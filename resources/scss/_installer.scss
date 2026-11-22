@@ -1,0 +1,189 @@
+// Installation wizard layout.
+
+.ld-installer {
+    background:
+        radial-gradient(900px 420px at 0% 0%, var(--ld-accent-soft), transparent 70%),
+        radial-gradient(700px 380px at 100% 100%, rgba(20, 184, 166, 0.08), transparent 70%),
+        var(--ld-bg);
+    min-height: 100vh;
+}
+
+.ld-installer__wrap {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 1.5rem 1rem;
+}
+
+.ld-installer__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.75rem;
+}
+
+.ld-installer__grid {
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: 1fr;
+
+    @include media-breakpoint-up(lg) {
+        grid-template-columns: 220px 1fr;
+        align-items: start;
+    }
+}
+
+.ld-installer__card {
+    box-shadow: var(--ld-shadow-lg);
+    min-width: 0;
+}
+
+.ld-installer__steps ol {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+
+    @include media-breakpoint-up(lg) {
+        flex-direction: column;
+        gap: 0.25rem;
+        position: sticky;
+        top: 1.5rem;
+    }
+
+    li {
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+        padding: 0.5rem 0.65rem;
+        border-radius: var(--ld-radius-sm);
+        color: var(--ld-text-subtle);
+        font-weight: 500;
+        white-space: nowrap;
+
+        > span:last-child {
+            display: none;
+
+            @include media-breakpoint-up(lg) {
+                display: inline;
+            }
+        }
+
+        &.is-current {
+            background: var(--ld-surface);
+            color: var(--ld-heading);
+            box-shadow: var(--ld-shadow-sm);
+
+            > span:last-child {
+                display: inline;
+            }
+        }
+
+        &.is-done {
+            color: var(--ld-text-muted);
+        }
+    }
+}
+
+.ld-installer__dot {
+    width: 26px;
+    height: 26px;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-size: 0.75rem;
+    font-weight: 700;
+    border: 1px solid var(--ld-border-strong);
+    background: var(--ld-surface);
+
+    .is-current & {
+        background: var(--ld-accent);
+        border-color: var(--ld-accent);
+        color: var(--ld-accent-contrast);
+    }
+
+    .is-done & {
+        background: var(--ld-success-soft);
+        border-color: transparent;
+        color: var(--ld-success);
+    }
+}
+
+.ld-installer h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.35rem;
+}
+
+.ld-installer__lead {
+    color: var(--ld-text-muted);
+    margin-bottom: 1.75rem;
+}
+
+.ld-installer__actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--ld-border);
+}
+
+.ld-check-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+
+    li {
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+        padding: 0.55rem 0;
+        border-bottom: 1px solid var(--ld-border);
+
+        &:last-child {
+            border-bottom: 0;
+        }
+    }
+
+    .ld-check-list__meta {
+        margin-left: auto;
+        font-size: 0.8125rem;
+        color: var(--ld-text-muted);
+        text-align: right;
+    }
+
+    .is-pass .ld-icon { color: var(--ld-success); }
+    .is-warn .ld-icon { color: var(--ld-warning); }
+    .is-fail .ld-icon { color: var(--ld-danger); }
+}
+
+.ld-terms {
+    max-height: 220px;
+    overflow-y: auto;
+    padding: 1rem;
+    border: 1px solid var(--ld-border);
+    border-radius: var(--ld-radius-sm);
+    background: var(--ld-surface-2);
+    font-size: 0.8125rem;
+    color: var(--ld-text-muted);
+}
+
+.ld-installing {
+    display: none;
+}
+
+form.is-submitting {
+    .ld-installing {
+        display: inline-flex;
+    }
+
+    .ld-install-label {
+        display: none;
+    }
+}

@@ -1,0 +1,14 @@
+// LabelDesk design system entry point.
+// Bootstrap provides the grid/components; LabelDesk tokens (CSS variables) drive
+// colour, surfaces and theming so light and dark share a single stylesheet.
+
+@import 'bootstrap-config';
+@import 'bootstrap/scss/bootstrap';
+
+@import 'tokens';
+@import 'themes';
+@import 'base';
+@import 'layout';
+@import 'components';
+@import 'auth';
+@import 'installer';

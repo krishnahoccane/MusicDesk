@@ -1,0 +1,70 @@
+// Authentication (guest) layout.
+
+.ld-auth {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 1fr;
+
+    @include media-breakpoint-up(lg) {
+        grid-template-columns: minmax(420px, 46%) 1fr;
+    }
+}
+
+.ld-auth__brand {
+    display: none;
+    position: relative;
+    overflow: hidden;
+    padding: 3rem;
+    color: #fff;
+    background:
+        radial-gradient(1200px 600px at -10% -10%, rgba(var(--ld-accent-rgb), 0.55), transparent 60%),
+        radial-gradient(900px 500px at 110% 110%, rgba(var(--ld-accent-2-rgb), 0.35), transparent 60%),
+        #0b0c14;
+
+    @include media-breakpoint-up(lg) {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
+    h2 {
+        color: #fff;
+        font-size: 2rem;
+        font-weight: 700;
+        line-height: 1.2;
+        max-width: 26ch;
+    }
+
+    p {
+        color: rgba(255, 255, 255, 0.72);
+        max-width: 44ch;
+    }
+}
+
+.ld-auth__wave {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    height: 72px;
+    margin-bottom: 2rem;
+
+    span {
+        width: 6px;
+        border-radius: 3px;
+        background: linear-gradient(180deg, var(--ld-accent), var(--ld-accent-2));
+        opacity: 0.85;
+    }
+}
+
+.ld-auth__panel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1.25rem;
+    background: var(--ld-bg);
+}
+
+.ld-auth__card {
+    width: 100%;
+    max-width: 400px;
+}

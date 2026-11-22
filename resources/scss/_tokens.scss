@@ -1,0 +1,173 @@
+// ---------------------------------------------------------------------------
+// Design tokens. Every LabelDesk component reads these variables and the
+// Bootstrap runtime variables are re-pointed at them, so both systems agree.
+//
+//   <html data-bs-theme="light|dark"      colour mode
+//         data-ld-theme="aurora|ocean|…"  colour theme (see _themes.scss)
+//         data-ld-sidebar="light|tinted|dark">
+//
+// Neutrals live here; accents per theme live in _themes.scss.
+// ---------------------------------------------------------------------------
+
+:root,
+[data-bs-theme='light'] {
+    // Accent (default theme "aurora"; overridden per theme)
+    --ld-accent: #6d5efc;
+    --ld-accent-rgb: 109, 94, 252;
+    --ld-accent-hover: #5a4aea;
+    --ld-accent-contrast: #ffffff;
+    --ld-accent-2: #14b8a6;
+    --ld-accent-2-rgb: 20, 184, 166;
+
+    --ld-bg: #f5f6fa;
+    --ld-bg-glow: rgba(var(--ld-accent-rgb), 0.06);
+    --ld-surface: #ffffff;
+    --ld-surface-2: #f8f9fc;
+    --ld-surface-hover: #f2f4f8;
+    --ld-surface-raised: #ffffff;
+
+    --ld-text: #1b2030;
+    --ld-text-muted: #667085;
+    --ld-text-subtle: #98a2b3;
+    --ld-heading: #0c111d;
+
+    --ld-border: #e6e8ef;
+    --ld-border-strong: #d4d8e1;
+    --ld-input-bg: #ffffff;
+
+    --ld-success: #12a150;
+    --ld-success-rgb: 18, 161, 80;
+    --ld-warning: #d97706;
+    --ld-warning-rgb: 217, 119, 6;
+    --ld-danger: #e11d48;
+    --ld-danger-rgb: 225, 29, 72;
+    --ld-info: #0284c7;
+    --ld-info-rgb: 2, 132, 199;
+    --ld-neutral-soft: rgba(100, 116, 139, 0.12);
+
+    --ld-shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.04);
+    --ld-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 2px 8px -2px rgba(16, 24, 40, 0.06);
+    --ld-shadow-md: 0 4px 16px -4px rgba(16, 24, 40, 0.1);
+    --ld-shadow-lg: 0 18px 48px -12px rgba(16, 24, 40, 0.22);
+
+    color-scheme: light;
+}
+
+[data-bs-theme='dark'] {
+    --ld-accent: #8f82ff;
+    --ld-accent-rgb: 143, 130, 255;
+    --ld-accent-hover: #a59bff;
+    --ld-accent-contrast: #0b0b14;
+    --ld-accent-2: #2dd4bf;
+    --ld-accent-2-rgb: 45, 212, 191;
+
+    --ld-bg: #0c0e13;
+    --ld-bg-glow: rgba(var(--ld-accent-rgb), 0.08);
+    --ld-surface: #13161d;
+    --ld-surface-2: #181c24;
+    --ld-surface-hover: #1e232c;
+    --ld-surface-raised: #191d26;
+
+    --ld-text: #e4e7ee;
+    --ld-text-muted: #9aa3b5;
+    --ld-text-subtle: #687083;
+    --ld-heading: #f8f9fc;
+
+    --ld-border: #242934;
+    --ld-border-strong: #333a48;
+    --ld-input-bg: #0f1218;
+
+    --ld-success: #2ccf74;
+    --ld-success-rgb: 44, 207, 116;
+    --ld-warning: #fbbf24;
+    --ld-warning-rgb: 251, 191, 36;
+    --ld-danger: #fb7185;
+    --ld-danger-rgb: 251, 113, 133;
+    --ld-info: #38bdf8;
+    --ld-info-rgb: 56, 189, 248;
+    --ld-neutral-soft: rgba(148, 163, 184, 0.14);
+
+    --ld-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+    --ld-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 2px 10px -2px rgba(0, 0, 0, 0.35);
+    --ld-shadow-md: 0 6px 20px -6px rgba(0, 0, 0, 0.55);
+    --ld-shadow-lg: 0 22px 56px -14px rgba(0, 0, 0, 0.7);
+
+    color-scheme: dark;
+}
+
+// Derived tokens (follow whichever accent / mode is active).
+:root,
+[data-bs-theme='light'],
+[data-bs-theme='dark'] {
+    --ld-accent-soft: rgba(var(--ld-accent-rgb), 0.11);
+    --ld-accent-softer: rgba(var(--ld-accent-rgb), 0.06);
+    --ld-accent-2-soft: rgba(var(--ld-accent-2-rgb), 0.12);
+    --ld-success-soft: rgba(var(--ld-success-rgb), 0.12);
+    --ld-warning-soft: rgba(var(--ld-warning-rgb), 0.14);
+    --ld-danger-soft: rgba(var(--ld-danger-rgb), 0.11);
+    --ld-info-soft: rgba(var(--ld-info-rgb), 0.12);
+    --ld-gradient: linear-gradient(135deg, var(--ld-accent) 0%, var(--ld-accent-2) 100%);
+    --ld-gradient-soft: linear-gradient(135deg, rgba(var(--ld-accent-rgb), 0.14) 0%, rgba(var(--ld-accent-2-rgb), 0.10) 100%);
+
+    // Sidebar (light style by default; see [data-ld-sidebar] below)
+    --ld-sidebar-bg: var(--ld-surface);
+    --ld-sidebar-border: var(--ld-border);
+    --ld-sidebar-text: var(--ld-text-muted);
+    --ld-sidebar-text-active: var(--ld-heading);
+    --ld-sidebar-hover-bg: var(--ld-surface-hover);
+    --ld-sidebar-active-bg: var(--ld-accent-soft);
+    --ld-sidebar-active-text: var(--ld-accent);
+    --ld-sidebar-label: var(--ld-text-subtle);
+    --ld-topbar-bg: color-mix(in srgb, var(--ld-bg) 82%, transparent);
+
+    --ld-radius: 0.875rem;
+    --ld-radius-sm: 0.625rem;
+    --ld-radius-xs: 0.4rem;
+    --ld-sidebar-width: 264px;
+    --ld-sidebar-collapsed-width: 76px;
+    --ld-topbar-height: 64px;
+    --ld-transition: 170ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+// Sidebar styles chosen by the administrator.
+[data-ld-sidebar='tinted'] {
+    --ld-sidebar-bg: color-mix(in srgb, var(--ld-accent) 7%, var(--ld-surface));
+    --ld-sidebar-border: color-mix(in srgb, var(--ld-accent) 12%, var(--ld-border));
+    --ld-sidebar-hover-bg: rgba(var(--ld-accent-rgb), 0.08);
+    --ld-sidebar-active-bg: rgba(var(--ld-accent-rgb), 0.16);
+}
+
+[data-ld-sidebar='dark'] {
+    --ld-sidebar-bg: #0d0f15;
+    --ld-sidebar-border: rgba(255, 255, 255, 0.06);
+    --ld-sidebar-text: #a2a9b8;
+    --ld-sidebar-text-active: #ffffff;
+    --ld-sidebar-hover-bg: rgba(255, 255, 255, 0.06);
+    --ld-sidebar-active-bg: rgba(var(--ld-accent-rgb), 0.22);
+    --ld-sidebar-active-text: #ffffff;
+    --ld-sidebar-label: #5f6676;
+}
+
+// Map Bootstrap runtime variables onto LabelDesk tokens.
+:root,
+[data-bs-theme='light'],
+[data-bs-theme='dark'] {
+    --bs-body-bg: var(--ld-bg);
+    --bs-body-color: var(--ld-text);
+    --bs-emphasis-color: var(--ld-heading);
+    --bs-secondary-color: var(--ld-text-muted);
+    --bs-tertiary-color: var(--ld-text-subtle);
+    --bs-secondary-bg: var(--ld-surface-2);
+    --bs-tertiary-bg: var(--ld-surface-2);
+    --bs-border-color: var(--ld-border);
+    --bs-border-color-translucent: var(--ld-border);
+    --bs-heading-color: var(--ld-heading);
+    --bs-link-color: var(--ld-accent);
+    --bs-link-color-rgb: var(--ld-accent-rgb);
+    --bs-link-hover-color: var(--ld-accent-hover);
+    --bs-link-hover-color-rgb: var(--ld-accent-rgb);
+    --bs-primary: var(--ld-accent);
+    --bs-primary-rgb: var(--ld-accent-rgb);
+    --bs-focus-ring-color: var(--ld-accent-soft);
+    --bs-border-radius: var(--ld-radius-sm);
+}

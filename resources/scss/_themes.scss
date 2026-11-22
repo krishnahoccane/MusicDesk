@@ -1,0 +1,91 @@
+// ---------------------------------------------------------------------------
+// Colour themes, selected by the administrator (Settings → Appearance).
+// Each theme sets its accents for light mode and, combined with
+// [data-bs-theme='dark'], for dark mode. A few also tune the neutrals.
+// Keep the list in sync with App\Support\Appearance::THEMES.
+// ---------------------------------------------------------------------------
+
+@mixin ld-accents($accent, $hover, $contrast, $accent2) {
+    --ld-accent: #{$accent};
+    --ld-accent-rgb: #{red($accent)}, #{green($accent)}, #{blue($accent)};
+    --ld-accent-hover: #{$hover};
+    --ld-accent-contrast: #{$contrast};
+    --ld-accent-2: #{$accent2};
+    --ld-accent-2-rgb: #{red($accent2)}, #{green($accent2)}, #{blue($accent2)};
+}
+
+// Aurora — violet & teal (default; matches _tokens.scss)
+[data-ld-theme='aurora'] { @include ld-accents(#6d5efc, #5a4aea, #ffffff, #14b8a6); }
+[data-ld-theme='aurora'][data-bs-theme='dark'] { @include ld-accents(#8f82ff, #a59bff, #0b0b14, #2dd4bf); }
+
+// Ocean — blue & cyan
+[data-ld-theme='ocean'] { @include ld-accents(#2563eb, #1d4ed8, #ffffff, #06b6d4); }
+[data-ld-theme='ocean'][data-bs-theme='dark'] { @include ld-accents(#60a5fa, #93c5fd, #06101f, #22d3ee); }
+
+// Emerald — green & lime
+[data-ld-theme='emerald'] { @include ld-accents(#059669, #047857, #ffffff, #65a30d); }
+[data-ld-theme='emerald'][data-bs-theme='dark'] { @include ld-accents(#34d399, #6ee7b7, #03140d, #a3e635); }
+
+// Sunset — orange & pink
+[data-ld-theme='sunset'] { @include ld-accents(#ea580c, #c2410c, #ffffff, #db2777); }
+[data-ld-theme='sunset'][data-bs-theme='dark'] { @include ld-accents(#fb923c, #fdba74, #1c0d03, #f472b6); }
+
+// Rose — rose & violet
+[data-ld-theme='rose'] { @include ld-accents(#e11d48, #be123c, #ffffff, #8b5cf6); }
+[data-ld-theme='rose'][data-bs-theme='dark'] { @include ld-accents(#fb7185, #fda4af, #1f0710, #a78bfa); }
+
+// Midnight — indigo & sky on cool, deep neutrals
+[data-ld-theme='midnight'] {
+    @include ld-accents(#4f46e5, #4338ca, #ffffff, #0ea5e9);
+    --ld-bg: #f3f5fb;
+    --ld-surface-2: #f6f8fd;
+}
+[data-ld-theme='midnight'][data-bs-theme='dark'] {
+    @include ld-accents(#818cf8, #a5b4fc, #070b1a, #38bdf8);
+    --ld-bg: #070b16;
+    --ld-surface: #0d1324;
+    --ld-surface-2: #111a2e;
+    --ld-surface-hover: #16213a;
+    --ld-surface-raised: #121b31;
+    --ld-border: #1c2740;
+    --ld-border-strong: #2a3756;
+    --ld-input-bg: #0a1020;
+}
+
+// Graphite — monochrome, for a quiet professional look
+[data-ld-theme='graphite'] {
+    @include ld-accents(#18181b, #27272a, #ffffff, #71717a);
+    --ld-bg: #f6f6f7;
+}
+[data-ld-theme='graphite'][data-bs-theme='dark'] {
+    @include ld-accents(#f4f4f5, #ffffff, #0a0a0b, #a1a1aa);
+    --ld-bg: #0a0a0b;
+    --ld-surface: #121214;
+    --ld-surface-2: #18181b;
+    --ld-surface-hover: #1f1f23;
+    --ld-surface-raised: #17171a;
+    --ld-border: #27272a;
+    --ld-border-strong: #3f3f46;
+    --ld-input-bg: #0e0e10;
+}
+
+// Sand — warm amber & teal on paper-like neutrals
+[data-ld-theme='sand'] {
+    @include ld-accents(#b45309, #92400e, #ffffff, #0f766e);
+    --ld-bg: #f7f4ee;
+    --ld-surface-2: #faf8f3;
+    --ld-surface-hover: #f2eee6;
+    --ld-border: #e7e1d6;
+    --ld-border-strong: #d8d0c2;
+}
+[data-ld-theme='sand'][data-bs-theme='dark'] {
+    @include ld-accents(#f59e0b, #fbbf24, #160e02, #2dd4bf);
+    --ld-bg: #100d09;
+    --ld-surface: #18140f;
+    --ld-surface-2: #1e1913;
+    --ld-surface-hover: #251f18;
+    --ld-surface-raised: #1c1712;
+    --ld-border: #2e271e;
+    --ld-border-strong: #3d3428;
+    --ld-input-bg: #130f0b;
+}

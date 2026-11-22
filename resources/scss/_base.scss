@@ -1,0 +1,68 @@
+// Base element styling on top of Bootstrap reboot.
+
+html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+    background: var(--ld-bg);
+    color: var(--ld-text);
+    font-feature-settings: 'cv11', 'ss01';
+    transition: background-color var(--ld-transition), color var(--ld-transition);
+}
+
+h1, h2, h3, h4, h5, h6 {
+    color: var(--ld-heading);
+    letter-spacing: -0.01em;
+}
+
+a {
+    text-decoration: none;
+}
+
+::selection {
+    background: var(--ld-accent-soft);
+}
+
+.text-muted,
+.text-secondary {
+    color: var(--ld-text-muted) !important;
+}
+
+.text-subtle {
+    color: var(--ld-text-subtle) !important;
+}
+
+.ld-icon {
+    display: inline-block;
+    flex-shrink: 0;
+    vertical-align: -0.2em;
+}
+
+// Prevent theme transition flashes on first paint.
+.ld-no-transition * {
+    transition: none !important;
+}
+
+// Livewire cloak support.
+[wire\:cloak],
+[x-cloak] {
+    display: none !important;
+}
+
+:focus-visible {
+    outline: 2px solid var(--ld-accent);
+    outline-offset: 2px;
+}
+
+.visually-hidden-focusable:focus {
+    position: fixed !important;
+    top: 0.75rem;
+    left: 0.75rem;
+    z-index: 2000;
+    padding: 0.5rem 1rem;
+    background: var(--ld-surface);
+    border-radius: var(--ld-radius-sm);
+    box-shadow: var(--ld-shadow-lg);
+}
