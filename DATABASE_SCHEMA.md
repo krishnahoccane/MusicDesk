@@ -302,6 +302,32 @@ in `settings`: `backups.schedule`, `backups.retention`, `catalog.label_name`, `c
 `catalog.p_line_format`, `catalog.default_language`, `appearance.theme|modes|default_mode|sidebar`,
 `system.installed_version`, `system.upgraded_at`.
 
+## Artist accounts and bulk upload ✅ (M10)
+
+### artist_user
+| Column | Type | Notes |
+|--------|------|-------|
+| id | bigint unsigned PK | |
+| artist_id | FK artists, cascade | |
+| user_id | FK users, cascade | artist account |
+| created_at / updated_at | timestamps | |
+
+Unique (artist_id, user_id).
+
+### bulk_uploads
+| Column | Type | Notes |
+|--------|------|-------|
+| id | bigint unsigned PK | |
+| user_id | FK users null, null on delete | |
+| type | varchar(20), index | `artists` or `releases` |
+| original_name | varchar(255) | uploaded file name |
+| total_rows / created_count / skipped_count | int unsigned | |
+| errors | json null | row number → problems (max 500 rows) |
+| created_at / updated_at | timestamps | |
+
+Also in M10: indexes `royalty_lines (royalty_period_id, store)` and `(royalty_period_id, territory)`;
+settings `bulk_upload.staff`, `bulk_upload.artists`.
+
 ### Planned
 | Table | Milestone |
 |-------|-----------|

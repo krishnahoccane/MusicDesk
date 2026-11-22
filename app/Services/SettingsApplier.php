@@ -54,7 +54,8 @@ class SettingsApplier
             $config['labeldesk.datetime_format'] = ($config['labeldesk.date_format'] ?? config('labeldesk.date_format')).', '.$time;
         }
 
-        foreach (['theme', 'modes', 'default_mode', 'sidebar'] as $key) {
+        foreach (['theme', 'modes', 'default_mode', 'sidebar', 'font', 'brand_color', 'brand_color_2', 'logo', 'logo_dark', 'favicon',
+            'login_image', 'login_layout', 'login_headline', 'login_accent', 'login_headline_end', 'login_subtitle', 'login_welcome', 'login_note'] as $key) {
             if (filled($s['appearance.'.$key] ?? null)) {
                 $config['labeldesk.appearance.'.$key] = (string) $s['appearance.'.$key];
             }

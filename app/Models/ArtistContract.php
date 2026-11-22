@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\ContractStatus;
 use App\Enums\ContractType;
+use App\Models\Concerns\ScopedToArtistAccount;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -17,6 +18,7 @@ use Illuminate\Support\Carbon;
  */
 class ArtistContract extends Model
 {
+    use ScopedToArtistAccount;
     use SoftDeletes;
 
     /** @var list<string> */
@@ -85,5 +87,13 @@ class ArtistContract extends Model
     public function labelShare(): ?string
     {
         return $this->artist_share === null ? null : bcsub('100', (string) $this->artist_share, 4);
+    }
+
+    /**
+     * Artist accounts: only rows of their own artists.
+     */
+    public function scopeToArtists(Builder $query, array $artistIds): void
+    {
+        $query->whereIn($this->qualifyColumn('artist_id'), $artistIds);
     }
 }

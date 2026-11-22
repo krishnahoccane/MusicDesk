@@ -30,6 +30,19 @@ class RolesAndPermissionsSeeder extends Seeder
     /**
      * @return array<string, list<string>|string>
      */
+    /**
+     * Artist accounts: fixed set (the role cannot be edited). Every query is
+     * additionally limited to the account's own artists (App\Support\ArtistAccess).
+     */
+    public const ARTIST_PERMISSIONS = [
+        'artists.view', 'artists.update',
+        'releases.view', 'releases.create', 'releases.update', 'releases.submit', 'catalog.bulk_upload',
+        'tracks.view', 'tracks.create', 'tracks.update', 'tracks.delete', 'tracks.download_master',
+        'contributors.view', 'contributors.manage',
+        'contracts.view', 'documents.view',
+        'distribution.view', 'payments.view',
+    ];
+
     public static function roles(): array
     {
         $all = collect(self::permissions())->flatten()->all();
@@ -41,7 +54,7 @@ class RolesAndPermissionsSeeder extends Seeder
             ])),
             SystemRole::ArtistManager->value => [
                 'artists.view', 'artists.create', 'artists.update',
-                'releases.view', 'releases.create', 'releases.update', 'releases.submit',
+                'releases.view', 'releases.create', 'releases.update', 'releases.submit', 'catalog.bulk_upload',
                 'tracks.view', 'tracks.create', 'tracks.update',
                 'contributors.view', 'contributors.manage',
                 'contracts.view', 'documents.view', 'documents.manage',
@@ -61,6 +74,7 @@ class RolesAndPermissionsSeeder extends Seeder
                 'artists.view', 'releases.view', 'tracks.view', 'contributors.view',
                 'distribution.view', 'reports.view',
             ],
+            SystemRole::Artist->value => self::ARTIST_PERMISSIONS,
         ];
     }
 
@@ -91,6 +105,12 @@ class RolesAndPermissionsSeeder extends Seeder
                 // permissions that are new in this version, so their choices
                 // are never undone.
                 $wanted = $isNewRole ? $permissions : array_values(array_intersect($permissions, $new));
+            }
+
+            if ($roleName === SystemRole::Artist->value) {
+                $role->syncPermissions($permissions); // fixed set, never edited
+
+                continue;
             }
 
             $missing = array_diff($wanted, $role->permissions()->pluck('name')->all());

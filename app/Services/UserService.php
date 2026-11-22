@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\SystemRole;
 use App\Exceptions\UserManagementException;
+use App\Models\Artist;
 use App\Models\User;
 use App\Services\Activity\ActivityLogger;
 use App\Services\License\LicenseFeatureService;
@@ -160,6 +161,7 @@ class UserService
             $user->forceFill(['is_active' => $active, 'email_verified_at' => now()]);
             $user->save();
             $user->syncRoles([$role->name]);
+            $this->syncArtistLinks($user, $role->name, $data['artist_ids'] ?? []);
 
             return $user;
         });
@@ -211,6 +213,9 @@ class UserService
             if ($roleChanged) {
                 $user->syncRoles([$roleName]);
             }
+            if (array_key_exists('artist_ids', $data)) {
+                $this->syncArtistLinks($user, $roleName, $data['artist_ids']);
+            }
         });
 
         if ($passwordChanged) {
@@ -227,6 +232,30 @@ class UserService
         $this->activity->log('user.updated', __('Updated user :name', ['name' => $user->name]), $user, $changes);
 
         return $user;
+    }
+
+    /**
+     * Artist accounts must be linked to at least one artist profile; other
+     * accounts never keep artist links.
+     *
+     * @param  array<int|string>  $artistIds
+     */
+    protected function syncArtistLinks(User $user, string $roleName, array $artistIds): void
+    {
+        if ($roleName !== SystemRole::Artist->value) {
+            $user->artists()->detach();
+            $user->forgetLinkedArtists();
+
+            return;
+        }
+
+        $ids = Artist::query()->whereIn('id', array_map('intval', $artistIds))->pluck('id')->all();
+        if ($ids === []) {
+            throw new UserManagementException(__('Choose the artist profiles this artist account may manage.'));
+        }
+
+        $user->artists()->sync($ids);
+        $user->forgetLinkedArtists();
     }
 
     public function setActive(User $actor, User $user, bool $active): void

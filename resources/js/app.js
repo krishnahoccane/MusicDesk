@@ -5,6 +5,10 @@
  * file only provides theme switching, the sidebar, toasts and chart helpers.
  */
 import '@fontsource-variable/inter';
+import '@fontsource-variable/inter-tight';
+import '@fontsource/instrument-serif/400.css';
+import '@fontsource/instrument-serif/400-italic.css';
+import '@fontsource-variable/jetbrains-mono';
 import * as bootstrap from 'bootstrap';
 import { initTheme } from './modules/theme';
 import { initSidebar } from './modules/sidebar';

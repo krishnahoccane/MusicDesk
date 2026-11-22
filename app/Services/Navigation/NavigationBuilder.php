@@ -4,6 +4,7 @@ namespace App\Services\Navigation;
 
 use App\Models\User;
 use Illuminate\Routing\Router;
+use Illuminate\Support\Facades\Gate;
 
 /**
  * Builds the sidebar navigation for the current user from config/navigation.php.
@@ -43,6 +44,10 @@ class NavigationBuilder
                 }
 
                 if (! empty($item['permission']) && ! $user?->can($item['permission'])) {
+                    continue;
+                }
+
+                if (! empty($item['gate']) && ! ($user && Gate::forUser($user)->allows($item['gate']))) {
                     continue;
                 }
 

@@ -1,31 +1,29 @@
 <x-layouts.installer :title="__('License')" :step="$step">
-    <h1>{{ __('License activation') }}</h1>
-    <p class="ld-installer__lead">{{ __('Enter the license key from your MusicDesk.tech account. LabelDesk contacts MusicDesk.tech over HTTPS to activate it for this domain.') }}</p>
+    <div class="eyebrow mb-2">{{ __('Step :n', ['n' => 0]) }}</div>
+    <h1>{{ __('Validate your license') }}</h1>
+    <p class="ld-installer__lead">{{ __('Enter the license key from your MusicDesk.tech account. LabelDesk checks it over HTTPS and activates it for this site\'s domain.') }}</p>
 
     @if ($driver === 'mock')
-        <x-alert variant="warning" class="mb-4" :title="__('Development license provider')">
-            {{ __('This installation uses the development mock provider. It cannot activate real licenses and is refused in production.') }}
-        </x-alert>
+        <div class="ld-notice mb-4" style="border-color: rgba(var(--ld-warning-rgb), .3); background: rgba(var(--ld-warning-rgb), .06)">
+            <strong style="color: var(--ld-warning)">{{ __('Development:') }}</strong>
+            {{ __('this installation uses the mock license provider. It cannot activate real licenses and is refused in production.') }}
+        </div>
     @endif
 
     @if ($activated)
-        <div class="card mb-4" style="background: var(--ld-success-soft); border-color: transparent">
-            <div class="card-body d-flex gap-3 align-items-start">
+        <div class="ld-notice mb-4" style="border-color: rgba(var(--ld-success-rgb), .3); background: rgba(var(--ld-success-rgb), .06)">
+            <div class="d-flex gap-3 align-items-start">
                 <span class="ld-stat__icon ld-stat__icon--success"><x-icon name="badge-check" size="20" /></span>
-                <div class="flex-grow-1">
-                    <div class="fw-semibold" style="color: var(--ld-heading)">{{ $offline ? __('Offline activation accepted') : __('License activated') }}</div>
-                    <div class="small text-muted mb-3">{{ $maskedKey }} &middot; {{ $domain }}</div>
-                    <dl class="ld-dl mb-0">
-                        <dt>{{ __('Plan') }}</dt><dd class="text-capitalize">{{ $activated['plan'] }}</dd>
-                        <dt>{{ __('Status') }}</dt><dd class="text-capitalize">{{ $activated['status'] }}</dd>
-                        <dt>{{ __('Updates & support until') }}</dt><dd>{{ ! empty($activated['support_until']) ? \Illuminate\Support\Carbon::parse($activated['support_until'])->format(config('labeldesk.date_format')) : '—' }}</dd>
-                        <dt>{{ __('Features') }}</dt>
-                        <dd>
-                            @foreach ($activated['features'] as $feature)
-                                <x-badge variant="accent" class="me-1 mb-1">{{ __(config('licensing.features.'.$feature, $feature)) }}</x-badge>
-                            @endforeach
-                        </dd>
-                    </dl>
+                <div class="flex-grow-1 min-w-0">
+                    <div class="fw-semibold" style="color: var(--ld-heading)">{{ $offline ? __('Offline activation accepted') : __('License valid') }}</div>
+                    <div class="small font-mono text-muted mb-2">{{ $maskedKey }} &middot; {{ $domain }}</div>
+                    <div class="d-flex flex-wrap gap-2 small">
+                        <x-badge variant="accent" class="text-capitalize">{{ $activated['plan'] }}</x-badge>
+                        <x-badge variant="success" class="text-capitalize">{{ $activated['status'] }}</x-badge>
+                        @if (! empty($activated['support_until']))
+                            <span class="text-muted">{{ __('Updates & support until :date', ['date' => \Illuminate\Support\Carbon::parse($activated['support_until'])->format('M d, Y')]) }}</span>
+                        @endif
+                    </div>
                     @foreach ($activated['messages'] ?? [] as $notice)
                         <div class="small mt-2"><x-icon name="info" size="14" /> {{ $notice }}</div>
                     @endforeach
@@ -37,18 +35,19 @@
     <form method="POST" action="{{ route('installer.license.store') }}" novalidate>
         @csrf
         <div class="row g-3">
-            <div class="col-md-8">
+            <div class="col-12">
+                <label class="form-label" for="url">{{ __('Site address') }} <span class="text-subtle">({{ __('the license is activated for this domain') }})</span></label>
+                <input id="url" name="url" class="form-control @error('url') is-invalid @enderror" value="{{ old('url', $url) }}" required maxlength="255" autocomplete="off">
+                @error('url') <div class="invalid-feedback">{{ $message }}</div> @enderror
+            </div>
+            <div class="col-12">
                 <label class="form-label" for="license_key">{{ $activated ? __('Use a different license key') : __('License key') }}</label>
                 <div class="input-icon">
                     <x-icon name="key-round" size="16" />
-                    <input id="license_key" name="license_key" class="form-control font-monospace text-uppercase @error('license_key') is-invalid @enderror"
-                           value="{{ old('license_key') }}" placeholder="LDSK-XXXX-XXXX-XXXX-XXXX" maxlength="64" autocomplete="off" spellcheck="false" @if (! $activated) required @endif>
+                    <input id="license_key" name="license_key" class="form-control font-mono text-uppercase @error('license_key') is-invalid @enderror"
+                           value="{{ old('license_key') }}" placeholder="LDSK-XXXX-XXXX-XXXX-XXXX" maxlength="64" autocomplete="off" spellcheck="false" @if (! $activated) required autofocus @endif>
                 </div>
                 @error('license_key') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
-            </div>
-            <div class="col-md-4">
-                <label class="form-label">{{ __('Activation domain') }}</label>
-                <input class="form-control" value="{{ $domain }}" readonly aria-readonly="true">
             </div>
         </div>
         <div class="form-check mt-3">
@@ -56,7 +55,7 @@
             <label class="form-check-label small" for="accept">{{ __('Allow LabelDesk to contact MusicDesk.tech over HTTPS to activate this license and check in once a day.') }}</label>
             @error('accept') <div class="invalid-feedback">{{ $message }}</div> @enderror
         </div>
-        <button type="submit" class="btn {{ $activated ? 'btn-light' : 'btn-primary' }} mt-3"><x-icon name="shield-check" size="16" /> {{ __('Validate & activate') }}</button>
+        <button type="submit" class="btn {{ $activated ? 'btn-light' : 'btn-primary' }} mt-3"><x-icon name="shield-check" size="16" /> {{ __('Validate license') }}</button>
     </form>
 
     <details class="mt-4" @if ($errors->has('license_file')) open @endif>
@@ -81,7 +80,7 @@
     <form method="POST" action="{{ route('installer.license.continue') }}">
         @csrf
         <div class="ld-installer__actions">
-            <a href="{{ route('installer.administrator') }}" class="btn btn-light"><x-icon name="arrow-left" size="16" /> {{ __('Back') }}</a>
+            <a href="{{ route('installer.welcome') }}" class="btn btn-ghost"><x-icon name="arrow-left" size="16" /> {{ __('Back') }}</a>
             <button type="submit" class="btn btn-primary" @disabled(! $activated)>{{ __('Continue') }} <x-icon name="arrow-right" size="16" /></button>
         </div>
     </form>

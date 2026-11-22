@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\ArtistStatus;
 use App\Enums\ArtistType;
+use App\Models\Concerns\ScopedToArtistAccount;
 use App\Support\Countries;
 use Database\Factories\ArtistFactory;
 use Illuminate\Database\Eloquent\Builder;
@@ -20,6 +21,8 @@ class Artist extends Model
 {
     /** @use HasFactory<ArtistFactory> */
     use HasFactory, SoftDeletes;
+
+    use ScopedToArtistAccount;
 
     /** @var list<string> */
     protected $fillable = [
@@ -103,5 +106,13 @@ class Artist extends Model
             ->where('name', 'like', $like)
             ->orWhere('legal_name', 'like', $like)
             ->orWhere('email', 'like', $like));
+    }
+
+    /**
+     * Artist accounts: only rows of their own artists.
+     */
+    public function scopeToArtists(Builder $query, array $artistIds): void
+    {
+        $query->whereIn($this->qualifyColumn('id'), $artistIds);
     }
 }

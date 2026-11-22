@@ -10,6 +10,7 @@ use App\Models\Genre;
 use App\Models\Language;
 use App\Models\Release;
 use App\Services\Catalog\ReleaseService;
+use App\Support\ArtistAccess;
 use App\Support\CatalogDefaults;
 use App\Support\Identifiers;
 use Closure;
@@ -91,6 +92,9 @@ class Form extends Component
             $this->p_line = CatalogDefaults::pLine();
             // Started from an artist profile: pre-select that artist.
             $artist = request()->integer('artist');
+            if ($artist <= 0) {
+                $artist = ArtistAccess::ids()[0] ?? 0; // artist accounts: their own profile
+            }
             $this->artistRows = [['artist_id' => $artist > 0 ? $artist : '', 'role' => ArtistRole::Primary->value]];
             $this->language_id = (string) Language::query()->where('code', CatalogDefaults::languageCode())->value('id');
         }
@@ -155,7 +159,7 @@ class Form extends Component
         $data = $this->validate();
         $data['upc'] = Identifiers::normalizeUpc($this->upc);
 
-        $duplicate = $data['upc'] !== null && Release::withTrashed()->where('upc', $data['upc'])
+        $duplicate = $data['upc'] !== null && Release::withTrashed()->withoutGlobalScope('artist-account')->where('upc', $data['upc'])
             ->when($this->release, fn ($q) => $q->whereKeyNot($this->release->id))->exists();
         if ($duplicate) {
             $this->addError('upc', __('This UPC is already used by another release.'));

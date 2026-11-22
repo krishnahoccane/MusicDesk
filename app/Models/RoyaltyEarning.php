@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\ScopedToArtistAccount;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -11,6 +13,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class RoyaltyEarning extends Model
 {
+    use ScopedToArtistAccount;
+
     public $timestamps = false;
 
     /** @var list<string> */
@@ -50,5 +54,13 @@ class RoyaltyEarning extends Model
     public function contract(): BelongsTo
     {
         return $this->belongsTo(ArtistContract::class, 'artist_contract_id')->withTrashed();
+    }
+
+    /**
+     * Artist accounts: only rows of their own artists.
+     */
+    public function scopeToArtists(Builder $query, array $artistIds): void
+    {
+        $query->whereIn($this->qualifyColumn('artist_id'), $artistIds);
     }
 }

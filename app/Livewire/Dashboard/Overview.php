@@ -16,6 +16,7 @@ use App\Models\RoyaltyPeriod;
 use App\Models\User;
 use App\Services\License\LicenseService;
 use App\Services\Royalties\RoyaltyPeriodService;
+use App\Support\ArtistAccess;
 use App\Support\Decimal;
 use App\Support\Format;
 use Illuminate\Contracts\View\View;
@@ -114,6 +115,16 @@ class Overview extends Component
                 $balances[$entry->artist_id] = Decimal::add($balances[$entry->artist_id] ?? '0', (string) $entry->amount);
             }
             $owed = Decimal::sum(array_filter($balances, fn ($b) => Decimal::compare($b, '0') > 0));
+            if (ArtistAccess::restricted()) {
+                // Artist accounts: their own balance, linking to their earnings.
+                $own = Decimal::sum($balances);
+                $first = ArtistAccess::ids()[0] ?? null;
+                $kpis[] = ['label' => __('Your balance'), 'value' => Format::money($own), 'icon' => 'hand-coins', 'variant' => 'success',
+                    'hint' => __('Earnings minus advances and payments'),
+                    'url' => $first ? route('artists.show', ['artist' => $first, 'tab' => 'earnings']) : null];
+
+                return array_slice($kpis, 0, 4);
+            }
             $kpis[] = ['label' => __('Owed to artists'), 'value' => Format::money($owed), 'icon' => 'hand-coins', 'variant' => 'warning',
                 'hint' => trans_choice('{0} no open balances|{1} 1 artist with a balance|[2,*] :count artists with a balance', count(array_filter($balances, fn ($b) => Decimal::compare($b, '0') > 0)), ['count' => count(array_filter($balances, fn ($b) => Decimal::compare($b, '0') > 0))]),
                 'url' => route('royalties.balances', ['filter' => 'owed'])];

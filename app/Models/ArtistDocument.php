@@ -3,7 +3,9 @@
 namespace App\Models;
 
 use App\Enums\DocumentCategory;
+use App\Models\Concerns\ScopedToArtistAccount;
 use App\Support\Format;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -14,6 +16,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class ArtistDocument extends Model
 {
+    use ScopedToArtistAccount;
+
     /** @var list<string> */
     protected $fillable = ['title', 'category', 'artist_contract_id'];
 
@@ -55,5 +59,13 @@ class ArtistDocument extends Model
             str_contains($this->mime_type, 'sheet') || str_contains($this->mime_type, 'excel') || $this->mime_type === 'text/csv' => 'file-spreadsheet',
             default => 'file-text',
         };
+    }
+
+    /**
+     * Artist accounts: only rows of their own artists.
+     */
+    public function scopeToArtists(Builder $query, array $artistIds): void
+    {
+        $query->whereIn($this->qualifyColumn('artist_id'), $artistIds);
     }
 }

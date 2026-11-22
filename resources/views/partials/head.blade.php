@@ -4,6 +4,11 @@
 <meta name="robots" content="noindex, nofollow">
 <meta name="color-scheme" content="light dark">
 <title>{{ $title ? $title.' · ' : '' }}{{ config('app.name', 'LabelDesk') }}</title>
-<link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
+@php($ldFavicon = App\Support\Branding::url('favicon'))
+<link rel="icon" href="{{ $ldFavicon ?? asset('favicon.svg') }}">
 @include('partials.theme-script')
 @vite(['resources/scss/app.scss', 'resources/js/app.js'])
+@if (! empty($appearance['css']))
+    {{-- Custom brand colours (validated #rrggbb values only). --}}
+    <style>{!! $appearance['css'] !!}</style>
+@endif

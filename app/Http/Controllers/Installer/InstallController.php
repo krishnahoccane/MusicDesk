@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Installer;
 
 use App\Services\Installation\InstallationService;
+use App\Services\License\Data\ActivationContext;
+use App\Support\Appearance;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -24,7 +26,10 @@ class InstallController extends InstallerController
             'database' => collect($db)->only(['host', 'port', 'database', 'username', 'prefix', 'server', 'version', 'resuming'])->all(),
             'application' => $this->wizard->get('application'),
             'administrator' => collect($this->wizard->get('administrator'))->only(['name', 'email'])->all(),
-            'license' => $this->wizard->get('license')['summary'] ?? [],
+            'license' => ($this->wizard->get('license')['summary'] ?? []) + ['domain' => ActivationContext::domainFrom((string) ($this->wizard->get('site')['url'] ?? ''))],
+            'redis' => collect($this->wizard->get('redis'))->except('password')->all(),
+            'mail' => collect($this->wizard->get('mail'))->except('password')->all(),
+            'appearanceSummary' => $this->appearanceSummary(),
             'lastError' => $this->state->progress()['last_error'] ?? null,
         ]);
     }
@@ -40,6 +45,10 @@ class InstallController extends InstallerController
         $db = $this->wizard->get('database');
         $db['password'] = $this->wizard->decrypt($db['password'] ?? null);
         $license = $this->wizard->get('license');
+        $redis = $this->wizard->get('redis');
+        $redis['password'] = $this->wizard->decrypt($redis['password'] ?? null);
+        $mail = $this->wizard->get('mail');
+        $mail['password'] = $this->wizard->decrypt($mail['password'] ?? null);
 
         try {
             $result = $installer->install(
@@ -55,6 +64,11 @@ class InstallController extends InstallerController
                     'offline' => (bool) ($license['offline'] ?? false),
                     'plan' => $license['summary']['plan'] ?? null,
                 ],
+                [
+                    'redis' => $redis,
+                    'mail' => $mail,
+                    'customize' => $this->wizard->get('customize'),
+                ],
             );
         } catch (Throwable $e) {
             report($e);
@@ -69,6 +83,16 @@ class InstallController extends InstallerController
         $this->wizard->forget();
 
         return redirect()->route('installer.complete', ['token' => $result['completion_token']]);
+    }
+
+    protected function appearanceSummary(): string
+    {
+        $c = $this->wizard->get('customize');
+        $theme = ! empty($c['custom_colors']) ? strtoupper((string) $c['brand_color']).' / '.strtoupper((string) $c['brand_color_2'])
+            : __(Appearance::THEMES[$c['theme'] ?? 'musicdesk'][0] ?? 'MusicDesk');
+        $modes = ['both' => __('light & dark'), 'light' => __('light only'), 'dark' => __('dark only')][$c['modes'] ?? 'both'] ?? '';
+
+        return $theme.' · '.$modes.' · '.__(':design sign-in page', ['design' => __(Appearance::LOGIN_LAYOUTS[$c['login_layout'] ?? 'spotlight'][0] ?? '')]);
     }
 
     protected function safeMessage(Throwable $e): string

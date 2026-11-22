@@ -1,5 +1,6 @@
 <x-layouts.installer :title="__('Administrator')" :step="$step">
-    <h1>{{ __('Administrator account') }}</h1>
+    <div class="eyebrow mb-2">{{ __('Step :n', ['n' => 5]) }}</div>
+    <h1>{{ __('Create the super admin account') }}</h1>
     <p class="ld-installer__lead">{{ __('This account receives the Super Admin role with full access. You can invite your team after installation.') }}</p>
 
     <form method="POST" action="{{ route('installer.administrator.store') }}" novalidate>
@@ -28,7 +29,7 @@
         </div>
 
         <div class="ld-installer__actions">
-            <a href="{{ route('installer.application') }}" class="btn btn-light"><x-icon name="arrow-left" size="16" /> {{ __('Back') }}</a>
+            <a href="{{ route('installer.mail') }}" class="btn btn-ghost"><x-icon name="arrow-left" size="16" /> {{ __('Back') }}</a>
             <button type="submit" class="btn btn-primary">{{ __('Continue') }} <x-icon name="arrow-right" size="16" /></button>
         </div>
     </form>

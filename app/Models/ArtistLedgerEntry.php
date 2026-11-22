@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Enums\LedgerEntryType;
+use App\Models\Concerns\ScopedToArtistAccount;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -12,6 +14,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class ArtistLedgerEntry extends Model
 {
+    use ScopedToArtistAccount;
+
     /** @var list<string> */
     protected $fillable = ['type', 'amount', 'entry_date', 'description', 'method', 'reference', 'royalty_period_id'];
 
@@ -37,5 +41,13 @@ class ArtistLedgerEntry extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by')->withTrashed();
+    }
+
+    /**
+     * Artist accounts: only rows of their own artists.
+     */
+    public function scopeToArtists(Builder $query, array $artistIds): void
+    {
+        $query->whereIn($this->qualifyColumn('artist_id'), $artistIds);
     }
 }

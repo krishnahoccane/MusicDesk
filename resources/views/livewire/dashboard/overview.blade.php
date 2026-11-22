@@ -7,8 +7,8 @@
             @endforeach
         </div>
         <div class="position-relative" style="max-width: 760px">
-            <div class="ld-hero__eyebrow">{{ $today }}</div>
-            <h1 class="ld-hero__title">{{ $greeting }}, {{ $firstName }}</h1>
+            <div class="ld-hero__eyebrow eyebrow">{{ $today }}</div>
+            <h1 class="ld-hero__title">{{ $greeting }}, <span class="serif-accent text-gradient">{{ $firstName }}</span></h1>
             <p class="ld-hero__text">{{ __('Here is what is happening at :label today.', ['label' => config('app.name')]) }}</p>
             @if ($actions)
                 <div class="d-flex flex-wrap gap-2 mt-3">

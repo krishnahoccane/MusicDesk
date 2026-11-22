@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Enums\DeliveryStatus;
+use App\Models\Concerns\ScopedToArtistAccount;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -13,6 +15,8 @@ use Illuminate\Support\Carbon;
  */
 class ReleaseDelivery extends Model
 {
+    use ScopedToArtistAccount;
+
     /** @var list<string> */
     protected $fillable = ['dsp_id', 'store_id', 'store_url', 'notes'];
 
@@ -60,5 +64,13 @@ class ReleaseDelivery extends Model
         $today = now()->setTimezone(config('labeldesk.display_timezone'))->startOfDay();
 
         return Carbon::parse($releaseDate)->subDays($lead)->lt($today);
+    }
+
+    /**
+     * Artist accounts: only rows of their own artists.
+     */
+    public function scopeToArtists(Builder $query, array $artistIds): void
+    {
+        $query->whereHas('release');
     }
 }

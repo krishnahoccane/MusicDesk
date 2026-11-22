@@ -27,6 +27,7 @@ class PermissionCatalog
                 'releases.delete' => __('Delete releases'),
                 'releases.submit' => __('Submit releases for review'),
                 'releases.review' => __('Approve or reject releases'),
+                'catalog.bulk_upload' => __('Bulk upload artists and releases'),
             ]],
             'tracks' => ['label' => __('Tracks'), 'permissions' => [
                 'tracks.view' => __('View tracks'),

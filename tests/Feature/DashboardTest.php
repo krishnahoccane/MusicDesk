@@ -24,7 +24,7 @@ class DashboardTest extends TestCase
             ->assertOk()
             ->assertSee('Asha')
             ->assertSee('ld-sidebar', false)
-            ->assertSee('data-theme-preference="system"', false)
+            ->assertSee('data-theme-preference="dark"', false)
             ->assertSee('Sign out');
     }
 

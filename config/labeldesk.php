@@ -36,7 +36,7 @@ return [
     /*
      | Default colour mode for new users: light, dark or system.
      */
-    'default_theme' => env('LABELDESK_DEFAULT_THEME', 'system'),
+    'default_theme' => env('LABELDESK_DEFAULT_THEME', 'dark'),
 
     /*
      | Look of the application. Administrators change these in Settings →
@@ -57,10 +57,24 @@ return [
     ],
 
     'appearance' => [
-        'theme' => env('LABELDESK_THEME', 'aurora'),
+        'theme' => env('LABELDESK_THEME', 'musicdesk'),
         'modes' => 'both',
-        'default_mode' => env('LABELDESK_DEFAULT_THEME', 'system'),
+        'default_mode' => env('LABELDESK_DEFAULT_THEME', 'dark'),
         'sidebar' => 'light',
+        'font' => 'inter-tight',
+        'brand_color' => null,
+        'brand_color_2' => null,
+        'logo' => null,
+        'logo_dark' => null,
+        'favicon' => null,
+        'login_image' => null,
+        'login_layout' => 'spotlight',
+        'login_headline' => null,
+        'login_accent' => null,
+        'login_headline_end' => null,
+        'login_subtitle' => null,
+        'login_welcome' => null,
+        'login_note' => null,
     ],
 
     /*

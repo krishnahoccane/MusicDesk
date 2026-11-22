@@ -100,6 +100,18 @@ scripts/sync-icons.mjs      Copies Lucide SVG paths into resources/icons/lucide
 - **Global search** (`Livewire\GlobalSearch`, Ctrl/Cmd+K or "/"): artists, releases, tracks,
   contributors and users, each filtered by permission and license feature.
 
+### MusicDesk design layer
+
+- `resources/scss/_musicdesk.scss` ports the MusicDesk UI/UX guide (Tailwind there) onto LabelDesk's
+  Bootstrap/SCSS: ink tokens, glass `.card`, gradient `.btn-primary`, `.btn-ghost`, tinted `.ld-badge--*`,
+  mono table headers, `.eyebrow`, `.display`, `.serif-accent`, `.text-gradient`, `.glass`, `.grid-bg`,
+  `.glow-border`, `.eq-bar`. `_auth.scss` holds the five sign-in designs.
+- White-label: `Appearance::themeCss()` prints validated `#rrggbb` brand colours (and their RGB
+  triplets) after the stylesheet; `Support\Branding` stores logo / dark logo / favicon / sign-in image on
+  the public disk (`branding/`), served by `BrandingController` (strict name pattern, `nosniff`, sandbox CSP).
+- `<html data-ld-font>` switches between Inter Tight and the system font; `data-ld-area` (label / artist)
+  picks the page glow colour.
+
 ## Security baseline (Milestone 1)
 
 - CSRF on all forms and the theme endpoint; Blade escaping by default; toasts use `textContent`.
@@ -258,3 +270,41 @@ ReportExportController ─► ReportExporter ─► OpenSpout CSV / XLSX streame
 - `Services\System\UpgradeService` / `labeldesk:upgrade`: forward-only migrations, idempotent seeders,
   cache clear, `system.installed_version`. Administration → System shows versions, server, database,
   storage, scheduler heartbeat, queue and the upgrade button when new files are uploaded.
+
+## Artist accounts (Milestone 10)
+
+- Users with the system role **Artist** are artist accounts, linked to profiles through `artist_user`.
+  The role's permissions are fixed (`RolesAndPermissionsSeeder::ARTIST_PERMISSIONS`, synced on every
+  seed; the role cannot be edited).
+- **Data boundary**: `App\Support\ArtistAccess::ids()` returns the linked artist ids for an artist
+  account (null for everyone else). Models using `Models\Concerns\ScopedToArtistAccount` add a global
+  scope `artist-account`: Artist (id), Release (has a linked artist), Track / ReleaseDelivery (release
+  visible), ArtistContract / Document / Contact / Link / LedgerEntry, RoyaltyEarning (artist_id),
+  TrackContributor (track visible), Contributor (created by the user or credited on a visible track).
+  Route model binding uses the same scopes, so other records return 404.
+- Catalogue-wide integrity checks (UPC, ISRC) explicitly use `withoutGlobalScope('artist-account')` and
+  word their errors without naming other artists' releases. `ReleaseService` / `TrackService::syncArtists`
+  call `ArtistAccess::ensureOwned()` so an artist account can only credit its own profiles.
+- Staff, console commands and queued jobs are never scoped (no artist-account user).
+
+## Bulk upload (Milestone 10)
+
+```
+Livewire BulkUpload\Index ─► BulkUploadService (access, templates, log)
+   ├─ BulkSheet (StatementReader: CSV/XLSX → rows keyed by template column; key or label headings)
+   ├─ ArtistBulkImporter  (validate → ArtistService::create + links)
+   └─ ReleaseBulkImporter (group rows into releases → ReleaseService::create + TrackService::save)
+```
+
+- "Check file" analyses without writing; "Import" re-reads and re-validates the uploaded file on the
+  server, so the browser's preview is never trusted. Each release is created in its own transaction.
+- Access: administrators always; staff with `catalog.bulk_upload` when `bulk_upload.staff` is on;
+  artist accounts (releases only, own artists) when `bulk_upload.artists` is on. Gate `bulk-upload`.
+- `bulk_uploads` keeps the history (counts and row problems).
+
+## Sales report import (Milestone 10)
+
+`Livewire\Reports\SalesImports` (route `reports.import`, `royalties.import`) chooses or creates an open
+period and embeds the existing `Royalties\Imports` component, so mapping, matching, queueing and
+reverting are shared with Royalties.
+

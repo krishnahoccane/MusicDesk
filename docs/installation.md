@@ -68,18 +68,22 @@ Then enable HTTPS (e.g. `certbot --nginx`), open the site, and add the cron entr
 
 ## 4. The installation wizard
 
+Open your domain in a browser. Until LabelDesk is installed, every page leads to `/install`.
+
 | Step | What happens |
 |---|---|
-| 1. Welcome | Version information and installation terms. |
-| 2. Requirements | PHP version, extensions, functions, folder permissions, upload limits, database drivers. Failed items block progress. |
-| 3. Database | Host, port, name, user, password and optional table prefix. The connection is tested; **non-empty databases are refused**. |
-| 4. Application | Name, URL (the license is bound to this domain), timezone, currency, language. |
-| 5. Administrator | Name, email and a strong password. This user becomes **Super Admin**. |
-| 6. License | Enter your MusicDesk.tech license key. LabelDesk asks MusicDesk.tech to activate it for your domain and shows your plan. |
-| 7. Install | Creates the tables, default roles and permissions, the administrator, settings and the license activation, writes `.env`, then locks the installer. |
-| 8. Complete | One-time summary with your login URL. |
+| Welcome | Accept the installation terms |
+| **0 · License** | Confirm the site address and enter your `LDSK-…` key. It is validated with MusicDesk.tech and activated for this domain. Servers without internet can use the offline request / `.ldlic` file instead |
+| **1 · Server check** | PHP version, extensions and writable folders; failures must be fixed before continuing |
+| **2 · Database** | MySQL 8 / MariaDB 10.6+ details; the connection is tested and a database already in use is refused |
+| **3 · Redis** *(optional)* | Host, port, password, database number and TLS; choose cache, sessions and/or queue. Tested before continuing. **Skip** keeps the database drivers (works on any shared host). Uses the PHP redis extension if present, otherwise the bundled Predis client |
+| **4 · Email** *(can be skipped)* | SMTP server, port, encryption, login and sender. **Send test email** checks it on the spot. Skipping logs emails until you set it up in Settings → Email |
+| **5 · Super admin** | Your own account with full access (strong password required) |
+| **6 · Customise** | Site name, time zone, currency, date format and language. Then the look: colour theme (MusicDesk by default) or your own brand colours, font, which colour modes are allowed and the default, sidebar style, logo / dark-mode logo / favicon, and the sign-in page: one of five designs (Spotlight, Split, Cover, Studio, Minimal) with your own headline, italic accent word, subtitle, form heading, note and cover image. A live preview recolours as you choose; **Preview the sign-in page** opens the real page |
+| Review & install | A summary with a **Change** link per step, then **Install**. Tables, roles, your account and all settings are created; `.env` is written last, followed by the lock file |
 
-Passwords are never shown again after you type them, and are never written to logs.
+Everything from steps 3, 4 and 6 can be changed later in **Settings** (Appearance, Catalogue, Email).
+Passwords entered in the wizard are kept encrypted or hashed in the session and are never shown again.
 
 ## 5. Security of the installer
 

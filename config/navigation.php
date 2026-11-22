@@ -30,6 +30,7 @@ return [
             ['label' => 'Artists', 'icon' => 'mic-vocal', 'route' => 'artists.index', 'active' => 'artists.*', 'permission' => 'artists.view', 'feature' => 'artists'],
             ['label' => 'Releases', 'icon' => 'disc-3', 'route' => 'releases.index', 'active' => 'releases.*', 'permission' => 'releases.view', 'feature' => 'releases'],
             ['label' => 'Tracks', 'icon' => 'audio-lines', 'route' => 'tracks.index', 'active' => 'tracks.*', 'permission' => 'tracks.view', 'feature' => 'tracks'],
+            ['label' => 'Bulk upload', 'icon' => 'upload', 'route' => 'bulk-upload.index', 'active' => 'bulk-upload.*', 'gate' => 'bulk-upload'],
             ['label' => 'Contributors', 'icon' => 'users-round', 'route' => 'contributors.index', 'active' => 'contributors.*', 'permission' => 'contributors.view', 'feature' => 'releases'],
         ],
     ],

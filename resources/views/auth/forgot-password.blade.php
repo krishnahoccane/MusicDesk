@@ -1,5 +1,5 @@
 <x-layouts.auth :title="__('Forgot password')">
-    <h1 class="h3 fw-bold mb-1">{{ __('Forgot your password?') }}</h1>
+    <h1 class="ld-login__title">{{ __('Forgot your password?') }}</h1>
     <p class="text-muted mb-4">{{ __('Enter the email address of your account and we will send you a link to choose a new password.') }}</p>
 
     @if (session('status'))

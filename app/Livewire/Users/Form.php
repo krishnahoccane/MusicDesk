@@ -2,9 +2,11 @@
 
 namespace App\Livewire\Users;
 
+use App\Enums\SystemRole;
 use App\Exceptions\UserManagementException;
 use App\Livewire\Concerns\EnforcesLicense;
 use App\Models\ActivityLog;
+use App\Models\Artist;
 use App\Models\User;
 use App\Services\UserService;
 use Illuminate\Contracts\View\View;
@@ -34,6 +36,9 @@ class Form extends Component
 
     public bool $is_active = true;
 
+    /** Artist accounts: linked artist profiles. */
+    public array $artist_ids = [];
+
     /** On create: email a "set your password" link instead of choosing one. */
     public bool $send_link = true;
 
@@ -46,6 +51,7 @@ class Form extends Component
             $this->email = $user->email;
             $this->role = (string) $user->getRoleNames()->first();
             $this->is_active = $user->is_active;
+            $this->artist_ids = $user->artists()->pluck('artists.id')->map(fn ($id) => (string) $id)->all();
             $this->send_link = false;
         } else {
             $this->authorize('create', User::class);
@@ -69,12 +75,14 @@ class Form extends Component
             'password' => [$needsPassword ? 'required' : 'nullable', 'string', 'max:255', 'confirmed', Password::defaults()],
             'is_active' => ['boolean'],
             'send_link' => ['boolean'],
+            'artist_ids' => [$this->role === SystemRole::Artist->value ? 'required' : 'nullable', 'array'],
+            'artist_ids.*' => ['integer', Rule::exists('artists', 'id')->whereNull('deleted_at')],
         ];
     }
 
     protected function validationAttributes(): array
     {
-        return ['email' => __('email address')];
+        return ['email' => __('email address'), 'artist_ids' => __('artist profiles')];
     }
 
     public function messages(): array
@@ -94,7 +102,7 @@ class Form extends Component
 
         try {
             if ($this->user) {
-                $users->update($actor, $this->user, $data, $this->role);
+                $users->update($actor, $this->user, $data + ['artist_ids' => $this->artist_ids], $this->role);
                 $message = __('Changes to :name have been saved.', ['name' => $this->user->name]);
             } else {
                 $user = $users->create($actor, [
@@ -102,6 +110,7 @@ class Form extends Component
                     'email' => $data['email'],
                     'password' => $this->send_link ? null : $data['password'],
                     'is_active' => $this->is_active,
+                    'artist_ids' => $this->artist_ids,
                 ], $this->role, $this->send_link && $this->is_active);
 
                 $message = $this->send_link && $this->is_active
@@ -137,6 +146,8 @@ class Form extends Component
             'isSelf' => $editing && $this->user->is(auth()->user()),
             'seatsAvailable' => $users->seatsAvailable(),
             'seatLimit' => $users->seatLimit(),
+            'artistRole' => SystemRole::Artist->value,
+            'artistOptions' => Artist::query()->orderBy('name')->pluck('name', 'id'),
             'activity' => $editing
                 ? ActivityLog::query()->where(fn ($q) => $q
                     ->where('user_id', $this->user->id)

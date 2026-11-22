@@ -1,5 +1,5 @@
 <x-layouts.auth :title="__('Choose a new password')">
-    <h1 class="h3 fw-bold mb-1">{{ __('Choose a new password') }}</h1>
+    <h1 class="ld-login__title">{{ __('Choose a new password') }}</h1>
     <p class="text-muted mb-4">{{ __('Use at least 10 characters with upper- and lower-case letters and a number.') }}</p>
 
     <form method="POST" action="{{ route('password.store') }}" novalidate>

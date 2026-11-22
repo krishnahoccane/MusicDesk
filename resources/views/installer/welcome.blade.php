@@ -1,6 +1,7 @@
 <x-layouts.installer :title="__('Welcome')" :step="$step">
-    <h1>{{ __('Welcome to LabelDesk') }}</h1>
-    <p class="ld-installer__lead">{{ __('This wizard installs LabelDesk on your server in a few minutes. You will need your database details and the license key from your MusicDesk.tech account.') }}</p>
+    <div class="eyebrow mb-2">{{ __('Setup') }}</div>
+    <h1>{{ __('Welcome to') }} <span class="serif-accent text-gradient">LabelDesk</span></h1>
+    <p class="ld-installer__lead">{{ __('Seven short steps and your label workspace is ready. Have your license key and database details at hand; Redis and email can be skipped.') }}</p>
 
     @if ($resuming)
         <x-alert variant="warning" :title="__('A previous installation did not finish')" class="mb-4">
@@ -10,11 +11,15 @@
 
     <div class="row g-3 mb-4">
         @foreach ([
-            ['icon' => 'server', 'title' => __('Server check'), 'text' => __('PHP version, extensions and folder permissions.')],
-            ['icon' => 'database', 'title' => __('Database'), 'text' => __('An empty MySQL 8 or MariaDB 10.6+ database.')],
-            ['icon' => 'key-round', 'title' => __('License'), 'text' => __('Your purchase license key from MusicDesk.tech.')],
+            ['icon' => 'key-round', 'title' => '0 · '.__('License'), 'text' => __('Your LDSK license key from MusicDesk.tech.')],
+            ['icon' => 'server', 'title' => '1 · '.__('Server check'), 'text' => __('PHP version, extensions and folder permissions.')],
+            ['icon' => 'database', 'title' => '2 · '.__('Database'), 'text' => __('An empty MySQL 8 or MariaDB 10.6+ database.')],
+            ['icon' => 'zap', 'title' => '3 · '.__('Redis'), 'text' => __('Optional. Faster cache, sessions and queue.')],
+            ['icon' => 'mail', 'title' => '4 · '.__('Email'), 'text' => __('SMTP for password resets and invitations. Can be skipped.')],
+            ['icon' => 'user-cog', 'title' => '5 · '.__('Super admin'), 'text' => __('Your own account with full access.')],
+            ['icon' => 'palette', 'title' => '6 · '.__('Customise'), 'text' => __('Name, colours, logo and sign-in page.')],
         ] as $item)
-            <div class="col-md-4">
+            <div class="col-md-6 col-lg-4">
                 <div class="d-flex gap-3 h-100 p-3 rounded-3" style="background: var(--ld-surface-2)">
                     <span class="ld-stat__icon"><x-icon :name="$item['icon']" size="20" /></span>
                     <div>
@@ -49,7 +54,7 @@
         </div>
 
         <div class="ld-installer__actions">
-            <span class="small text-muted">{{ __('Step 1 of 8') }}</span>
+            <span class="small text-muted">{{ __('About five minutes') }}</span>
             <button type="submit" class="btn btn-primary">{{ __('Start installation') }} <x-icon name="arrow-right" size="16" /></button>
         </div>
     </form>

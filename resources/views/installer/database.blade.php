@@ -1,4 +1,5 @@
 <x-layouts.installer :title="__('Database')" :step="$step">
+    <div class="eyebrow mb-2">{{ __('Step :n', ['n' => 2]) }}</div>
     <h1>{{ __('Database configuration') }}</h1>
     <p class="ld-installer__lead">{{ __('Create an empty MySQL or MariaDB database and user in your hosting control panel, then enter the details below. The connection is tested before continuing.') }}</p>
 
@@ -50,7 +51,7 @@
         </x-alert>
 
         <div class="ld-installer__actions">
-            <a href="{{ route('installer.requirements') }}" class="btn btn-light"><x-icon name="arrow-left" size="16" /> {{ __('Back') }}</a>
+            <a href="{{ route('installer.requirements') }}" class="btn btn-ghost"><x-icon name="arrow-left" size="16" /> {{ __('Back') }}</a>
             <button type="submit" class="btn btn-primary"><x-icon name="plug-zap" size="16" /> {{ __('Test connection & continue') }}</button>
         </div>
     </form>

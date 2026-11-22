@@ -5,6 +5,44 @@ All notable changes to LabelDesk are documented here. The format follows
 
 ## [Unreleased]
 
+### Added — MusicDesk design system, sign-in designs, new installer
+- **MusicDesk look** (from the MusicDesk UI/UX guide): ink canvas with frosted-glass cards,
+  white-alpha hairlines, volt/flare gradients, tinted status badges, mono table headers and eyebrows,
+  Inter Tight + Instrument Serif accent + JetBrains Mono (bundled, no font CDN), soft page glow (volt for
+  the label team, accent for artist accounts) and film grain. New default theme "MusicDesk", dark by
+  default; light mode keeps the same recipes. Branded page-header eyebrows on every screen.
+- **White-label**: custom brand colours (dark-mode shades derived automatically), font choice, logo,
+  dark-mode logo and favicon uploads (SVGs with scripts are refused), served without a storage symlink.
+- **Five sign-in page designs** — Spotlight, Split, Cover, Studio, Minimal — with editable headline,
+  italic accent word, subtitle, form heading, note and cover image; previews for administrators.
+- **New installation wizard**: 0 license (with site address) → 1 server check → 2 database → 3 Redis
+  (optional, tested, choose cache/sessions/queue) → 4 SMTP (test email, or skip) → 5 super admin →
+  6 full customisation with live preview → review with "Change" links → install.
+
+### Added — Milestone 10 (Commercial release) and artist accounts
+- **Artist accounts**: a new "Artist" role for artists' own logins, linked to one or more artist profiles.
+  Artists see and edit only their own profiles, releases, tracks, credits, deliveries, contracts and
+  earnings; everything else (other artists, label revenue, users, settings) is hidden or answers 404.
+- **Bulk upload** (Catalog → Bulk upload): artists and releases with tracks from Excel / CSV templates,
+  check-before-import with row-level problems, optional creation of missing artists, upload history.
+  Administrators always; the label team and artist accounts each have an on/off switch
+  (Settings → Catalogue).
+- **Import sales reports** (Reports → Import sales reports): choose or create a period, upload, map and
+  process distributor / store sales reports; recent imports across all periods.
+- Branded error pages (403, 404, 419, 429, 500, 503) that work without built assets.
+- Release packaging script (`scripts/package-release.php`) and guides `docs/user-guide.md`, `docs/release.md`.
+- Route security tests: every application route requires sign-in; guests are redirected; viewers are
+  refused on management pages.
+
+### Changed / security — Milestone 10
+- The private storage disk is no longer served by URL (`storage/{path}` route removed); private files are
+  only served by LabelDesk controllers after permission checks.
+- ISRC and UPC duplicate checks always cover the whole catalogue (also for artist accounts) without
+  revealing other artists' releases.
+- Royalty statements can be opened with `payments.view` (artist accounts, own artists only).
+- Indexes on royalty lines for revenue by store and by territory.
+- Dependency audit: `composer audit` and `npm audit` report no known vulnerabilities.
+
 ### Added — Milestone 9 (Reports, backups, configuration, redesign)
 - **New look**: redesigned dashboard (welcome hero, quick actions, KPI cards, revenue / release / store
   charts, upcoming releases, "Needs attention", administration panel with license, user allowance and

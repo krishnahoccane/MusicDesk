@@ -1,5 +1,7 @@
 <x-layouts.app :title="__('Statement — :artist', ['artist' => $artist->name])"
-               :breadcrumbs="[['label' => __('Business')], ['label' => __('Royalties'), 'url' => route('royalties.index')], ['label' => $period->name, 'url' => route('royalties.periods.show', ['period' => $period, 'tab' => 'earnings'])], ['label' => $artist->name]]">
+               :breadcrumbs="auth()->user()->can('royalties.view')
+                   ? [['label' => __('Business')], ['label' => __('Royalties'), 'url' => route('royalties.index')], ['label' => $period->name, 'url' => route('royalties.periods.show', ['period' => $period, 'tab' => 'earnings'])], ['label' => $artist->name]]
+                   : [['label' => __('Artists'), 'url' => route('artists.index')], ['label' => $artist->name, 'url' => route('artists.show', ['artist' => $artist, 'tab' => 'earnings'])], ['label' => $period->name]]">
     <x-page-header :title="__('Royalty statement')" :subtitle="$artist->name.' · '.$period->name.' ('.App\Support\Format::date($period->starts_on).' – '.App\Support\Format::date($period->ends_on).')'">
         <x-slot:actions>
             <a href="{{ route('royalties.statements.export', [$period, $artist, 'xlsx']) }}" class="btn btn-light"><x-icon name="file-spreadsheet" size="16" /> {{ __('Excel') }}</a>

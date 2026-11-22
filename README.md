@@ -3,7 +3,7 @@
 Self-hosted music label management software by [MusicDesk](https://musicdesk.tech): artists,
 releases, tracks, manual DSP distribution, royalties, contracts and reports for a single label.
 
-> Status: in development (Milestone 1 of 10 complete). See `DEVELOPMENT_PROGRESS.md`.
+> Status: all 10 milestones built; final checks before 1.0 are listed in `DEVELOPMENT_PLAN.md`.
 
 ## Server requirements (production)
 
@@ -14,7 +14,7 @@ releases, tracks, manual DSP distribution, royalties, contracts and reports for 
 - No Node.js, Composer, Redis or Docker required on the server — the release package ships with
   `vendor/` and compiled assets.
 
-Customer installation will use the browser-based installation wizard (Milestone 2).
+Customers install with the browser-based installation wizard — see `docs/installation.md`.
 
 ## Development setup
 
@@ -36,10 +36,12 @@ Sign in at http://127.0.0.1:8000 with the local development account defined in
 
 | Command | Purpose |
 |---------|---------|
-| `php artisan test` | Run the test suite (SQLite in-memory) |
+| `vendor/bin/phpunit` | Run the test suite (SQLite in-memory) |
 | `vendor/bin/pint` | Format PHP code |
 | `npm run build` | Compile SCSS/JS to `public/build` |
 | `npm run icons:sync` | Refresh `resources/icons/lucide` after upgrading `lucide-static` |
+| `php scripts/package-release.php` | Build the customer ZIP (`build/`), see `docs/release.md` |
+| `php artisan labeldesk:backup` / `labeldesk:upgrade` | Backup / upgrade from the command line |
 
 ## Project documents
 
@@ -47,7 +49,8 @@ Sign in at http://127.0.0.1:8000 with the local development account defined in
 - `DEVELOPMENT_PROGRESS.md` — what has been built, tested and what is outstanding
 - `ARCHITECTURE.md` — structure, conventions, theme and security design
 - `DATABASE_SCHEMA.md` — tables and columns
-- `LICENSE_API_SPEC.md` — MusicDesk.tech licensing API contract (draft)
+- `LICENSE_API_SPEC.md` — how LabelDesk uses the MusicDesk.tech licensing API (v1)
+- `docs/installation.md`, `docs/user-guide.md`, `docs/backups.md`, `docs/release.md`
 - `CHANGELOG.md`
 
 ## License

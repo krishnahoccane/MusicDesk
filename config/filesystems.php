@@ -33,7 +33,9 @@ return [
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app/private'),
-            'serve' => true,
+            // Private files (masters, contracts, backups) are only served by
+            // LabelDesk controllers after permission checks, never by URL.
+            'serve' => false,
             'throw' => false,
             'report' => false,
         ],

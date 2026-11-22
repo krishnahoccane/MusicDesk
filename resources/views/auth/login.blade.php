@@ -1,9 +1,11 @@
-<x-layouts.auth :title="__('Sign in')">
-    <h1 class="h3 fw-bold mb-1">{{ __('Welcome back') }}</h1>
+@php($loginTexts = $texts ?? App\Support\Appearance::loginTexts())
+<x-layouts.auth :title="__('Sign in')" :design="$design ?? null" :texts="$loginTexts" :preview="$preview ?? false">
+    <h1 class="ld-login__title">{{ $loginTexts['welcome'] }}</h1>
     <p class="text-muted mb-4">{{ __('Sign in to :name to continue.', ['name' => config('app.name')]) }}</p>
 
-    <form method="POST" action="{{ route('login.store') }}" novalidate>
+    <form method="POST" action="{{ ($preview ?? false) ? '#' : route('login.store') }}" novalidate>
         @csrf
+        <fieldset @disabled($preview ?? false) class="border-0 p-0 m-0">
 
         <div class="mb-3">
             <label for="email" class="form-label">{{ __('Email address') }}</label>
@@ -46,5 +48,6 @@
             {{ __('Sign in') }}
             <x-icon name="arrow-right" size="16" />
         </button>
+        </fieldset>
     </form>
 </x-layouts.auth>

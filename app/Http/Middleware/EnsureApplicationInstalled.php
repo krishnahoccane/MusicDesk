@@ -16,7 +16,10 @@ class EnsureApplicationInstalled
 
     public function handle(Request $request, Closure $next): Response
     {
-        if ($this->state->isInstalled() || $request->routeIs('installer.*') || $request->is('install', 'install/*')) {
+        // The installer's own pages, uploaded branding images and the Livewire/Alpine
+        // script (read-only assets the installer pages use) stay reachable.
+        if ($this->state->isInstalled() || $request->routeIs('installer.*', 'branding.file') || $request->is('install', 'install/*')
+            || ($request->isMethod('GET') && $request->is('livewire/livewire.js', 'livewire/livewire.min.js', 'livewire/livewire.min.js.map'))) {
             return $next($request);
         }
 

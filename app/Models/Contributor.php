@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\ScopedToArtistAccount;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -12,6 +13,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class Contributor extends Model
 {
+    use ScopedToArtistAccount;
+
     /** @var list<string> */
     protected $fillable = ['name', 'legal_name', 'ipi_number', 'pro', 'email', 'notes'];
 
@@ -27,5 +30,13 @@ class Contributor extends Model
         return $query->where(fn (Builder $q) => $q->where('name', 'like', $like)
             ->orWhere('legal_name', 'like', $like)
             ->orWhere('ipi_number', 'like', $like));
+    }
+
+    /**
+     * Artist accounts: only rows of their own artists.
+     */
+    public function scopeToArtists(Builder $query, array $artistIds): void
+    {
+        $query->where(fn (Builder $q) => $q->where($this->qualifyColumn('created_by'), auth()->id())->orWhereHas('credits'));
     }
 }

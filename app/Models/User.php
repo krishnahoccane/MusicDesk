@@ -2,13 +2,16 @@
 
 namespace App\Models;
 
+use App\Enums\SystemRole;
 use App\Enums\ThemePreference;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Spatie\Permission\Traits\HasRoles;
 
@@ -65,6 +68,39 @@ class User extends Authenticatable
 
             return $initials !== '' ? $initials : 'U';
         });
+    }
+
+    /** @var list<int>|null */
+    protected ?array $linkedArtistIds = null;
+
+    /**
+     * Artist profiles an artist account may see and work on.
+     */
+    public function artists(): BelongsToMany
+    {
+        return $this->belongsToMany(Artist::class)->withTimestamps();
+    }
+
+    /**
+     * An artist account (role "Artist") only sees its own artists' data.
+     */
+    public function isArtistAccount(): bool
+    {
+        return $this->hasRole(SystemRole::Artist->value);
+    }
+
+    /**
+     * @return list<int>
+     */
+    public function linkedArtistIds(): array
+    {
+        return $this->linkedArtistIds ??= DB::table('artist_user')
+            ->where('user_id', $this->id)->pluck('artist_id')->map(fn ($id) => (int) $id)->all();
+    }
+
+    public function forgetLinkedArtists(): void
+    {
+        $this->linkedArtistIds = null;
     }
 
     public function recordLogin(?string $ip): void

@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Crypt;
  */
 class InstallerSession
 {
-    public const STEPS = ['welcome', 'requirements', 'database', 'application', 'administrator', 'license', 'install'];
+    public const STEPS = ['welcome', 'license', 'requirements', 'database', 'redis', 'mail', 'administrator', 'customize', 'install'];
 
     protected const KEY = 'installer';
 

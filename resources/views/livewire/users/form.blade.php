@@ -35,7 +35,7 @@
                         </div>
                         <div class="col-md-6">
                             <label for="role" class="form-label">{{ __('Role') }}</label>
-                            <select id="role" wire:model="role" @class(['form-select', 'is-invalid' => $errors->has('role')]) @disabled($isSelf) required>
+                            <select id="role" wire:model.live="role" @class(['form-select', 'is-invalid' => $errors->has('role')]) @disabled($isSelf) required>
                                 <option value="">{{ __('Choose a role…') }}</option>
                                 @foreach ($roles as $r)
                                     <option value="{{ $r->name }}">{{ $r->name }}</option>
@@ -46,6 +46,19 @@
                             @endif
                             @error('role') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
+                        @if ($role === $artistRole)
+                            <div class="col-12">
+                                <label for="artist_ids" class="form-label">{{ __('Artist profiles') }}</label>
+                                <select id="artist_ids" multiple size="6" wire:model="artist_ids" @class(['form-select', 'is-invalid' => $errors->has('artist_ids') || $errors->has('artist_ids.*')])>
+                                    @foreach ($artistOptions as $id => $artistName)
+                                        <option value="{{ $id }}">{{ $artistName }}</option>
+                                    @endforeach
+                                </select>
+                                @error('artist_ids') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                                @error('artist_ids.*') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                                <div class="form-text">{{ __('An artist account only sees and edits these artists, their releases, tracks, contracts and earnings. Hold Ctrl (Cmd on Mac) to choose several.') }}</div>
+                            </div>
+                        @endif
                         @unless ($editing)
                             <div class="col-md-6 d-flex align-items-end">
                                 <div class="form-check form-switch mb-2">

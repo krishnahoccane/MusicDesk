@@ -21,14 +21,22 @@ class InstallerAccessTest extends TestCase
     {
         $this->get('/install')
             ->assertOk()
-            ->assertSee('Welcome to LabelDesk')
+            ->assertSee('Welcome to')
+            ->assertSee('LabelDesk')
             ->assertSee(config('labeldesk.product.version'));
     }
 
     public function test_terms_must_be_accepted(): void
     {
         $this->post('/install', [])->assertSessionHasErrors('terms');
-        $this->post('/install', ['terms' => '1'])->assertRedirect('/install/requirements');
+        $this->post('/install', ['terms' => '1'])->assertRedirect('/install/license');
+    }
+
+    protected function passLicense(): void
+    {
+        $this->post('/install', ['terms' => '1']);
+        $this->post('/install/license', ['license_key' => 'MD-LD-TEST-ACTV-AAAA-BBBB', 'url' => 'https://label.example.com', 'accept' => '1']);
+        $this->post('/install/license/continue')->assertRedirect('/install/requirements');
     }
 
     public function test_steps_cannot_be_skipped(): void
@@ -40,7 +48,7 @@ class InstallerAccessTest extends TestCase
 
     public function test_requirements_page_lists_checks(): void
     {
-        $this->post('/install', ['terms' => '1']);
+        $this->passLicense();
 
         $this->get('/install/requirements')
             ->assertOk()
@@ -55,7 +63,7 @@ class InstallerAccessTest extends TestCase
             $mock->shouldReceive('passes')->andReturn(false);
         });
 
-        $this->post('/install', ['terms' => '1']);
+        $this->passLicense();
         $this->post('/install/requirements')->assertSessionHas('error');
         $this->get('/install/database')->assertRedirect('/install/requirements');
     }

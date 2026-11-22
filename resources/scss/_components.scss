@@ -905,3 +905,17 @@ a.ld-list__item:hover {
     color: var(--ld-heading);
     border-top: 1px solid var(--ld-border-strong);
 }
+
+// Numbered step marker in card headers
+.ld-step {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 50%;
+    background: var(--ld-accent-soft);
+    color: var(--ld-accent);
+    font-size: 0.75rem;
+    font-weight: 700;
+}

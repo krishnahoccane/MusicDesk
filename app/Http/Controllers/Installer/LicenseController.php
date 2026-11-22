@@ -14,20 +14,31 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\View\View;
+use Throwable;
 
+/**
+ * Step 0: validate the license key with MusicDesk.tech for this site's domain.
+ * The signed token is kept in the session and verified again when installing.
+ */
 class LicenseController extends InstallerController
 {
-    public function show(LicenseManager $manager): View|RedirectResponse
+    protected function siteUrl(Request $request): string
+    {
+        return (string) ($this->wizard->get('site')['url'] ?? $request->getSchemeAndHttpHost().$request->getBasePath());
+    }
+
+    public function show(Request $request, LicenseManager $manager): View|RedirectResponse
     {
         if ($redirect = $this->guard('license')) {
             return $redirect;
         }
 
-        $url = (string) ($this->wizard->get('application')['url'] ?? '');
+        $url = $this->siteUrl($request);
         $license = $this->wizard->get('license');
 
         return view('installer.license', [
             'step' => 'license',
+            'url' => $url,
             'domain' => ActivationContext::domainFrom($url),
             'activated' => $license['summary'] ?? null,
             'maskedKey' => isset($license['key']) ? LicenseActivation::mask((string) $this->wizard->decrypt($license['key'])) : null,
@@ -42,7 +53,9 @@ class LicenseController extends InstallerController
             return $redirect;
         }
 
-        $url = (string) ($this->wizard->get('application')['url'] ?? '');
+        $url = (string) $request->validated('url');
+        $this->rememberUrl($url);
+
         $context = ActivationContext::for($url, $this->state->ensureInstallationId());
         $key = (string) $request->validated('license_key');
         $provider = $manager->provider();
@@ -50,14 +63,19 @@ class LicenseController extends InstallerController
         try {
             $result = $activations->activate($context, $key, $provider->name());
         } catch (LicenseException $e) {
-            return back()->withInput($request->only('license_key'))->withErrors(['license_key' => $e->getMessage()]);
+            return back()->withInput($request->only('license_key', 'url'))->withErrors(['license_key' => $e->getMessage()]);
+        } catch (Throwable $e) {
+            // Before the server check: missing curl / sodium / openssl ends up here.
+            report($e);
+
+            return back()->withInput($request->only('license_key', 'url'))->withErrors(['license_key' => __('The license could not be checked on this server (:reason). The next step lists what the server is missing; you can also use offline activation below.', [
+                'reason' => class_basename($e),
+            ])]);
         }
 
-        // Keep the signed token (re-verified at install time) and the key
-        // and activation secret encrypted.
         $this->remember($key, $provider->name(), $result, false);
 
-        return redirect()->route('installer.license')->with('success', __('License activated.'));
+        return redirect()->route('installer.license')->with('success', __('License validated and activated for :domain.', ['domain' => $context->domain]));
     }
 
     /**
@@ -71,8 +89,7 @@ class LicenseController extends InstallerController
 
         $request->validate(['license_file' => ['required', 'file', 'max:64']], [], ['license_file' => __('activation file')]);
 
-        $url = (string) ($this->wizard->get('application')['url'] ?? '');
-        $context = ActivationContext::for($url, $this->state->ensureInstallationId());
+        $context = ActivationContext::for($this->siteUrl($request), $this->state->ensureInstallationId());
         $provider = $manager->provider();
 
         try {
@@ -81,6 +98,7 @@ class LicenseController extends InstallerController
             return back()->withErrors(['license_file' => $e->getMessage()]);
         }
 
+        $this->rememberUrl($this->siteUrl($request));
         $this->remember('', $provider->name(), $result, true);
 
         return redirect()->route('installer.license')->with('success', __('Offline activation file accepted.'));
@@ -89,16 +107,39 @@ class LicenseController extends InstallerController
     /**
      * Activation request file for the MusicDesk portal (Licenses → Offline activation).
      */
-    public function request(): Response|RedirectResponse
+    public function request(Request $request): Response|RedirectResponse
     {
         if ($redirect = $this->guard('license')) {
             return $redirect;
         }
 
-        $url = (string) ($this->wizard->get('application')['url'] ?? '');
-        $context = ActivationContext::for($url, $this->state->ensureInstallationId());
+        return OfflineRequestFile::download(ActivationContext::for($this->siteUrl($request), $this->state->ensureInstallationId()));
+    }
 
-        return OfflineRequestFile::download($context);
+    public function continue(): RedirectResponse
+    {
+        if ($redirect = $this->guard('license')) {
+            return $redirect;
+        }
+
+        if (empty($this->wizard->get('license')['payload'])) {
+            return redirect()->route('installer.license')->withErrors(['license_key' => __('Validate your license key to continue.')]);
+        }
+
+        return $this->next('license');
+    }
+
+    /**
+     * The license is bound to the site's domain; a different address needs a new activation.
+     */
+    protected function rememberUrl(string $url): void
+    {
+        $previous = $this->wizard->get('site')['url'] ?? null;
+        if ($previous !== null && $previous !== $url) {
+            $this->wizard->put('license', []);
+            $this->wizard->resetAfter('welcome');
+        }
+        $this->wizard->put('site', ['url' => $url]);
     }
 
     protected function remember(string $key, string $provider, LicenseResult $result, bool $offline): void
@@ -113,18 +154,5 @@ class LicenseController extends InstallerController
             'offline' => $offline,
             'summary' => $result->summary(),
         ]);
-    }
-
-    public function continue(): RedirectResponse
-    {
-        if ($redirect = $this->guard('license')) {
-            return $redirect;
-        }
-
-        if (empty($this->wizard->get('license')['payload'])) {
-            return redirect()->route('installer.license')->withErrors(['license_key' => __('Activate your license to continue.')]);
-        }
-
-        return $this->next('license');
     }
 }

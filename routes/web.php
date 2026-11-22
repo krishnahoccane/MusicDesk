@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\BrandingController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -18,3 +19,8 @@ Route::get('/', function () {
         ? redirect()->route('dashboard')
         : redirect()->route('login');
 })->name('home');
+
+// Uploaded logo, favicon and sign-in images (public: shown on the sign-in page and installer).
+Route::get('branding/{file}', BrandingController::class)
+    ->where('file', '[a-z_]+-[a-z0-9]{16}\.(png|jpg|jpeg|webp|svg|ico)')
+    ->name('branding.file');

@@ -12,6 +12,7 @@ use App\Policies\RolePolicy;
 use App\Policies\TrackPolicy;
 use App\Policies\UserPolicy;
 use App\Services\Activity\ActivityLogger;
+use App\Services\BulkUpload\BulkUploadService;
 use App\Services\Installation\InstallationState;
 use App\Services\License\LicenseFeatureService;
 use App\Services\License\LicenseManager;
@@ -87,6 +88,9 @@ class AppServiceProvider extends ServiceProvider
         // Super Admin implicitly passes every *permission* check ("users.manage").
         // Model policies (update, delete …) still run for Super Admins so rules
         // such as "cannot delete yourself" apply to everyone.
+        // Bulk upload: administrators, staff and artist accounts per Settings → Catalogue.
+        Gate::define('bulk-upload', fn (User $user) => $this->app->make(BulkUploadService::class)->typesFor($user) !== []);
+
         Gate::before(function ($user, string $ability) {
             return str_contains($ability, '.') && method_exists($user, 'hasRole') && $user->hasRole('Super Admin') ? true : null;
         });

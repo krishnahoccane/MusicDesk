@@ -11,6 +11,7 @@ use App\Models\Track;
 use App\Models\User;
 use App\Services\Activity\ActivityLogger;
 use App\Services\Media\AudioInspector;
+use App\Support\ArtistAccess;
 use App\Support\Identifiers;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -102,6 +103,8 @@ class TrackService
             }
         }
 
+        ArtistAccess::ensureOwned(array_keys($rows));
+
         if (! collect($rows)->contains(fn ($r) => $r['role'] === ArtistRole::Primary->value)) {
             throw new CatalogException(__('Add at least one primary artist to the track.'));
         }
@@ -165,13 +168,18 @@ class TrackService
             throw new CatalogException(__('The ISRC must look like CC-XXX-YY-NNNNN (12 characters).'));
         }
 
-        $conflict = Track::query()
-            ->with('release:id,title,type,deleted_at')
+        // Checked across the whole catalogue, also for artist accounts.
+        $conflict = Track::query()->withoutGlobalScope('artist-account')
+            ->with(['release' => fn ($q) => $q->withoutGlobalScope('artist-account')->select('id', 'title', 'type', 'deleted_at')])
             ->where('isrc', $isrc)
             ->when($track, fn ($q) => $q->whereKeyNot($track->id))
             ->get()
             ->first(fn (Track $other) => $other->release_id === $release->id
                 || ($release->type !== ReleaseType::Compilation && $other->release?->type !== ReleaseType::Compilation));
+
+        if ($conflict && ArtistAccess::restricted() && ! in_array($conflict->release_id, Release::query()->pluck('id')->all(), true)) {
+            throw new CatalogException(__('ISRC :isrc is already used in the label catalogue.', ['isrc' => $isrc]));
+        }
 
         if ($conflict) {
             throw new CatalogException(__('ISRC :isrc is already used by ":track" on :release.', [

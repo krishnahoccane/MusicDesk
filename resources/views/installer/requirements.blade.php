@@ -1,4 +1,5 @@
 <x-layouts.installer :title="__('Server requirements')" :step="$step">
+    <div class="eyebrow mb-2">{{ __('Step :n', ['n' => 1]) }}</div>
     <h1>{{ __('Server requirements') }}</h1>
     <p class="ld-installer__lead">{{ __('LabelDesk checked your hosting environment. Items marked as failed must be fixed before continuing; warnings are recommendations.') }}</p>
 

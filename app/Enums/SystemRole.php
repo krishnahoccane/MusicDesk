@@ -14,4 +14,5 @@ enum SystemRole: string
     case DistributionManager = 'Distribution Manager';
     case Accountant = 'Accountant';
     case Viewer = 'Viewer';
+    case Artist = 'Artist';             // artist accounts: only their own artists' data
 }

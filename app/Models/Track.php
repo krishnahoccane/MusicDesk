@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\ArtistRole;
+use App\Models\Concerns\ScopedToArtistAccount;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -15,6 +16,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class Track extends Model
 {
+    use ScopedToArtistAccount;
+
     /** @var list<string> */
     protected $fillable = ['title', 'version', 'isrc', 'duration_seconds', 'explicit', 'language_id', 'disc_number', 'position'];
 
@@ -105,5 +108,13 @@ class Track extends Model
             ->where('title', 'like', $like)
             ->when($isrc !== '', fn (Builder $w) => $w->orWhere('isrc', 'like', '%'.$isrc.'%'))
             ->orWhereHas('artists', fn (Builder $a) => $a->where('name', 'like', $like)));
+    }
+
+    /**
+     * Artist accounts: only rows of their own artists.
+     */
+    public function scopeToArtists(Builder $query, array $artistIds): void
+    {
+        $query->whereHas('release');
     }
 }

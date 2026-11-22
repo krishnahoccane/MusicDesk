@@ -9,6 +9,8 @@ use App\Services\License\LicenseActivationService;
 use App\Services\License\LicenseManager;
 use App\Services\License\LicenseSignatureVerifier;
 use App\Services\SettingsService;
+use App\Support\Appearance;
+use App\Support\Branding;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
@@ -46,9 +48,10 @@ class InstallationService
      * @param  array{name: string, url: string, timezone: string, currency: string, locale: string}  $app
      * @param  array{name: string, email: string, password_hash: string}  $admin
      * @param  array{key: string, provider: string, payload: string, signature: string, messages?: list<string>, offline?: bool}  $license
+     * @param  array{redis?: array<string, mixed>, mail?: array<string, mixed>, customize?: array<string, mixed>}  $options
      * @return array{completion_token: string}
      */
-    public function install(array $db, array $app, array $admin, array $license): array
+    public function install(array $db, array $app, array $admin, array $license, array $options = []): array
     {
         if ($this->state->isInstalled()) {
             throw new RuntimeException('LabelDesk is already installed.');
@@ -74,10 +77,12 @@ class InstallationService
             $this->state->updateProgress(['stage' => 'configure']);
             $user = $this->createAdministrator($admin);
             $this->storeSettings($app, $installationId);
+            $this->storeMail((array) ($options['mail'] ?? []));
+            $this->storeAppearance((array) ($options['customize'] ?? []));
             $this->storeLicense($app['url'], $installationId, $license, $user);
 
             $this->state->updateProgress(['stage' => 'environment']);
-            $this->writeEnvironment($db, $app);
+            $this->writeEnvironment($db, $app, (array) ($options['redis'] ?? []));
             $this->linkStorage();
 
             $token = Str::random(40);
@@ -187,7 +192,7 @@ class InstallationService
      * @param  array<string, mixed>  $db
      * @param  array<string, mixed>  $app
      */
-    protected function writeEnvironment(array $db, array $app): void
+    protected function writeEnvironment(array $db, array $app, array $redis = []): void
     {
         $developer = app()->environment('local');
         $https = str_starts_with(strtolower($app['url']), 'https://');
@@ -212,6 +217,82 @@ class InstallationService
             'LABELDESK_TIMEZONE' => $app['timezone'],
             'LABELDESK_CURRENCY' => $app['currency'],
         ]);
+
+        // Step 3: Redis for cache / sessions / queue (database drivers otherwise).
+        if (! empty($redis['enabled'])) {
+            $this->env->set([
+                'REDIS_CLIENT' => (string) ($redis['client'] ?? 'predis'),
+                'REDIS_SCHEME' => ! empty($redis['tls']) ? 'tls' : 'tcp',
+                'REDIS_HOST' => (string) $redis['host'],
+                'REDIS_PORT' => (string) $redis['port'],
+                'REDIS_USERNAME' => (string) ($redis['username'] ?? ''),
+                'REDIS_PASSWORD' => (string) ($redis['password'] ?? ''),
+                'REDIS_DB' => (string) $redis['database'],
+                'REDIS_CACHE_DB' => (string) $redis['database'],
+                'CACHE_STORE' => ! empty($redis['use_cache']) ? 'redis' : 'database',
+                'SESSION_DRIVER' => ! empty($redis['use_sessions']) ? 'redis' : 'database',
+                'QUEUE_CONNECTION' => ! empty($redis['use_queue']) ? 'redis' : 'database',
+            ]);
+        }
+    }
+
+    /**
+     * Step 4: outgoing email (Settings → Email). The password is stored encrypted.
+     */
+    protected function storeMail(array $mail): void
+    {
+        if (($mail['mailer'] ?? null) !== 'smtp') {
+            $this->settings->set('mail.mailer', 'log');
+
+            return;
+        }
+
+        $this->settings->setMany([
+            'mail.mailer' => 'smtp',
+            'mail.host' => (string) $mail['host'],
+            'mail.port' => (int) $mail['port'],
+            'mail.scheme' => ($mail['encryption'] ?? 'tls') === 'ssl' ? 'smtps' : '',
+            'mail.username' => (string) ($mail['username'] ?? ''),
+            'mail.from_address' => (string) $mail['from_address'],
+            'mail.from_name' => (string) ($mail['from_name'] ?? ''),
+        ]);
+        if (filled($mail['password'] ?? null)) {
+            $this->settings->set('mail.password', (string) $mail['password'], 'encrypted');
+        }
+    }
+
+    /**
+     * Step 6: look and sign-in page (Settings → Appearance).
+     */
+    protected function storeAppearance(array $c): void
+    {
+        if ($c === []) {
+            return;
+        }
+
+        $values = [
+            'appearance.theme' => $c['theme'],
+            'appearance.font' => $c['font'],
+            'appearance.modes' => $c['modes'],
+            'appearance.default_mode' => $c['default_mode'],
+            'appearance.sidebar' => $c['sidebar'],
+            'appearance.login_layout' => $c['login_layout'],
+            'appearance.brand_color' => ! empty($c['custom_colors']) ? $c['brand_color'] : null,
+            'appearance.brand_color_2' => ! empty($c['custom_colors']) ? $c['brand_color_2'] : null,
+            'general.date_format' => $c['date_format'] ?? 'd M Y',
+        ];
+        $defaults = Appearance::loginTextDefaults();
+        foreach (($c['login'] ?? []) as $key => $value) {
+            if (array_key_exists($key, $defaults)) {
+                $values['appearance.login_'.$key] = $value === '' || $value === $defaults[$key] ? null : $value;
+            }
+        }
+        foreach (array_keys(Branding::KINDS) as $kind) {
+            $name = $c['files'][$kind] ?? null;
+            $values['appearance.'.$kind] = is_string($name) && preg_match(Branding::NAME_PATTERN, $name) ? $name : null;
+        }
+
+        $this->settings->setMany($values);
     }
 
     protected function linkStorage(): void

@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\ArtistRole;
 use App\Enums\ReleaseStatus;
 use App\Enums\ReleaseType;
+use App\Models\Concerns\ScopedToArtistAccount;
 use Database\Factories\ReleaseFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -18,6 +19,8 @@ class Release extends Model
 {
     /** @use HasFactory<ReleaseFactory> */
     use HasFactory, SoftDeletes;
+
+    use ScopedToArtistAccount;
 
     /** @var list<string> */
     protected $fillable = [
@@ -136,5 +139,13 @@ class Release extends Model
             ->orWhere('upc', 'like', $like)
             ->orWhere('catalog_number', 'like', $like)
             ->orWhereHas('artists', fn (Builder $a) => $a->where('name', 'like', $like)));
+    }
+
+    /**
+     * Artist accounts: only rows of their own artists.
+     */
+    public function scopeToArtists(Builder $query, array $artistIds): void
+    {
+        $query->whereHas('artists', fn (Builder $q) => $q->whereIn('artists.id', $artistIds));
     }
 }

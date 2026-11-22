@@ -8,6 +8,8 @@
       data-theme-preference="{{ $themePreference }}"
       @if ($appearance['toggle']) data-theme-endpoint="{{ route('preferences.theme') }}" @else data-theme-locked="1" @endif
       data-ld-theme="{{ $appearance['theme'] }}"
+      data-ld-font="{{ $appearance['font'] }}"
+      data-ld-area="{{ $appearance['area'] }}"
       data-ld-sidebar="{{ $appearance['sidebar'] }}"
       data-bs-theme="light"
       data-sidebar="expanded"

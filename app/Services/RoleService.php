@@ -39,6 +39,12 @@ class RoleService
         return $role->name === SystemRole::SuperAdmin->value;
     }
 
+    /** The Artist role has a fixed permission set. */
+    public static function isArtist(Role $role): bool
+    {
+        return $role->name === SystemRole::Artist->value;
+    }
+
     public function customRolesEnabled(): bool
     {
         return $this->license->canUse('custom_roles');

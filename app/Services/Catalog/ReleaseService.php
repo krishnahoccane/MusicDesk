@@ -8,6 +8,7 @@ use App\Models\Release;
 use App\Models\User;
 use App\Services\Activity\ActivityLogger;
 use App\Services\Media\ImageProcessor;
+use App\Support\ArtistAccess;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -91,6 +92,8 @@ class ReleaseService
                 $rows[$id] = ['role' => ArtistRole::from($row['role'])->value, 'position' => $position++];
             }
         }
+
+        ArtistAccess::ensureOwned(array_keys($rows));
 
         if (! collect($rows)->contains(fn ($r) => $r['role'] === ArtistRole::Primary->value)) {
             throw new CatalogException(__('Add at least one primary artist.'));

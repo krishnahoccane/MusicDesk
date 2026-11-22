@@ -25,7 +25,7 @@ class RolePolicy
 
     public function update(User $actor, Role $role): bool
     {
-        return $actor->can('roles.manage') && ! RoleService::isSuperAdmin($role);
+        return $actor->can('roles.manage') && ! RoleService::isSuperAdmin($role) && ! RoleService::isArtist($role);
     }
 
     public function delete(User $actor, Role $role): bool

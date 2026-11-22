@@ -1,5 +1,11 @@
 <div>
-    <x-page-header :title="__('Reports')" :subtitle="__('Filter any report on screen, then export it to CSV or Excel.')" />
+    <x-page-header :title="__('Reports')" :subtitle="__('Filter any report on screen, then export it to CSV or Excel.')">
+        @if (auth()->user()->can('royalties.import') && app(App\Services\License\LicenseService::class)->canUse('royalties'))
+            <x-slot:actions>
+                <a href="{{ route('reports.import') }}" class="btn btn-primary"><x-icon name="upload" size="16" /> {{ __('Import sales reports') }}</a>
+            </x-slot:actions>
+        @endif
+    </x-page-header>
 
     @if ($groups === [])
         <div class="card">

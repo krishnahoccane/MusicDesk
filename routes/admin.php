@@ -3,8 +3,10 @@
 use App\Http\Controllers\Admin\ThemePreferenceController;
 use App\Http\Controllers\Artists\ArtistFileController;
 use App\Http\Controllers\BackupDownloadController;
+use App\Http\Controllers\BulkUploadTemplateController;
 use App\Http\Controllers\Catalog\CatalogFileController;
 use App\Http\Controllers\License\LicenseStatusController;
+use App\Http\Controllers\LoginPreviewController;
 use App\Http\Controllers\ReportExportController;
 use App\Http\Controllers\Royalties\StatementController;
 use App\Livewire\Activity\Index as ActivityIndex;
@@ -12,6 +14,7 @@ use App\Livewire\Artists\Form as ArtistForm;
 use App\Livewire\Artists\Index as ArtistIndex;
 use App\Livewire\Artists\Show as ArtistShow;
 use App\Livewire\Backups\Index as BackupIndex;
+use App\Livewire\BulkUpload\Index as BulkUploadIndex;
 use App\Livewire\Contracts\Index as ContractIndex;
 use App\Livewire\Contributors\Index as ContributorIndex;
 use App\Livewire\Dashboard\Overview;
@@ -22,6 +25,7 @@ use App\Livewire\Releases\Form as ReleaseForm;
 use App\Livewire\Releases\Index as ReleaseIndex;
 use App\Livewire\Releases\Show as ReleaseShow;
 use App\Livewire\Reports\Index as ReportIndex;
+use App\Livewire\Reports\SalesImports as SalesReportImports;
 use App\Livewire\Reports\Show as ReportShow;
 use App\Livewire\Roles\Form as RoleForm;
 use App\Livewire\Roles\Index as RoleIndex;
@@ -37,6 +41,7 @@ use App\Livewire\Tracks\Form as TrackForm;
 use App\Livewire\Tracks\Index as TrackIndex;
 use App\Livewire\Users\Form as UserForm;
 use App\Livewire\Users\Index as UserIndex;
+use App\Support\Appearance;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -92,10 +97,23 @@ Route::middleware(['auth', 'auth.session', 'active', 'license'])->group(function
         });
     });
 
+    // Catalog → Bulk upload (who may use it: BulkUploadService::allows)
+    Route::get('bulk-upload', BulkUploadIndex::class)->middleware('can:bulk-upload')->name('bulk-upload.index');
+    Route::get('bulk-upload/template/{type}/{format}', BulkUploadTemplateController::class)
+        ->whereIn('type', ['artists', 'releases'])->whereIn('format', ['csv', 'xlsx'])
+        ->middleware(['can:bulk-upload', 'throttle:30,1'])->name('bulk-upload.template');
+
     // Business → Distribution (license feature "distribution")
     Route::middleware('feature:distribution')->group(function () {
         Route::get('distribution', DistributionIndex::class)->middleware('permission:distribution.view')->name('distribution.index');
         Route::get('distribution/stores', DspIndex::class)->middleware('permission:dsps.manage')->name('distribution.dsps');
+    });
+
+    // Royalty statements: royalty staff, and artist accounts (payments.view) for their own artists.
+    Route::middleware(['feature:royalties', 'permission:royalties.view|payments.view'])->group(function () {
+        Route::get('royalties/periods/{period}/statements/{artist}', [StatementController::class, 'show'])->withTrashed()->name('royalties.statements.show');
+        Route::get('royalties/periods/{period}/statements/{artist}/export/{format}', [StatementController::class, 'export'])
+            ->withTrashed()->middleware('throttle:30,1')->whereIn('format', ['csv', 'xlsx'])->name('royalties.statements.export');
     });
 
     // Business → Royalties (license feature "royalties")
@@ -103,10 +121,11 @@ Route::middleware(['auth', 'auth.session', 'active', 'license'])->group(function
         Route::get('royalties', RoyaltyIndex::class)->name('royalties.index');
         Route::get('royalties/periods/{period}', RoyaltyPeriodShow::class)->name('royalties.periods.show');
         Route::get('royalties/balances', RoyaltyBalances::class)->middleware('permission:payments.view')->name('royalties.balances');
-        Route::get('royalties/periods/{period}/statements/{artist}', [StatementController::class, 'show'])->withTrashed()->name('royalties.statements.show');
-        Route::get('royalties/periods/{period}/statements/{artist}/export/{format}', [StatementController::class, 'export'])
-            ->withTrashed()->middleware('throttle:30,1')->whereIn('format', ['csv', 'xlsx'])->name('royalties.statements.export');
     });
+
+    // Reports → Import sales reports (registered before reports/{report})
+    Route::get('reports/import', SalesReportImports::class)
+        ->middleware(['feature:royalties', 'permission:royalties.import'])->name('reports.import');
 
     // Business → Reports (license feature "reports"; each report adds its own features and permissions)
     Route::middleware(['feature:reports', 'permission:reports.view'])->group(function () {
@@ -140,6 +159,8 @@ Route::middleware(['auth', 'auth.session', 'active', 'license'])->group(function
         Route::get('settings/mail', MailSettings::class)->name('settings.mail');
         Route::get('settings/appearance', AppearanceSettings::class)->name('settings.appearance');
         Route::get('settings/catalog', CatalogSettings::class)->name('settings.catalog');
+        Route::get('settings/appearance/login-preview/{design}', LoginPreviewController::class)
+            ->whereIn('design', array_keys(Appearance::LOGIN_LAYOUTS))->name('settings.appearance.login-preview');
         Route::get('system', SystemInfo::class)->name('system.index');
     });
 

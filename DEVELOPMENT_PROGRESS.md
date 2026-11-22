@@ -430,3 +430,43 @@ defaulted to `system` for everyone; deleted genres/languages/stores would have c
 3. Restore is intentionally manual (documented); there is no in-app restore button.
 
 **Next task**: Milestone 10 — commercial release (see DEVELOPMENT_PLAN.md).
+
+---
+
+## Milestone 10 — Commercial release, artist accounts, bulk upload, sales imports ✅ (open items below)
+
+**Artist accounts**: role `Artist` (fixed permissions), `artist_user` links, `ArtistAccess` +
+`ScopedToArtistAccount` global scopes on 12 models, ownership check when crediting artists, artist
+profile picker in the user form, statements for own artists (`payments.view`), "Your balance" on the
+dashboard. Fixed while doing this: ISRC and UPC duplicate checks went through the (now scoped) models and
+would have let an artist reuse another artist's codes or seen their titles — they now always check the
+whole catalogue with neutral wording.
+
+**Bulk upload**: `Services/BulkUpload/{BulkSheet,ArtistBulkImporter,ReleaseBulkImporter,BulkUploadService}`,
+Livewire `BulkUpload/Index`, `BulkUploadTemplateController`, model `BulkUpload`, permission
+`catalog.bulk_upload`, gate `bulk-upload`, switches in Settings → Catalogue.
+
+**Sales report import**: Livewire `Reports/SalesImports` (embeds the royalty import), button on Reports.
+
+**Security / performance / release**: route security tests, private disk no longer URL-served, branded
+error pages, `composer audit` / `npm audit` clean, royalty line indexes, `scripts/package-release.php`
+(built `build/labeldesk-1.0.0-dev.zip`, 11.1 MB, 8,983 files; extracted package boots, installer routes
+present, no dev packages or secrets), docs `user-guide.md`, `release.md`, README.
+
+**Migration**: `2026_11_23_100000_create_artist_accounts_and_bulk_uploads` (migrated on MariaDB).
+
+**Tests**: `vendor/bin/phpunit` → **253 passed, 1,520 assertions** (18 new): `ArtistAccounts/ArtistAccountTest`
+(linking, own-catalogue only, 404 for others' records, staff areas forbidden, statements, release
+creation for own artists only, UPC check, contributors, fixed role, staff unaffected),
+`BulkUpload/BulkUploadTest` (artists with duplicates/invalid rows, releases grouped with tracks and
+durations, invalid UPC/ISRC/artists, create-missing, admin switches, artist accounts limited to own
+artists, templates, bad headings, sales import page and period creation), `Security/RouteSecurityTest`.
+
+**Browser check (MariaDB)**: signed in as the dev artist account (credentials in `LocalDevelopmentSeeder`):
+reduced menu, only own release, "Your balance", bulk upload refused while switched off, branded 403 on
+`/users`. As administrator: Bulk upload (templates, steps) and Import sales reports (period picker, recent
+imports) render correctly.
+
+**Open items (before 1.0)**: real-key activation against musicdesk.tech; installation of the ZIP on a real
+cPanel account and on MySQL 8; load test with a large catalogue; version bump to 1.0.0. Bulk upload covers
+metadata only (artwork and audio are added per release).
