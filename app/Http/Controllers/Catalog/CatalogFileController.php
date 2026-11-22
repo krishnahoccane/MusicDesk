@@ -8,12 +8,15 @@ use App\Models\Track;
 use App\Services\Activity\ActivityLogger;
 use App\Services\Catalog\ReleaseService;
 use App\Services\Catalog\TrackService;
+use App\Services\MediaStorage\MediaSyncService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\HeaderUtils;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * Serves private catalog files (artwork, master audio) after authorization.
@@ -36,14 +39,14 @@ class CatalogFileController extends Controller
         ]);
     }
 
-    public function audio(Track $track): BinaryFileResponse
+    public function audio(Track $track): Response
     {
         $this->authorize('downloadMaster', $track);
 
         return $this->file($track, ResponseHeaderBag::DISPOSITION_INLINE);
     }
 
-    public function download(Track $track, ActivityLogger $activity): BinaryFileResponse
+    public function download(Track $track, ActivityLogger $activity): Response
     {
         $this->authorize('downloadMaster', $track);
 
@@ -53,15 +56,20 @@ class CatalogFileController extends Controller
         return $response;
     }
 
-    protected function file(Track $track, string $disposition): BinaryFileResponse
+    protected function file(Track $track, string $disposition): Response
     {
         $disk = Storage::disk(TrackService::DISK);
-        abort_unless($track->audio_path && $disk->exists($track->audio_path), 404);
+        abort_unless((bool) $track->audio_path, 404);
 
         $extension = pathinfo($track->audio_path, PATHINFO_EXTENSION);
         $artists = $track->artistLine();
         $name = Str::limit(trim(($artists !== '' ? $artists.' - ' : '').$track->displayTitle()), 150, '');
         $safe = trim(preg_replace('/[\x00-\x1F\x7F"<>:|?*\/\\\\]+/u', '_', $name) ?? 'track', ' .') ?: 'track';
+
+        if (! $disk->exists($track->audio_path)) {
+            // Removed from the server after upload: stream it from the cloud drive.
+            return $this->fromCloud($track, $disposition, $safe.'.'.$extension, Str::ascii($safe).'.'.$extension);
+        }
 
         $response = new BinaryFileResponse($disk->path($track->audio_path), 200, [
             'Content-Type' => $track->audio_mime ?: 'application/octet-stream',
@@ -72,5 +80,43 @@ class CatalogFileController extends Controller
         $response->setContentDisposition($disposition, $safe.'.'.$extension, Str::ascii($safe).'.'.$extension);
 
         return $response;
+    }
+
+    /**
+     * Proxies the cloud copy (with Range support for the player). The drive's
+     * URL and token are never exposed to the browser.
+     */
+    protected function fromCloud(Track $track, string $disposition, string $filename, string $fallback): StreamedResponse
+    {
+        $remote = app(MediaSyncService::class)->remoteCopy('audio', $track->release_id, $track->id, $track->audio_path);
+        abort_unless($remote !== null, 404);
+        [$drive, $record] = $remote;
+
+        $range = request()->header('Range');
+        $range = is_string($range) && preg_match('/^bytes=\d*-\d*$/', $range) ? $range : null;
+        $upstream = $drive->download((string) $record->remote_id, $range);
+        abort_unless(in_array($upstream->status(), [200, 206], true), 502, __('The file could not be fetched from :drive.', ['drive' => $drive->label()]));
+
+        $headers = array_filter([
+            'Content-Type' => $track->audio_mime ?: 'application/octet-stream',
+            'Content-Length' => $upstream->header('Content-Length') ?: null,
+            'Content-Range' => $upstream->header('Content-Range') ?: null,
+            'Accept-Ranges' => 'bytes',
+            'X-Content-Type-Options' => 'nosniff',
+            'Cache-Control' => 'private, no-store',
+            'Content-Disposition' => HeaderUtils::makeDisposition($disposition, $filename, $fallback),
+        ]);
+
+        $body = $upstream->toPsrResponse()->getBody();
+        if ($body->isSeekable()) {
+            $body->rewind();
+        }
+
+        return new StreamedResponse(function () use ($body) {
+            while (! $body->eof()) {
+                echo $body->read(1024 * 256);
+                flush();
+            }
+        }, $upstream->status(), $headers);
     }
 }

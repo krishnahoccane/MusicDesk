@@ -29,10 +29,6 @@ class Catalog extends Component
 
     public string $default_language = 'en';
 
-    public bool $bulk_staff = true;
-
-    public bool $bulk_artists = false;
-
     public string $newGenre = '';
 
     public string $newLanguageCode = '';
@@ -49,21 +45,6 @@ class Catalog extends Component
         $this->c_line_format = (string) $settings->get('catalog.c_line_format', CatalogDefaults::DEFAULT_LINE);
         $this->p_line_format = (string) $settings->get('catalog.p_line_format', CatalogDefaults::DEFAULT_LINE);
         $this->default_language = CatalogDefaults::languageCode();
-        $this->bulk_staff = (bool) $settings->get('bulk_upload.staff', true);
-        $this->bulk_artists = (bool) $settings->get('bulk_upload.artists', false);
-    }
-
-    public function saveBulk(SettingsService $settings, ActivityLogger $activity): void
-    {
-        $this->guard();
-        $this->validate(['bulk_staff' => ['boolean'], 'bulk_artists' => ['boolean']]);
-
-        $settings->setMany(['bulk_upload.staff' => $this->bulk_staff, 'bulk_upload.artists' => $this->bulk_artists]);
-        $activity->log('settings.updated', __('Updated bulk upload access'), null, [
-            'staff' => $this->bulk_staff, 'artists' => $this->bulk_artists,
-        ]);
-
-        $this->dispatch('toast', type: 'success', message: __('Bulk upload access saved.'));
     }
 
     public function saveDefaults(SettingsService $settings, ActivityLogger $activity): void

@@ -80,7 +80,7 @@ class LicenseSignatureVerifier
             throw LicenseException::invalidSignature();
         }
 
-        $issuer = (string) config('licensing.issuer');
+        $issuer = LicenseAuthority::issuer();
         if ($issuer !== '' && rtrim((string) ($claims['iss'] ?? ''), '/') !== $issuer) {
             throw new LicenseException('wrong_issuer', __('The license token was not issued by MusicDesk.tech.'));
         }
@@ -112,7 +112,7 @@ class LicenseSignatureVerifier
             licenseType: null,
             salesChannel: 'musicdesk_direct',
             features: $features,
-            expiresAt: null,
+            expiresAt: $this->timestamp($claims['expires'] ?? null), // signed license expiry (null = lifetime)
             activationLimit: null,
             activationsUsed: null,
             userLimit: $userLimit,

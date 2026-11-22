@@ -22,50 +22,36 @@
 
 return [
 
-    'driver' => env('LICENSE_DRIVER', 'musicdesk'),
-
-    'api_base_url' => rtrim((string) env('LICENSE_API_URL', 'https://musicdesk.tech/api/license/v1'), '/'),
-
-    'endpoints' => [
-        'activate' => '/activate',
-        'check_in' => '/check-in',
-        'deactivate' => '/deactivate',
-        'public_key' => '/public-key',
-    ],
-
     /*
-     | Expected "iss" claim of license tokens (the license server's URL).
-     | Leave empty to skip the issuer check.
+     | Server address, issuer, signing public key and provider are NOT
+     | configurable: they are constants in App\Services\License\LicenseAuthority
+     | and no .env value can change them.
      */
-    'issuer' => rtrim((string) env('LICENSE_ISSUER', 'https://musicdesk.tech'), '/'),
 
     'product_code' => 'LABELDESK',
 
-    'product_version' => '1.0.0',
-
-    /*
-     | Base64 Ed25519 public key of the MusicDesk.tech license server, shipped
-     | with LabelDesk (GET /api/license/v1/public-key, kid 75338fabc5122988).
-     | It is a PUBLIC key; the private key never leaves MusicDesk. Override
-     | with LICENSE_PUBLIC_KEY only if MusicDesk rotates its signing key.
-     */
-    'public_key' => env('LICENSE_PUBLIC_KEY', 'EH9AZETQgvr7ssPdu71Z5eCpxvhDaj8jVwiopVPe+d8='),
-
     // Seconds
-    'connection_timeout' => (int) env('LICENSE_CONNECT_TIMEOUT', 5),
-    'verification_timeout' => (int) env('LICENSE_TIMEOUT', 15),
+    'connection_timeout' => 5,
+    'verification_timeout' => 15,
 
     // Retries for connection failures / 5xx. The server allows 30 requests
     // per minute per IP, so retries are few and spaced.
     'retries' => 2,
     'retry_delay_ms' => 750,
 
-    // Check in with the server this often (hours). The server asks for 24 h.
-    'cache_duration' => (int) env('LICENSE_CACHE_HOURS', 24),
+    // Check in with the server every hour (scheduler + on page loads).
+    'cache_duration_minutes' => 60,
 
-    // Days LabelDesk keeps working after the signed token expires (tokens are
-    // valid 30 days, offline .ldlic tokens 365 days) before becoming read-only.
-    'offline_grace_period' => (int) env('LICENSE_GRACE_DAYS', 7),
+    // Days LabelDesk keeps working after the signed token expires while the
+    // server cannot be reached (tokens are valid 30 days, offline .ldlic 365).
+    'offline_grace_period' => 7,
+
+    // Expired license: read-only for this many days after the expiry date,
+    // then the application is locked (no sign-in) until it is renewed.
+    'expired_read_only_days' => 10,
+
+    // "Your license expires soon" ribbon on dashboards.
+    'expiring_notice_days' => 30,
 
     'public_support_url' => 'https://musicdesk.tech/support',
     'customer_portal_url' => 'https://musicdesk.tech/account/licenses',

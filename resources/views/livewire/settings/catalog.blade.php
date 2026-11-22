@@ -43,34 +43,6 @@
         </form>
     </div>
 
-    <div class="card mb-3">
-        <div class="card-header">
-            <x-icon name="upload" size="18" />
-            <h2 class="card-title">{{ __('Bulk upload') }}</h2>
-            @if (Route::has('bulk-upload.index'))
-                <a href="{{ route('bulk-upload.index') }}" class="small ms-auto">{{ __('Open bulk upload') }} &rarr;</a>
-            @endif
-        </div>
-        <form class="card-body" wire:submit="saveBulk" novalidate>
-            <p class="small text-muted">{{ __('Administrators can always bulk upload artists and releases. Choose who else may:') }}</p>
-            <div class="form-check form-switch mb-2">
-                <input class="form-check-input" type="checkbox" role="switch" id="bulk_staff" wire:model="bulk_staff">
-                <label class="form-check-label" for="bulk_staff">
-                    {{ __('Label team') }}
-                    <span class="d-block small text-muted">{{ __('Staff whose role includes "Bulk upload artists and releases" (Label Manager, Artist Manager by default).') }}</span>
-                </label>
-            </div>
-            <div class="form-check form-switch mb-3">
-                <input class="form-check-input" type="checkbox" role="switch" id="bulk_artists" wire:model="bulk_artists">
-                <label class="form-check-label" for="bulk_artists">
-                    {{ __('Artist accounts') }}
-                    <span class="d-block small text-muted">{{ __('Artists can bulk upload releases for their own artist profiles only. Releases arrive as drafts for your review.') }}</span>
-                </label>
-            </div>
-            <button type="submit" class="btn btn-outline-primary">{{ __('Save') }}</button>
-        </form>
-    </div>
-
     <div class="row g-3">
         <div class="col-lg-6">
             <div class="card h-100">

@@ -5,6 +5,7 @@ namespace Tests\Licensing;
 use App\Exceptions\LicenseException;
 use App\Services\License\Data\ActivationContext;
 use App\Services\License\LicenseActivationService;
+use App\Services\License\LicenseAuthority;
 use App\Services\License\LicenseSignatureVerifier;
 use App\Services\License\Providers\MusicDeskLicenseProvider;
 use Illuminate\Http\Client\ConnectionException;
@@ -27,10 +28,10 @@ class MusicDeskProviderTest extends TestCase
 
         $this->keypair = sodium_crypto_sign_keypair();
         config([
-            'licensing.driver' => 'musicdesk',
-            'licensing.public_key' => base64_encode(sodium_crypto_sign_publickey($this->keypair)),
-            'licensing.api_base_url' => 'https://musicdesk.tech/api/license/v1',
-            'licensing.issuer' => 'https://musicdesk.tech',
+            'licensing.testing.driver' => 'musicdesk',
+            'licensing.testing.public_key' => base64_encode(sodium_crypto_sign_publickey($this->keypair)),
+            'licensing.testing.api_base_url' => 'https://musicdesk.tech/api/license/v1',
+            'licensing.testing.issuer' => 'https://musicdesk.tech',
             'licensing.retry_delay_ms' => 1,
         ]);
     }
@@ -196,6 +197,78 @@ class MusicDeskProviderTest extends TestCase
         }
     }
 
+    public function test_cloudflare_challenge_is_named_with_its_ray_id(): void
+    {
+        Http::fake(['musicdesk.tech/*' => Http::response(
+            '<!DOCTYPE html><html><head><title>Just a moment...</title></head><body>challenge-platform cloudflare</body></html>',
+            403,
+            ['Server' => 'cloudflare', 'CF-RAY' => '8f2a1b3c4d5e6f70-SIN', 'cf-mitigated' => 'challenge', 'Content-Type' => 'text/html; charset=UTF-8'],
+        )]);
+
+        try {
+            app(MusicDeskLicenseProvider::class)->activate($this->context(), 'LDSK-AAAA-BBBB-CCCC-DDDD');
+            $this->fail('Expected blocked_by_firewall');
+        } catch (LicenseException $e) {
+            $this->assertSame('blocked_by_firewall', $e->errorCode);
+            $this->assertStringContainsString('Cloudflare', $e->getMessage());
+            $this->assertStringContainsString('8f2a1b3c4d5e6f70-SIN', $e->getMessage());
+            $this->assertStringContainsString('HTTP 403', $e->getMessage());
+            $this->assertNotSame('License verification failed.', $e->getMessage());
+        }
+    }
+
+    public function test_wrong_server_address_is_reported_as_such(): void
+    {
+        // What musicdesk.tech answers for an address that does not exist.
+        Http::fake(['musicdesk.tech/*' => Http::response(['message' => 'Not Found.'], 404)]);
+
+        try {
+            app(MusicDeskLicenseProvider::class)->activate($this->context(), 'LDSK-AAAA-BBBB-CCCC-DDDD');
+            $this->fail('Expected wrong_endpoint');
+        } catch (LicenseException $e) {
+            $this->assertSame('wrong_endpoint', $e->errorCode);
+            $this->assertStringContainsString('not found', $e->getMessage());
+        }
+    }
+
+    public function test_server_key_and_driver_cannot_be_changed_from_the_environment(): void
+    {
+        $env = str_replace('
+', '', (string) file_get_contents(base_path('.env.example')));
+        $this->assertStringNotContainsString('LICENSE_', $env, 'no licensing settings in the .env template');
+        $this->assertStringNotContainsString("env('LICENSE", (string) file_get_contents(config_path('licensing.php')));
+
+        $this->assertSame('https://musicdesk.tech/api/license/v1', LicenseAuthority::API_BASE_URL);
+        $this->assertSame('EH9AZETQgvr7ssPdu71Z5eCpxvhDaj8jVwiopVPe+d8=', LicenseAuthority::PUBLIC_KEY);
+        $this->assertSame('https://musicdesk.tech', LicenseAuthority::ISSUER);
+    }
+
+    public function test_non_json_errors_name_the_http_status(): void
+    {
+        Http::fake(['musicdesk.tech/*' => Http::response('<html>Forbidden by proxy</html>', 403, ['Content-Type' => 'text/html'])]);
+
+        try {
+            app(MusicDeskLicenseProvider::class)->activate($this->context(), 'LDSK-AAAA-BBBB-CCCC-DDDD');
+            $this->fail('Expected unexpected_response');
+        } catch (LicenseException $e) {
+            $this->assertSame('unexpected_response', $e->errorCode);
+            $this->assertStringContainsString('HTTP 403', $e->getMessage());
+        }
+    }
+
+    public function test_unknown_server_codes_show_the_server_message(): void
+    {
+        Http::fake(['musicdesk.tech/*' => Http::response(['error' => ['code' => 'move_limit_reached', 'message' => 'This license has reached its limit of 3 domain moves.', 'field' => null]], 409)]);
+
+        try {
+            app(MusicDeskLicenseProvider::class)->activate($this->context(), 'LDSK-AAAA-BBBB-CCCC-DDDD');
+            $this->fail('Expected move_limit_reached');
+        } catch (LicenseException $e) {
+            $this->assertSame('move_limit_reached', $e->errorCode);
+            $this->assertSame('This license has reached its limit of 3 domain moves.', $e->getMessage());
+        }
+    }
+
     public function test_rate_limit_is_reported(): void
     {
         Http::fake(['musicdesk.tech/*' => Http::response('Too Many Requests', 429)]);
@@ -219,7 +292,7 @@ class MusicDeskProviderTest extends TestCase
 
     public function test_fails_closed_without_a_valid_public_key(): void
     {
-        config(['licensing.public_key' => 'not-a-key']);
+        config(['licensing.testing.public_key' => 'not-a-key']);
         Http::fake();
 
         try {
@@ -234,19 +307,14 @@ class MusicDeskProviderTest extends TestCase
 
     public function test_shipped_public_key_matches_the_musicdesk_key_id(): void
     {
-        $key = base64_decode((string) config('licensing.public_key', ''), true);
-        config(['licensing.public_key' => require base_path('config/licensing.php')]);
-
-        $shipped = (require base_path('config/licensing.php'))['public_key'];
-        $raw = base64_decode($shipped, true);
+        $raw = base64_decode(LicenseAuthority::PUBLIC_KEY, true);
         $this->assertSame(SODIUM_CRYPTO_SIGN_PUBLICKEYBYTES, strlen((string) $raw));
-        $this->assertSame('75338fabc5122988', substr(hash('sha256', (string) $raw), 0, 16));
-        $this->assertNotFalse($key);
+        $this->assertSame(LicenseAuthority::KEY_ID, substr(hash('sha256', (string) $raw), 0, 16));
     }
 
     public function test_plain_http_endpoints_are_refused(): void
     {
-        config(['licensing.api_base_url' => 'http://musicdesk.tech/api/license/v1']);
+        config(['licensing.testing.api_base_url' => 'http://musicdesk.tech/api/license/v1']);
         Http::fake();
 
         try {

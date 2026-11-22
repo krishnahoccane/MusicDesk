@@ -49,14 +49,9 @@ It needs Apache or LiteSpeed with `mod_rewrite` (standard on cPanel). Hidden fil
 in File Manager → Settings, tick **Show Hidden Files (dotfiles)** to check that `.htaccess` is there.
 Option A is still preferred because private files are then outside the web folder entirely.
 
-**After installation** add a cron job (cPanel → Cron Jobs, *Once per minute*), using the folder that
-contains `artisan` (for Option B that is `public_html`):
-
-```
-php /home/USER/labeldesk/artisan schedule:run >> /dev/null 2>&1
-```
-
-It runs the daily license check, queued jobs, the nightly backup and clean-up.
+**No cron job is needed.** LabelDesk runs its background work by itself while it is being used, after
+each page has been sent: hourly license check, queued jobs, cloud media uploads, the nightly backup and
+clean-up (Administration → System shows when each last ran).
 
 **Checks after uploading** (either option):
 
@@ -94,8 +89,7 @@ server {
 }
 ```
 
-Then enable HTTPS (e.g. `certbot --nginx`), open the site, and add the cron entry:
-`* * * * * www-data php /var/www/labeldesk/artisan schedule:run >> /dev/null 2>&1`.
+Then enable HTTPS (e.g. `certbot --nginx`) and open the site. No cron entry is needed.
 
 ## 4. The installation wizard
 
@@ -131,7 +125,7 @@ installation and resumes it — migrations only add tables, defaults are only ad
 nothing is deleted.
 
 **The installer opens on a site that was already installed** (the lock file was lost, e.g. during a
-hosting move): do **not** run the wizard. With SSH or a one-off cron job run:
+hosting move): do **not** run the wizard. With SSH (or your host's "run command" tool) run:
 ```
 php artisan labeldesk:install:restore-lock
 ```

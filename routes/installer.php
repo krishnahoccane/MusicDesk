@@ -48,6 +48,7 @@ Route::prefix('install')->name('installer.')->group(function () {
             Route::post('customize', [CustomizeController::class, 'store'])->name('customize.store');
             Route::post('administrator', [AdministratorController::class, 'store'])->name('administrator.store');
             Route::post('license', [LicenseController::class, 'store'])->middleware('throttle:license-activation')->name('license.store');
+            Route::post('license/diagnose', [LicenseController::class, 'diagnose'])->middleware('throttle:6,1')->name('license.diagnose');
             Route::post('license/continue', [LicenseController::class, 'continue'])->name('license.continue');
             Route::post('license/offline', [LicenseController::class, 'offline'])->middleware('throttle:license-activation')->name('license.offline');
             Route::post('run', [InstallController::class, 'store'])->name('install.store');

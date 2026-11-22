@@ -1,0 +1,11 @@
+{
+    "slug": "sso",
+    "name": "Single sign-on",
+    "version": "1.0.0",
+    "addon": "sso",
+    "description": "Sign in with Microsoft Entra ID, Google Workspace, Okta or any OpenID Connect provider.",
+    "author": "MusicDesk",
+    "requires": "1.0.0",
+    "namespace": "LabelDesk\\Addons\\Sso\\",
+    "provider": "LabelDesk\\Addons\\Sso\\SsoServiceProvider"
+}

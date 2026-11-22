@@ -2,9 +2,12 @@
 
 use App\Http\Middleware\EnsureApplicationInstalled;
 use App\Http\Middleware\EnsureFeatureEnabled;
+use App\Http\Middleware\EnsureLicenseNotLocked;
+use App\Http\Middleware\EnsurePluginRunning;
 use App\Http\Middleware\EnsureUserIsActive;
 use App\Http\Middleware\LicenseMiddleware;
 use App\Http\Middleware\RedirectIfInstalled;
+use App\Http\Middleware\RunAutomaticTasks;
 use App\Http\Middleware\SecurityHeaders;
 use App\Services\Installation\EnvironmentBootstrapper;
 use Illuminate\Foundation\Application;
@@ -34,7 +37,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(prepend: [
             EnsureApplicationInstalled::class,
         ], append: [
+            EnsureLicenseNotLocked::class,
             SecurityHeaders::class,
+            RunAutomaticTasks::class,
         ]);
 
         $middleware->alias([
@@ -44,6 +49,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'feature' => EnsureFeatureEnabled::class,
             'role' => RoleMiddleware::class,
             'permission' => PermissionMiddleware::class,
+            'plugin' => EnsurePluginRunning::class,
             'role_or_permission' => RoleOrPermissionMiddleware::class,
         ]);
 

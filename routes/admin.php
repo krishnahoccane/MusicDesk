@@ -3,10 +3,10 @@
 use App\Http\Controllers\Admin\ThemePreferenceController;
 use App\Http\Controllers\Artists\ArtistFileController;
 use App\Http\Controllers\BackupDownloadController;
-use App\Http\Controllers\BulkUploadTemplateController;
 use App\Http\Controllers\Catalog\CatalogFileController;
 use App\Http\Controllers\License\LicenseStatusController;
 use App\Http\Controllers\LoginPreviewController;
+use App\Http\Controllers\MediaStorageOAuthController;
 use App\Http\Controllers\ReportExportController;
 use App\Http\Controllers\Royalties\StatementController;
 use App\Livewire\Activity\Index as ActivityIndex;
@@ -14,12 +14,12 @@ use App\Livewire\Artists\Form as ArtistForm;
 use App\Livewire\Artists\Index as ArtistIndex;
 use App\Livewire\Artists\Show as ArtistShow;
 use App\Livewire\Backups\Index as BackupIndex;
-use App\Livewire\BulkUpload\Index as BulkUploadIndex;
 use App\Livewire\Contracts\Index as ContractIndex;
 use App\Livewire\Contributors\Index as ContributorIndex;
 use App\Livewire\Dashboard\Overview;
 use App\Livewire\Distribution\Dsps as DspIndex;
 use App\Livewire\Distribution\Index as DistributionIndex;
+use App\Livewire\Plugins\Index;
 use App\Livewire\Profile\Edit as ProfileEdit;
 use App\Livewire\Releases\Form as ReleaseForm;
 use App\Livewire\Releases\Index as ReleaseIndex;
@@ -36,11 +36,13 @@ use App\Livewire\Settings\Appearance as AppearanceSettings;
 use App\Livewire\Settings\Catalog as CatalogSettings;
 use App\Livewire\Settings\General as GeneralSettings;
 use App\Livewire\Settings\Mail as MailSettings;
+use App\Livewire\Settings\MediaStorage;
 use App\Livewire\System\Info as SystemInfo;
 use App\Livewire\Tracks\Form as TrackForm;
 use App\Livewire\Tracks\Index as TrackIndex;
 use App\Livewire\Users\Form as UserForm;
 use App\Livewire\Users\Index as UserIndex;
+use App\Services\MediaStorage\MediaStorageManager;
 use App\Support\Appearance;
 use Illuminate\Support\Facades\Route;
 
@@ -96,12 +98,6 @@ Route::middleware(['auth', 'auth.session', 'active', 'license'])->group(function
                 ->middleware(['permission:tracks.download_master', 'throttle:30,1'])->name('tracks.download');
         });
     });
-
-    // Catalog → Bulk upload (who may use it: BulkUploadService::allows)
-    Route::get('bulk-upload', BulkUploadIndex::class)->middleware('can:bulk-upload')->name('bulk-upload.index');
-    Route::get('bulk-upload/template/{type}/{format}', BulkUploadTemplateController::class)
-        ->whereIn('type', ['artists', 'releases'])->whereIn('format', ['csv', 'xlsx'])
-        ->middleware(['can:bulk-upload', 'throttle:30,1'])->name('bulk-upload.template');
 
     // Business → Distribution (license feature "distribution")
     Route::middleware('feature:distribution')->group(function () {
@@ -159,9 +155,19 @@ Route::middleware(['auth', 'auth.session', 'active', 'license'])->group(function
         Route::get('settings/mail', MailSettings::class)->name('settings.mail');
         Route::get('settings/appearance', AppearanceSettings::class)->name('settings.appearance');
         Route::get('settings/catalog', CatalogSettings::class)->name('settings.catalog');
+        Route::get('settings/media-storage', MediaStorage::class)->name('settings.media');
+        Route::get('settings/media-storage/{target}/connect', [MediaStorageOAuthController::class, 'connect'])
+            ->middleware('throttle:10,1')->name('settings.media.connect');
+        Route::get('settings/media-storage/callback/{driver}', [MediaStorageOAuthController::class, 'callback'])
+            ->whereIn('driver', array_keys(MediaStorageManager::DRIVERS))->middleware('throttle:10,1')->name('settings.media.callback');
         Route::get('settings/appearance/login-preview/{design}', LoginPreviewController::class)
             ->whereIn('design', array_keys(Appearance::LOGIN_LAYOUTS))->name('settings.appearance.login-preview');
         Route::get('system', SystemInfo::class)->name('system.index');
+    });
+
+    // Administration → Add-ons
+    Route::middleware('permission:plugins.manage')->group(function () {
+        Route::get('plugins', Index::class)->name('plugins.index');
     });
 
     Route::patch('preferences/theme', [ThemePreferenceController::class, 'update'])

@@ -199,7 +199,7 @@ class BackupsAndSystemTest extends TestCase
         app(SettingsService::class)->set('system.installed_version', '0.9.0');
 
         $this->actingAs($this->admin)->get('/system')->assertOk()
-            ->assertSee('A database upgrade is ready')->assertSee('Scheduler (cron)');
+            ->assertSee('A database upgrade is ready')->assertSee('Automatic tasks')->assertSee('No cron job needed');
 
         Livewire::actingAs($this->admin)->test(Info::class)->call('upgrade')->assertDispatched('toast', type: 'success');
 

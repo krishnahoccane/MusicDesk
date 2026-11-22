@@ -7,6 +7,7 @@ use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Factory as HttpFactory;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\Client\Response;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Throwable;
 
@@ -72,8 +73,8 @@ class LicenseApiClient
 
     protected function url(string $endpoint): string
     {
-        $base = (string) config('licensing.api_base_url');
-        $path = (string) config("licensing.endpoints.{$endpoint}", '/'.$endpoint);
+        $base = LicenseAuthority::apiBaseUrl();
+        $path = LicenseAuthority::endpoint($endpoint);
         $url = $base.'/'.ltrim($path, '/');
 
         if (! str_starts_with(strtolower($url), 'https://')) {
@@ -114,16 +115,69 @@ class LicenseApiClient
             return $data;
         }
 
+        $code = is_array($data) ? (string) ($data['error']['code'] ?? '') : '';
+
+        // Not an answer from the license server itself (no JSON error):
+        // a firewall / CDN / proxy in between. Say so, with a reference.
+        if ($code === '' && $response->status() !== 429) {
+            $this->reportForeignResponse($response);
+
+            if ($this->blockedByCloudflare($response)) {
+                throw LicenseException::blockedByFirewall($response->status(), $response->header('CF-RAY') ?: null);
+            }
+
+            if ($response->serverError()) {
+                throw LicenseException::unreachable();
+            }
+
+            if ($response->status() === 404) {
+                throw LicenseException::wrongEndpoint(LicenseAuthority::apiBaseUrl());
+            }
+
+            throw LicenseException::unexpectedResponse($response->status());
+        }
+
         if ($response->serverError()) {
             throw LicenseException::unreachable();
         }
 
-        $code = is_array($data) ? (string) ($data['error']['code'] ?? '') : '';
         if ($code === '') {
-            $code = $response->status() === 429 ? 'rate_limited' : 'server_error';
+            $code = 'rate_limited';
         }
         $message = is_array($data) && isset($data['error']['message']) ? (string) $data['error']['message'] : null;
 
         throw LicenseException::fromApi($code, $message);
+    }
+
+    /**
+     * Cloudflare challenge / block pages (Bot Fight Mode, WAF, Browser Integrity Check, IP rules).
+     */
+    protected function blockedByCloudflare(Response $response): bool
+    {
+        if ($response->header('cf-mitigated') !== '') {
+            return true;
+        }
+
+        $fromCloudflare = str_contains(strtolower($response->header('Server')), 'cloudflare') || $response->header('CF-RAY') !== '';
+        $body = strtolower(substr($response->body(), 0, 4000));
+
+        return $fromCloudflare && in_array($response->status(), [403, 429, 503], true)
+            && ! str_contains(strtolower($response->header('Content-Type')), 'json')
+            && (str_contains($body, 'cloudflare') || str_contains($body, 'challenge') || str_contains($body, 'attention required') || $body === '');
+    }
+
+    /**
+     * Logged without the request body (no key, no token).
+     */
+    protected function reportForeignResponse(Response $response): void
+    {
+        Log::warning('License server request was answered by something other than the license server', [
+            'status' => $response->status(),
+            'server' => $response->header('Server'),
+            'content_type' => $response->header('Content-Type'),
+            'cf_ray' => $response->header('CF-RAY'),
+            'cf_mitigated' => $response->header('cf-mitigated'),
+            'body_start' => Str::limit(trim(strip_tags($response->body())), 160),
+        ]);
     }
 }

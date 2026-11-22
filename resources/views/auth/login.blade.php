@@ -50,4 +50,7 @@
         </button>
         </fieldset>
     </form>
+    @foreach (app(\App\Plugins\PluginRegistry::class)->loginButtons as $button)
+        @include($button['view'], ['preview' => $preview ?? false])
+    @endforeach
 </x-layouts.auth>

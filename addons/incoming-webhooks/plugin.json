@@ -1,0 +1,11 @@
+{
+    "slug": "incoming-webhooks",
+    "name": "Incoming webhooks",
+    "version": "1.0.0",
+    "addon": "incoming_webhooks",
+    "description": "Receive signed webhooks from distributors and stores: update delivery status automatically and keep a full delivery log with replay.",
+    "author": "MusicDesk",
+    "requires": "1.0.0",
+    "namespace": "LabelDesk\\Addons\\IncomingWebhooks\\",
+    "provider": "LabelDesk\\Addons\\IncomingWebhooks\\IncomingWebhooksServiceProvider"
+}

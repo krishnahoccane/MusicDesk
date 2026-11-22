@@ -6,7 +6,7 @@ production licensing server. The server's own reference is the MusicDesk licensi
 
 ## Endpoints
 
-Base URL (`LICENSE_API_URL`, default): `https://musicdesk.tech/api/license/v1`
+Base URL: `https://musicdesk.tech/api/license/v1` — a constant in `App\Services\License\LicenseAuthority`, not configurable (no `.env` setting).
 
 | Method | Path | Sent by LabelDesk | Success |
 |---|---|---|---|
@@ -14,6 +14,7 @@ Base URL (`LICENSE_API_URL`, default): `https://musicdesk.tech/api/license/v1`
 | POST | `/check-in` | `{token, version, php_version}` | `200` token envelope |
 | POST | `/deactivate` | `{token}` | `204` |
 | GET | `/public-key` | — | signing key (informational; LabelDesk ships the key) |
+| POST | `/report` | `{domain, reason, key, version, php_version, instance_id, message, details}` after a failed license check, at most once an hour per reason | `202 {received, action}`; `action: lock` sets the activation to `blocked` (Locked state) until a later check succeeds |
 
 Requests are JSON over HTTPS only, with `Accept: application/json`, `User-Agent: LabelDesk/<version>`
 and an `X-Request-Id`. Connection errors and 5xx responses are retried (2 retries, 750 ms apart).
@@ -70,12 +71,13 @@ Ed25519-signed JWTs (`alg: EdDSA`), valid 30 days (365 days for offline files). 
 | `status` | `active`, `expiring`, `expired`, `pending` (all usable) |
 | `support_until` | end of updates & support (Unix time) |
 | `max_version` | newest LabelDesk version the license covers |
+| `expires` | license expiry (Unix time, annual licenses; `null` for lifetime) — drives the read-only window and lockout |
 
 Verification (`LicenseSignatureVerifier`): 32-byte public key present (else fail closed), header
 `alg` is EdDSA, signature verifies over `header.claims`, `iss` matches, `dom` matches, not expired.
 The production public key ships in `config/licensing.php`
-(`EH9AZETQgvr7ssPdu71Z5eCpxvhDaj8jVwiopVPe+d8=`, kid `75338fabc5122988`) and can be overridden with
-`LICENSE_PUBLIC_KEY` if MusicDesk rotates it. The token is stored in `license_cache` (signing input +
+(`EH9AZETQgvr7ssPdu71Z5eCpxvhDaj8jVwiopVPe+d8=`, kid `75338fabc5122988`) as a constant in
+`LicenseAuthority`; a key rotation ships as a LabelDesk update. The token is stored in `license_cache` (signing input +
 signature) and re-verified on every load, so editing the database cannot unlock anything.
 
 ### Plans and features
@@ -91,11 +93,32 @@ If a token carries a `features` claim it is used; otherwise features come from `
 `advanced_reports` (catalogue gaps, distribution by store) and `custom_roles` therefore need Business
 or Enterprise.
 
+## Hard-wired authority
+
+`LicenseAuthority` holds the server address, issuer, public key and production provider. There is no
+`LICENSE_DRIVER`, `LICENSE_API_URL`, `LICENSE_PUBLIC_KEY` or `LICENSE_ISSUER` any more; values left in
+an old `.env` are ignored. The development provider (test keys `MD-LD-TEST-…`) only runs inside the
+PHPUnit suite, or under `php artisan serve` / the CLI with `APP_ENV=local` — never under Apache,
+LiteSpeed or PHP-FPM. Each customer's own `LDSK-…` key is entered at installation and stored encrypted.
+
+## Expiry policy
+
+| Period | LabelDesk |
+|---|---|
+| 30 days before expiry | "License expires on …" ribbon on staff dashboards |
+| From the expiry date | Read-only. Everyone can still sign in and see everything. A ribbon on every page (and the sign-in page) shows the lock date; staff dashboards show a countdown |
+| From expiry + 11 days, 00:00 (label time zone) | Locked: every page shows "This application is suspended", users are signed out and cannot sign in. Data is untouched |
+| After renewal | The next check (hourly, on page loads, or "I have renewed — check again") unlocks it |
+
+Example: expiry on 31 Dec 2026 → read-only, sign-in allowed until 10 Jan 2027 → locked from 11 Jan 2027.
+The expiry date comes from the signed `expires` claim; when the server only reports `expired` (or refuses
+with `license_expired`), LabelDesk uses the day it first learned this.
+
 ## Lifecycle in LabelDesk
 
 1. **Activate** (installer or Settings → License) with the key → token stored.
-2. **Check in** daily (`labeldesk:license:verify`, 03:17) and opportunistically when the cached
-   token is older than 24 h, or every 15 minutes while the server asks for `check_in_requested`.
+2. **Check in** every hour (`labeldesk:license:verify`, minute 17) and opportunistically when the last
+   check is older than an hour, or every 15 minutes while the server asks for `check_in_requested`.
 3. If the server answers `activation_not_found`, `invalid_token`, `token_expired` (or the stored token
    fails verification) and the key is stored, LabelDesk re-activates automatically.
 4. Definitive refusals (`license_*`, `activation_deactivated`) put LabelDesk in **Restricted** mode.

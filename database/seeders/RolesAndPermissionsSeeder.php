@@ -36,7 +36,7 @@ class RolesAndPermissionsSeeder extends Seeder
      */
     public const ARTIST_PERMISSIONS = [
         'artists.view', 'artists.update',
-        'releases.view', 'releases.create', 'releases.update', 'releases.submit', 'catalog.bulk_upload',
+        'releases.view', 'releases.create', 'releases.update', 'releases.submit',
         'tracks.view', 'tracks.create', 'tracks.update', 'tracks.delete', 'tracks.download_master',
         'contributors.view', 'contributors.manage',
         'contracts.view', 'documents.view',
@@ -50,11 +50,11 @@ class RolesAndPermissionsSeeder extends Seeder
         return [
             SystemRole::SuperAdmin->value => '*',
             SystemRole::LabelManager->value => array_values(array_diff($all, [
-                'users.manage', 'roles.manage', 'settings.manage', 'backups.manage', 'license.manage',
+                'users.manage', 'roles.manage', 'settings.manage', 'backups.manage', 'license.manage', 'plugins.manage',
             ])),
             SystemRole::ArtistManager->value => [
                 'artists.view', 'artists.create', 'artists.update',
-                'releases.view', 'releases.create', 'releases.update', 'releases.submit', 'catalog.bulk_upload',
+                'releases.view', 'releases.create', 'releases.update', 'releases.submit',
                 'tracks.view', 'tracks.create', 'tracks.update',
                 'contributors.view', 'contributors.manage',
                 'contracts.view', 'documents.view', 'documents.manage',

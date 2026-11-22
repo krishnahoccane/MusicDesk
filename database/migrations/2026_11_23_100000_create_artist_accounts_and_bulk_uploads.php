@@ -6,7 +6,11 @@ use Illuminate\Support\Facades\Schema;
 
 /**
  * Artist accounts (users with the "Artist" role, linked to the artist
- * profiles they may see) and the bulk upload log.
+ * profiles they may see).
+ *
+ * Earlier builds also created the bulk upload log (bulk_uploads) here. Bulk upload
+ * is now the "bulk-upload" add-on, whose own migration creates that table when
+ * missing; installations that already have it keep it and its history.
  */
 return new class extends Migration
 {
@@ -19,18 +23,6 @@ return new class extends Migration
             $table->timestamps();
 
             $table->unique(['artist_id', 'user_id']);
-        });
-
-        Schema::create('bulk_uploads', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
-            $table->string('type', 20)->index()->comment('artists | releases');
-            $table->string('original_name');
-            $table->unsignedInteger('total_rows')->default(0);
-            $table->unsignedInteger('created_count')->default(0);
-            $table->unsignedInteger('skipped_count')->default(0);
-            $table->json('errors')->nullable();
-            $table->timestamps();
         });
 
         Schema::table('royalty_lines', function (Blueprint $table) {
@@ -46,7 +38,6 @@ return new class extends Migration
             $table->dropIndex(['royalty_period_id', 'store']);
             $table->dropIndex(['royalty_period_id', 'territory']);
         });
-        Schema::dropIfExists('bulk_uploads');
         Schema::dropIfExists('artist_user');
     }
 };

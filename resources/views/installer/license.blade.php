@@ -58,6 +58,32 @@
         <button type="submit" class="btn {{ $activated ? 'btn-light' : 'btn-primary' }} mt-3"><x-icon name="shield-check" size="16" /> {{ __('Validate license') }}</button>
     </form>
 
+    @if (session('diagnosis'))
+        @php($diagnosis = session('diagnosis'))
+        <div class="ld-notice mt-4" @style(['border-color: rgba(var(--ld-danger-rgb), .3); background: rgba(var(--ld-danger-rgb), .05)' => ! $diagnosis['ok']])>
+            <div class="fw-semibold mb-2" style="color: var(--ld-heading)">{{ $diagnosis['ok'] ? __('This server can reach the license server.') : __('This server cannot use the license server yet.') }}</div>
+            <ul class="list-unstyled small mb-2">
+                @foreach ($diagnosis['checks'] as $check)
+                    <li class="d-flex gap-2 mb-1">
+                        <x-icon :name="$check['ok'] ? 'circle-check-big' : 'circle-x'" size="15" @style([$check['ok'] ? 'color: var(--ld-success)' : 'color: var(--ld-danger)', 'flex-shrink: 0; margin-top: 3px']) />
+                        <span><strong>{{ $check['label'] }}</strong><br><span class="font-mono text-muted" style="font-size: 12px">{{ $check['detail'] }}</span></span>
+                    </li>
+                @endforeach
+            </ul>
+            <div class="small text-muted font-mono">
+                {{ __('Server IP: :ip', ['ip' => $diagnosis['ip'] ?? __('unknown')]) }}@if ($diagnosis['ray']) &middot; {{ __('Cloudflare Ray ID: :ray', ['ray' => $diagnosis['ray']]) }}@endif
+            </div>
+            @if ($diagnosis['advice'])
+                <p class="small mt-2 mb-0">{{ $diagnosis['advice'] }}</p>
+            @endif
+        </div>
+    @endif
+
+    <form method="POST" action="{{ route('installer.license.diagnose') }}" class="mt-3">
+        @csrf
+        <button type="submit" class="btn btn-sm btn-ghost"><x-icon name="activity" size="15" /> {{ __('Test connection to MusicDesk.tech') }}</button>
+    </form>
+
     <details class="mt-4" @if ($errors->has('license_file')) open @endif>
         <summary class="fw-semibold small" style="cursor: pointer">{{ __('This server has no internet access?') }}</summary>
         <div class="small text-muted mt-2">

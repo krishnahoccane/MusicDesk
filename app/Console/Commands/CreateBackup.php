@@ -11,7 +11,7 @@ use Throwable;
 
 /**
  * Creates a backup (database + uploaded files). Scheduled nightly when
- * enabled in Backups; can also be run from cron or SSH.
+ * enabled in Backups (automatic tasks); can also be run over SSH.
  */
 class CreateBackup extends Command
 {

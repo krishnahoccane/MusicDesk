@@ -1,0 +1,11 @@
+{
+    "slug": "hello-addon",
+    "name": "Hello add-on",
+    "version": "1.0.0",
+    "addon": "rest_api",
+    "description": "Test fixture add-on.",
+    "author": "MusicDesk",
+    "requires": "1.0.0",
+    "namespace": "LabelDesk\\Addons\\Hello\\",
+    "provider": "LabelDesk\\Addons\\Hello\\HelloServiceProvider"
+}

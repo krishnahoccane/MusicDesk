@@ -14,7 +14,7 @@ class LicenseActivation extends Model
         'license_status', 'plan', 'license_type', 'features', 'activation_limit', 'activations_used',
         'user_limit', 'expires_at', 'support_until', 'updates_until', 'activated_at',
         'last_verified_at', 'last_attempt_at', 'last_error_code', 'deactivated_at',
-        'environment', 'max_version', 'check_in_requested', 'messages', 'offline',
+        'environment', 'max_version', 'check_in_requested', 'messages', 'offline', 'expired_detected_at',
     ];
 
     protected $hidden = ['license_key', 'activation_secret', 'license_key_hash'];
@@ -26,6 +26,7 @@ class LicenseActivation extends Model
             'activation_secret' => 'encrypted',
             'features' => 'array',
             'expires_at' => 'datetime',
+            'expired_detected_at' => 'datetime',
             'support_until' => 'datetime',
             'updates_until' => 'datetime',
             'activated_at' => 'datetime',

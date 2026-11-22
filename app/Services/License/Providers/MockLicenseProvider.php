@@ -6,6 +6,7 @@ use App\Exceptions\LicenseException;
 use App\Services\License\Contracts\LicenseProviderInterface;
 use App\Services\License\Data\ActivationContext;
 use App\Services\License\Data\LicenseResult;
+use App\Services\License\LicenseAuthority;
 use App\Services\License\LicenseSignatureVerifier;
 use Illuminate\Support\Facades\File;
 
@@ -86,7 +87,7 @@ class MockLicenseProvider implements LicenseProviderInterface
             throw LicenseException::fromApi('activation_deactivated', null);
         }
 
-        $plan = ['plan' => $current->plan, 'status' => $current->status, 'features' => $current->features, 'user_limit' => $current->userLimit];
+        $plan = ['plan' => $current->plan, 'status' => $current->status, 'features' => $current->features, 'user_limit' => $current->userLimit, 'expires' => $current->expiresAt?->timestamp];
 
         return $this->issue($context, (string) $current->activationId, $plan, 30);
     }
@@ -115,6 +116,7 @@ class MockLicenseProvider implements LicenseProviderInterface
             'status' => $plan['status'],
             'support_until' => now()->addYear()->timestamp,
             'max_version' => null,
+            'expires' => $plan['expires'] ?? null,
             'features' => $plan['features'],
             'user_limit' => $plan['user_limit'],
         ], $days, $issuedAt);
@@ -135,7 +137,7 @@ class MockLicenseProvider implements LicenseProviderInterface
         $this->guard();
         $now = $issuedAt ?? now()->timestamp;
         $header = ['alg' => 'EdDSA', 'typ' => 'JWT', 'kid' => 'mock'];
-        $claims += ['iss' => (string) config('licensing.issuer'), 'iat' => $now, 'exp' => $now + $days * 86400];
+        $claims += ['iss' => LicenseAuthority::issuer(), 'iat' => $now, 'exp' => $now + $days * 86400];
 
         $input = LicenseSignatureVerifier::b64((string) json_encode($header)).'.'.LicenseSignatureVerifier::b64((string) json_encode($claims, JSON_UNESCAPED_SLASHES));
 

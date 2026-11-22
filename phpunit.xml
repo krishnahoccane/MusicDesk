@@ -17,6 +17,9 @@
         <testsuite name="Feature">
             <directory>tests/Feature</directory>
         </testsuite>
+        <testsuite name="Addons">
+            <directory>addons</directory>
+        </testsuite>
     </testsuites>
     <source>
         <include>
@@ -26,7 +29,6 @@
     <php>
         <env name="APP_ENV" value="testing"/>
         <env name="APP_URL" value="https://label.example.com"/>
-        <env name="LICENSE_DRIVER" value="mock"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="BROADCAST_CONNECTION" value="null"/>

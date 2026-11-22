@@ -49,7 +49,7 @@ class LicenseMiddleware
             ]);
         }
 
-        // Opportunistic refresh (works on hosting without cron).
+        // Opportunistic refresh (also done by the automatic tasks).
         app()->terminating(fn () => $this->validation->refreshIfStale());
 
         return $next($request);

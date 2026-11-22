@@ -123,13 +123,41 @@ class ReleaseService
         $disk->put($base.'.jpg', $full);
         $disk->put($base.'-thumb.jpg', $thumb);
 
-        $old = [$release->artwork_path, $release->artwork_thumb_path];
-        $release->forceFill(['artwork_path' => $base.'.jpg', 'artwork_thumb_path' => $base.'-thumb.jpg'])->save();
+        // Keep the file exactly as uploaded (for cloud storage and delivery);
+        // the re-encoded copy above is what the app displays.
+        $original = $base.'-original.'.$this->originalExtension($file);
+        $stream = fopen($file->getRealPath(), 'rb');
+        try {
+            $disk->writeStream($original, $stream);
+        } finally {
+            is_resource($stream) && fclose($stream);
+        }
+
+        $old = [$release->artwork_path, $release->artwork_thumb_path, $release->artwork_original_path];
+        $release->forceFill(['artwork_path' => $base.'.jpg', 'artwork_thumb_path' => $base.'-thumb.jpg', 'artwork_original_path' => $original])->save();
         $disk->delete(array_filter($old));
 
         $this->activity->log('release.artwork_updated', __('Updated artwork of :title', ['title' => $release->displayTitle()]), $release, [
             'size' => $width.'x'.$height,
         ]);
+    }
+
+    /**
+     * The original file's extension, from its real image type (the client's
+     * spelling is kept for JPEG: .jpg or .jpeg).
+     */
+    protected function originalExtension(UploadedFile $file): string
+    {
+        $type = @getimagesize($file->getRealPath())[2] ?? null;
+        $client = strtolower($file->getClientOriginalExtension());
+
+        return match ($type) {
+            IMAGETYPE_PNG => 'png',
+            IMAGETYPE_JPEG => in_array($client, ['jpg', 'jpeg'], true) ? $client : 'jpg',
+            IMAGETYPE_WEBP => 'webp',
+            IMAGETYPE_TIFF_II, IMAGETYPE_TIFF_MM => 'tif',
+            default => 'jpg',
+        };
     }
 
     public function removeArtwork(User $actor, Release $release): void
@@ -140,8 +168,8 @@ class ReleaseService
             return;
         }
 
-        Storage::disk(self::DISK)->delete(array_filter([$release->artwork_path, $release->artwork_thumb_path]));
-        $release->forceFill(['artwork_path' => null, 'artwork_thumb_path' => null])->save();
+        Storage::disk(self::DISK)->delete(array_filter([$release->artwork_path, $release->artwork_thumb_path, $release->artwork_original_path]));
+        $release->forceFill(['artwork_path' => null, 'artwork_thumb_path' => null, 'artwork_original_path' => null])->save();
 
         $this->activity->log('release.artwork_updated', __('Removed artwork of :title', ['title' => $release->displayTitle()]), $release);
     }

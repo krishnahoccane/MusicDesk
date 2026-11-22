@@ -71,7 +71,7 @@
                         <input class="form-check-input" type="checkbox" role="switch" id="schedule" wire:model="schedule">
                         <label class="form-check-label" for="schedule">{{ __('Back up every night') }}</label>
                     </div>
-                    <div class="form-text mb-3">{{ __('Runs at 02:15 server time. Needs the LabelDesk cron job (see the installation guide).') }}</div>
+                    <div class="form-text mb-3">{{ __('Runs automatically once a day, from 02:00, the next time someone uses LabelDesk. No cron job needed.') }}</div>
 
                     <label class="form-label" for="retention">{{ __('Backups to keep') }}</label>
                     <input type="number" id="retention" min="1" max="90" class="form-control @error('retention') is-invalid @enderror" style="max-width: 140px" wire:model="retention">

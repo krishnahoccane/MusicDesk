@@ -44,7 +44,7 @@ class LicenseActivationService
             throw LicenseException::fromApi('invalid_key', null);
         }
 
-        $result = $this->manager->provider($provider)->activate($context, $licenseKey);
+        $result = $this->manager->provider($provider ?? LicenseAuthority::defaultDriver($licenseKey))->activate($context, $licenseKey);
 
         if (! $result->isActive()) {
             throw LicenseException::fromApi('license_'.$result->status, null);
@@ -81,8 +81,8 @@ class LicenseActivationService
      */
     public function persist(ActivationContext $context, string $licenseKey, LicenseResult $result, ?string $provider = null, ?User $user = null, ?string $ip = null, bool $offline = false): LicenseActivation
     {
-        $provider ??= (string) config('licensing.driver');
         $licenseKey = self::normalizeKey($licenseKey);
+        $provider ??= LicenseAuthority::defaultDriver($licenseKey);
 
         return DB::transaction(function () use ($context, $licenseKey, $result, $provider, $user, $ip, $offline) {
             LicenseActivation::query()->where('status', 'active')->update([
@@ -226,6 +226,9 @@ class LicenseActivationService
             'activations_used' => $result->activationsUsed,
             'user_limit' => $result->userLimit,
             'expires_at' => $result->expiresAt,
+            'expired_detected_at' => $result->status === 'expired' || ($result->expiresAt?->isPast() ?? false)
+                ? ($activation->expired_detected_at ?? now())
+                : null,
             'support_until' => $result->supportUntil,
             'updates_until' => $result->updatesUntil,
             'environment' => $result->environment,

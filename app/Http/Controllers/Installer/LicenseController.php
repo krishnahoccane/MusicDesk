@@ -8,6 +8,8 @@ use App\Models\LicenseActivation;
 use App\Services\License\Data\ActivationContext;
 use App\Services\License\Data\LicenseResult;
 use App\Services\License\LicenseActivationService;
+use App\Services\License\LicenseAuthority;
+use App\Services\License\LicenseConnectivity;
 use App\Services\License\LicenseManager;
 use App\Services\License\OfflineRequestFile;
 use Illuminate\Http\RedirectResponse;
@@ -58,7 +60,7 @@ class LicenseController extends InstallerController
 
         $context = ActivationContext::for($url, $this->state->ensureInstallationId());
         $key = (string) $request->validated('license_key');
-        $provider = $manager->provider();
+        $provider = $manager->provider(LicenseAuthority::defaultDriver($key));
 
         try {
             $result = $activations->activate($context, $key, $provider->name());
@@ -114,6 +116,20 @@ class LicenseController extends InstallerController
         }
 
         return OfflineRequestFile::download(ActivationContext::for($this->siteUrl($request), $this->state->ensureInstallationId()));
+    }
+
+    /**
+     * "Test connection": dummy-key requests to the license server, results shown on the page.
+     */
+    public function diagnose(Request $request, LicenseConnectivity $connectivity): RedirectResponse
+    {
+        if ($redirect = $this->guard('license')) {
+            return $redirect;
+        }
+
+        $result = $connectivity->diagnose(ActivationContext::domainFrom($this->siteUrl($request)));
+
+        return redirect()->route('installer.license')->with('diagnosis', $result);
     }
 
     public function continue(): RedirectResponse

@@ -2,6 +2,8 @@
 
 namespace App\Support;
 
+use App\Plugins\PluginRegistry;
+
 /**
  * The single source of truth for LabelDesk permissions, grouped by module,
  * with the labels shown in the roles editor. Seeders and the UI read from here.
@@ -12,6 +14,17 @@ class PermissionCatalog
      * @return array<string, array{label: string, permissions: array<string, string>}>
      */
     public static function groups(): array
+    {
+        $plugins = collect(app(PluginRegistry::class)->permissionGroups)
+            ->map(fn ($g) => ['label' => $g['label'], 'permissions' => $g['permissions']])->all();
+
+        return self::core() + $plugins;
+    }
+
+    /**
+     * @return array<string, array{label: string, permissions: array<string, string>}>
+     */
+    protected static function core(): array
     {
         return [
             'artists' => ['label' => __('Artists'), 'permissions' => [
@@ -27,7 +40,6 @@ class PermissionCatalog
                 'releases.delete' => __('Delete releases'),
                 'releases.submit' => __('Submit releases for review'),
                 'releases.review' => __('Approve or reject releases'),
-                'catalog.bulk_upload' => __('Bulk upload artists and releases'),
             ]],
             'tracks' => ['label' => __('Tracks'), 'permissions' => [
                 'tracks.view' => __('View tracks'),
@@ -71,6 +83,7 @@ class PermissionCatalog
                 'settings.manage' => __('Manage settings'),
                 'activity.view' => __('View activity log'),
                 'backups.manage' => __('Manage backups'),
+                'plugins.manage' => __('Install and activate add-ons'),
                 'license.view' => __('View license'),
                 'license.manage' => __('Manage license'),
             ]],

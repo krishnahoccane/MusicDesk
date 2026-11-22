@@ -7,6 +7,7 @@ use App\Services\License\Contracts\LicenseProviderInterface;
 use App\Services\License\Data\ActivationContext;
 use App\Services\License\Data\LicenseResult;
 use App\Services\License\LicenseApiClient;
+use App\Services\License\LicenseAuthority;
 use App\Services\License\LicenseSignatureVerifier;
 
 /**
@@ -35,7 +36,7 @@ class MusicDeskLicenseProvider implements LicenseProviderInterface
 
     public function publicKey(): ?string
     {
-        $key = config('licensing.public_key');
+        $key = LicenseAuthority::publicKey();
 
         return is_string($key) && $key !== '' ? $key : null;
     }

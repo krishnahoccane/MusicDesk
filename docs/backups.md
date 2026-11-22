@@ -23,8 +23,8 @@ license key and the SMTP password) can only be read with the same `APP_KEY`.
 ## Making backups
 
 - **Back up now** on the Backups page.
-- **Nightly**: turn on "Back up every night" (runs at 02:15 server time). This needs the LabelDesk cron job:
-  `* * * * * php /path/to/labeldesk/artisan schedule:run >> /dev/null 2>&1`
+- **Nightly**: turn on "Back up every night". It runs automatically once a day from 02:00 (the next
+  time someone uses LabelDesk). No cron job is needed.
 - **SSH**: `php artisan labeldesk:backup` (add `--database-only` to skip files).
 - **Retention**: "Backups to keep" (1–90, default 7). Older backups are deleted after each new one.
 

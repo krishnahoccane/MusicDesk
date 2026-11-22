@@ -49,13 +49,28 @@
 
     <div class="card mt-3">
         <div class="card-header">
-            <x-icon name="terminal" size="18" />
-            <h2 class="card-title">{{ __('Cron job') }}</h2>
+            <x-icon name="timer" size="18" />
+            <h2 class="card-title">{{ __('Automatic tasks') }}</h2>
+            <span class="small text-muted ms-auto">{{ __('No cron job needed') }}</span>
         </div>
         <div class="card-body small">
-            <p class="text-muted">{{ __('Add this command in cPanel → Cron Jobs, set to run every minute. It runs the license check, queued emails, the nightly backup and clean-up.') }}</p>
-            <code class="d-block p-2 rounded" style="background: var(--ld-surface-2)">* * * * * {{ $cron }}</code>
-            <p class="text-muted mt-3 mb-0">{{ __('With SSH access you can also run the upgrade with:') }} <code>php artisan labeldesk:upgrade</code></p>
+            <p class="text-muted">{{ __('LabelDesk runs its background work by itself while people use it, after each page has been sent (nobody waits for it).') }}</p>
+            @php($labels = [
+                'queue' => __('Queued jobs (statement imports, emails)'),
+                'media' => __('Cloud media uploads and clean-up'),
+                'backup' => __('Nightly backup (when turned on)'),
+                'cleanup' => __('Activity log clean-up'),
+            ])
+            <dl class="ld-dl mb-3">
+                @foreach ($tasks as $task => $info)
+                    <dt>{{ $labels[$task] ?? $task }}</dt>
+                    <dd>
+                        <span class="text-muted">{{ $task === 'backup' ? __('daily, from 02:00') : ($info['every'] >= 1440 ? __('daily') : trans_choice('every minute|every :count minutes', $info['every'])) }}</span>
+                        &middot; {{ $info['last'] ? __('last :time', ['time' => \Carbon\CarbonImmutable::createFromTimestamp($info['last'])->diffForHumans()]) : __('not run yet') }}
+                    </dd>
+                @endforeach
+            </dl>
+            <p class="text-muted mb-0">{{ __('On a site nobody visits, tasks wait for the next visit; license expiry and lock dates are always enforced. With SSH you can also run') }} <code>php artisan labeldesk:tasks:run</code> {{ __('or the upgrade with') }} <code>php artisan labeldesk:upgrade</code>.</p>
         </div>
     </div>
 </div>

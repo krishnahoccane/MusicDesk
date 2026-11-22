@@ -85,7 +85,7 @@ foreach (['app', 'bootstrap', 'config', 'database', 'lang', 'public', 'resources
         copyTree($root.'/'.$dir, $stage.'/'.$dir, ['hot', 'storage']);
     }
 }
-foreach (['artisan', 'composer.json', 'composer.lock', '.env.example', '.htaccess', 'index.php', 'README.md', 'CHANGELOG.md', 'LICENSE_API_SPEC.md'] as $file) {
+foreach (['artisan', 'composer.json', 'composer.lock', '.env.example', '.htaccess', 'index.php', 'README.md', 'CHANGELOG.md', 'CHANGELOG.txt', 'LICENSE_API_SPEC.md'] as $file) {
     if (is_file($root.'/'.$file)) {
         copy($root.'/'.$file, $stage.'/'.$file);
     }
@@ -104,6 +104,14 @@ foreach ([
     @mkdir($stage.'/'.$dir, 0777, true);
     file_put_contents($stage.'/'.$dir.'/.gitignore', "*\n!.gitignore\n");
 }
+
+// Add-ons folder (installed from Administration → Add-ons; never shipped with add-ons inside).
+@mkdir($stage.'/plugins', 0777, true);
+file_put_contents($stage.'/plugins/.htaccess', 'Require all denied
+');
+file_put_contents($stage.'/plugins/README.txt', 'Add-ons installed from Administration > Add-ons are stored here.
+This folder must be writable by the web server. Do not edit add-on files: their signature is checked.
+');
 
 // Production dependencies only.
 run('composer install --no-dev --optimize-autoloader --no-interaction --no-progress --no-scripts', $stage);

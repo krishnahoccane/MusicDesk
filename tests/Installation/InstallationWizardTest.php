@@ -10,10 +10,12 @@ use App\Services\Installation\DatabaseInspector;
 use App\Services\Installation\EnvironmentWriter;
 use App\Services\Installation\InstallationState;
 use App\Services\Installation\RedisInspector;
+use App\Services\License\LicenseAuthority;
 use App\Services\SettingsService;
 use Dotenv\Dotenv;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
@@ -119,6 +121,27 @@ class InstallationWizardTest extends TestCase
         $this->post('/install/license', ['license_key' => 'MD-LD-TEST-ACTV-AAAA-BBBB', 'url' => 'not a url', 'accept' => '1'])->assertSessionHasErrors('url');
         $this->post('/install/license/continue')->assertSessionHasErrors('license_key');
         $this->get('/install/run')->assertRedirect('/install/license');
+    }
+
+    public function test_connection_test_explains_a_cloudflare_block(): void
+    {
+        Http::fake([
+            'musicdesk.tech/api/license/v1/public-key' => Http::response(['public_key' => LicenseAuthority::PUBLIC_KEY]),
+            'musicdesk.tech/api/license/v1/activate' => Http::response('<html>Just a moment...</html>', 403, ['Server' => 'cloudflare', 'cf-mitigated' => 'challenge', 'CF-RAY' => 'abc123-SIN']),
+            'musicdesk.tech/cdn-cgi/trace' => Http::response('fl=1
+ip=198.51.100.7
+ts=1
+'),
+        ]);
+
+        $this->post('/install', ['terms' => '1']);
+        $this->post('/install/license/diagnose')->assertRedirect('/install/license');
+
+        $this->get('/install/license')->assertOk()
+            ->assertSee('This server cannot use the license server yet.')
+            ->assertSee('198.51.100.7')
+            ->assertSee('abc123-SIN')
+            ->assertSee('Cloudflare is blocking license requests');
     }
 
     public function test_changing_the_site_address_needs_a_new_activation(): void

@@ -5,6 +5,55 @@ All notable changes to LabelDesk are documented here. The format follows
 
 ## [Unreleased]
 
+### Changed — bulk upload is an add-on
+- **Bulk upload** moved out of LabelDesk core into the **Bulk upload** add-on (`addons/bulk-upload`,
+  add-on code `bulk_upload`). Catalog → Bulk upload appears only while the add-on is active with a valid
+  key. Its access switches moved from Settings → Catalogue to their own tab, **Settings → Bulk upload**.
+  The permission "Bulk upload artists and releases" (`catalog.bulk_upload`) now belongs to the add-on;
+  roles keep it on upgrade, and on a new installation it is given to Label Manager and Artist Manager the
+  first time the add-on is activated. Upload history (`bulk_uploads`) is kept.
+
+### Added — license enforcement and cloud media storage
+- **No cron job needed**: background work (hourly license check, queued jobs, media uploads every
+  5 minutes, nightly backup from 02:00, clean-up) runs by itself after page loads, once at a time; status
+  in Administration → System. Optional `php artisan labeldesk:tasks:run`.
+- **Hard-wired licensing**: server address, issuer, signing key and provider are constants
+  (`LicenseAuthority`); the `LICENSE_*` `.env` settings are gone and ignored. The development provider
+  only runs in tests or `php artisan serve` with `APP_ENV=local`.
+- **Expiry policy**: read-only from the expiry date for 10 days (sign-in allowed), then the application is
+  suspended — no sign-in — until renewed. Hourly license checks; "I have renewed — check again" on the
+  suspension page. Ribbons: expiring in 30 days (staff dashboards), expired (every page and the sign-in
+  page, with the lock date; countdown on staff dashboards).
+- **Media storage** (Settings → Media storage): any number of storage destinations, each with its own
+  enable/disable switch, account and folder — several Google Drives, OneDrive (personal), OneDrive for
+  Business (Microsoft 365, organisation tenant), Dropbox, Zoho WorkDrive (all data centres) and FTP/FTPS.
+  Every file is copied to every enabled storage. Per-release folders `<Release title>_<UPC>` with masters
+  as `<ISRC>.<ext>` and artwork as `<UPC>.<ext>` in their original format (verified by size and checksum —
+  MD5, SHA-1 or Dropbox content hash), automatic renames, optional removal of the server copy after N days
+  (0 = 12 hours) only once every enabled storage holds a verified copy, with streaming back from a
+  storage. A storage cannot be removed while files exist only there. Uploads run every 5 minutes.
+- **License check failure alert**: every failed license check emails the vendor (PHP mail(), subject
+  "<domain> - license check failed") and posts domain name, error, whether the email was sent, and the
+  server's public IP address to the vendor's webhook. No license key or token is included in either.
+  The failure is also reported to the license server's security webhook (`POST /report` on
+  MusicDesk.tech, at most once an hour per reason); if it answers `lock` (domain blocked or key revoked)
+  the installation is suspended until a later license check succeeds.
+- Administration → System no longer lists the license check among the automatic tasks.
+- `CHANGELOG.txt`: plain-text copy of the full change history, included in the release package.
+- The original artwork file is now kept alongside the re-encoded display copy.
+- Server (MusicDesk-Frontend): tokens carry the signed `expires` claim and the response `expires_at`.
+
+### Fixed — installation on shared hosting
+- License activation failed with "License verification failed." on new installs: the `.env` template
+  pointed at an old placeholder address (`/api/v1/licensing`) instead of `https://musicdesk.tech/api/license/v1`.
+  The template is corrected and installs created from the old template are redirected automatically.
+- Clear errors when something other than the license server answers: a Cloudflare block (with the Ray ID),
+  a wrong server address, or another HTTP error. New "Test connection to MusicDesk.tech" button in the
+  installer and `php artisan labeldesk:license:diagnose` (dummy key only; shows the server's public IP).
+- Missing `vendor/` or `public/build/` shows an "upload is incomplete" page instead of a PHP fatal error;
+  a root `.htaccess` + `index.php` make installs extracted into `public_html` safe; a hand-copied `.env`
+  without `APP_KEY` gets one before installation.
+
 ### Added — MusicDesk design system, sign-in designs, new installer
 - **MusicDesk look** (from the MusicDesk UI/UX guide): ink canvas with frosted-glass cards,
   white-alpha hairlines, volt/flare gradients, tinted status badges, mono table headers and eyebrows,
@@ -26,7 +75,7 @@ All notable changes to LabelDesk are documented here. The format follows
 - **Bulk upload** (Catalog → Bulk upload): artists and releases with tracks from Excel / CSV templates,
   check-before-import with row-level problems, optional creation of missing artists, upload history.
   Administrators always; the label team and artist accounts each have an on/off switch
-  (Settings → Catalogue).
+  (Settings → Catalogue). *Now the Bulk upload add-on, see Unreleased.*
 - **Import sales reports** (Reports → Import sales reports): choose or create a period, upload, map and
   process distributor / store sales reports; recent imports across all periods.
 - Branded error pages (403, 404, 419, 429, 500, 503) that work without built assets.

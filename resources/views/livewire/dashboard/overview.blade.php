@@ -1,4 +1,48 @@
 <div>
+    {{-- License notices for the label team (not artist accounts) --}}
+    @unless (auth()->user()->isArtistAccount())
+        @php($ls = app(\App\Services\License\LicenseService::class)->snapshot())
+        @php($tz = config('labeldesk.display_timezone'))
+        @if ($ls->state === \App\Enums\LicenseState::Expired && $ls->lockAt)
+            @php($daysLeft = max(0, (int) ceil(now()->diffInDays($ls->lockAt, false))))
+            <div class="ld-license-callout ld-license-callout--danger" role="alert">
+                <span class="ld-license-callout__icon"><x-icon name="lock" size="20" /></span>
+                <div class="flex-grow-1 min-w-0">
+                    <div class="ld-license-callout__title">{{ __('This application will be locked on :date', ['date' => $ls->lockAt->setTimezone($tz)->format('M d, Y')]) }}</div>
+                    <div class="small text-muted">
+                        {{ __('The license expired on :date. Everything is read-only now. Unless the license is renewed, nobody can sign in from :lock.', [
+                            'date' => $ls->expiredAt?->setTimezone($tz)->format('M d, Y'), 'lock' => $ls->lockAt->setTimezone($tz)->format('M d, Y'),
+                        ]) }}
+                    </div>
+                </div>
+                <div class="text-center px-2">
+                    <div class="ld-license-callout__count">{{ $daysLeft }}</div>
+                    <div class="eyebrow" style="font-size: 10px">{{ trans_choice('day left|days left', $daysLeft) }}</div>
+                </div>
+                <a href="{{ config('licensing.customer_portal_url') }}" target="_blank" rel="noopener" class="btn btn-primary"><x-icon name="external-link" size="16" /> {{ __('Renew now') }}</a>
+            </div>
+        @elseif ($ls->isExpiring())
+            @php($on = $ls->expiringOn())
+            <div class="ld-license-callout" role="status">
+                <span class="ld-license-callout__icon"><x-icon name="calendar-clock" size="20" /></span>
+                <div class="flex-grow-1 min-w-0">
+                    <div class="ld-license-callout__title">
+                        {{ $on ? __('Your license expires on :date', ['date' => $on->setTimezone($tz)->format('M d, Y')]) : __('Your license expires within 30 days') }}
+                    </div>
+                    <div class="small text-muted">{{ __('Renew before then to keep full access. After expiry the site is read-only for 10 days and then locked.') }}</div>
+                </div>
+                @if ($on)
+                    @php($daysToExpiry = max(0, (int) ceil(now()->diffInDays($on, false))))
+                    <div class="text-center px-2">
+                        <div class="ld-license-callout__count">{{ $daysToExpiry }}</div>
+                        <div class="eyebrow" style="font-size: 10px">{{ trans_choice('day left|days left', $daysToExpiry) }}</div>
+                    </div>
+                @endif
+                <a href="{{ config('licensing.customer_portal_url') }}" target="_blank" rel="noopener" class="btn btn-light"><x-icon name="external-link" size="16" /> {{ __('Renew') }}</a>
+            </div>
+        @endif
+    @endunless
+
     {{-- Hero --}}
     <section class="ld-hero">
         <div class="ld-hero__wave" aria-hidden="true">

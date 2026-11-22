@@ -315,6 +315,9 @@ in `settings`: `backups.schedule`, `backups.retention`, `catalog.label_name`, `c
 Unique (artist_id, user_id).
 
 ### bulk_uploads
+Owned by the **Bulk upload** add-on (created by its migration when missing; installations that had bulk
+upload in core keep the table created by `2026_11_23_100000`).
+
 | Column | Type | Notes |
 |--------|------|-------|
 | id | bigint unsigned PK | |
@@ -326,7 +329,7 @@ Unique (artist_id, user_id).
 | created_at / updated_at | timestamps | |
 
 Also in M10: indexes `royalty_lines (royalty_period_id, store)` and `(royalty_period_id, territory)`;
-settings `bulk_upload.staff`, `bulk_upload.artists`.
+settings `bulk_upload.staff`, `bulk_upload.artists`, `bulk_upload.defaults_granted` (add-on).
 
 ### Planned
 | Table | Milestone |

@@ -6,17 +6,19 @@ use App\Models\Artist;
 use App\Models\Release;
 use App\Models\Track;
 use App\Models\User;
+use App\Plugins\PluginManager;
+use App\Plugins\PluginRegistry;
 use App\Policies\ArtistPolicy;
 use App\Policies\ReleasePolicy;
 use App\Policies\RolePolicy;
 use App\Policies\TrackPolicy;
 use App\Policies\UserPolicy;
 use App\Services\Activity\ActivityLogger;
-use App\Services\BulkUpload\BulkUploadService;
 use App\Services\Installation\InstallationState;
 use App\Services\License\LicenseFeatureService;
 use App\Services\License\LicenseManager;
 use App\Services\License\LicenseValidationService;
+use App\Services\MediaStorage\MediaSyncService;
 use App\Services\Navigation\NavigationBuilder;
 use App\Services\SettingsApplier;
 use App\Services\SettingsService;
@@ -38,6 +40,8 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        $this->app->singleton(PluginRegistry::class);
+        $this->app->singleton(PluginManager::class);
         $this->app->singleton(NavigationBuilder::class);
         $this->app->singleton(InstallationState::class);
         $this->app->singleton(SettingsService::class);
@@ -88,8 +92,20 @@ class AppServiceProvider extends ServiceProvider
         // Super Admin implicitly passes every *permission* check ("users.manage").
         // Model policies (update, delete …) still run for Super Admins so rules
         // such as "cannot delete yourself" apply to everyone.
-        // Bulk upload: administrators, staff and artist accounts per Settings → Catalogue.
-        Gate::define('bulk-upload', fn (User $user) => $this->app->make(BulkUploadService::class)->typesFor($user) !== []);
+        // Cloud media storage: queue uploads / renames when files or names change.
+        Track::saved(function (Track $track) {
+            if ($track->audio_path && ($track->wasRecentlyCreated || $track->wasChanged(['audio_path', 'isrc']))) {
+                $this->app->make(MediaSyncService::class)->queueTrack($track);
+            }
+        });
+        Release::saved(function (Release $release) {
+            $sync = $this->app->make(MediaSyncService::class);
+            if ($release->wasChanged(['title', 'upc'])) {
+                $sync->queueRelease($release, withTracks: true); // folder rename
+            } elseif ($release->wasChanged(['artwork_original_path', 'artwork_path'])) {
+                $sync->queueRelease($release);
+            }
+        });
 
         Gate::before(function ($user, string $ability) {
             return str_contains($ability, '.') && method_exists($user, 'hasRole') && $user->hasRole('Super Admin') ? true : null;
@@ -109,5 +125,8 @@ class AppServiceProvider extends ServiceProvider
             $view->with('appearance', $appearance);
             $view->with('themePreference', $appearance['preference']);
         });
+
+        // Add-ons (Administration → Add-ons): active and on the license.
+        $this->app->make(PluginManager::class)->boot();
     }
 }

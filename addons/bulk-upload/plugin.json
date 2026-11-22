@@ -1,0 +1,11 @@
+{
+    "slug": "bulk-upload",
+    "name": "Bulk upload",
+    "version": "1.0.0",
+    "addon": "bulk_upload",
+    "description": "Import artists and releases with tracks from Excel or CSV templates.",
+    "author": "MusicDesk",
+    "requires": "1.0.0",
+    "namespace": "LabelDesk\\Addons\\BulkUpload\\",
+    "provider": "LabelDesk\\Addons\\BulkUpload\\BulkUploadServiceProvider"
+}

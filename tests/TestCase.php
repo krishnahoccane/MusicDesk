@@ -10,6 +10,7 @@ use App\Services\License\Data\ActivationContext;
 use App\Services\License\LicenseActivationService;
 use App\Services\License\LicenseValidationService;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
+use Illuminate\Support\Facades\Http;
 
 abstract class TestCase extends BaseTestCase
 {
@@ -24,6 +25,9 @@ abstract class TestCase extends BaseTestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        // Tests never talk to the real license server or any other host.
+        Http::preventStrayRequests();
 
         $dir = storage_path('framework/testing');
         if (! is_dir($dir)) {

@@ -39,7 +39,7 @@ class LicenseCacheService
      */
     public function latest(LicenseActivation $activation, ActivationContext $context): ?LicenseResult
     {
-        $cache = $activation->caches()->orderByDesc('issued_at')->first();
+        $cache = $activation->caches()->orderByDesc('issued_at')->orderByDesc('id')->first();
 
         if (! $cache) {
             return null;

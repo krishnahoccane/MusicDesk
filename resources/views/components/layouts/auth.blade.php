@@ -21,6 +21,10 @@
     @include('partials.head', ['title' => $title])
 </head>
 <body class="ld-login ld-login--{{ $ldDesign }}">
+    @unless ($preview)
+        @php($ldRibbon = rescue(fn () => app(\App\Services\Installation\InstallationState::class)->isInstalled() ? app(\App\Services\License\LicenseService::class)->snapshot() : null, null, false))
+        @include('partials.license-ribbon', ['ribbonSnapshot' => $ldRibbon])
+    @endunless
     @if ($preview)
         <div class="ld-login__preview-bar">{{ __('Preview of the ":design" sign-in page. The form is disabled.', ['design' => __(App\Support\Appearance::LOGIN_LAYOUTS[$ldDesign][0])]) }}</div>
     @endif

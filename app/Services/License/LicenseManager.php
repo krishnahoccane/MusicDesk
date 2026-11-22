@@ -26,7 +26,12 @@ class LicenseManager
 
     public function provider(?string $name = null): LicenseProviderInterface
     {
-        $name ??= (string) config('licensing.driver', 'musicdesk');
+        $name ??= LicenseAuthority::defaultDriver();
+
+        // The development provider never runs on a server that serves visitors.
+        if ($name === 'mock' && ! LicenseAuthority::developmentAllowed()) {
+            $name = LicenseAuthority::PRODUCTION_DRIVER;
+        }
 
         $class = $this->providers[$name] ?? throw new InvalidArgumentException("Unknown license provider [{$name}].");
 

@@ -77,15 +77,29 @@ class LicenseValidationService
         try {
             $result = $this->cache->latest($activation, $this->contextFor($activation));
         } catch (LicenseException $e) {
-            return new LicenseSnapshot(LicenseState::Restricted, $e->getMessage(), null, $activation);
+            $result = null;
+            $cacheError = $e->getMessage();
+        }
+
+        // The license server answered a failure report with "lock" (blocked domain or revoked key).
+        if ($activation->license_status === 'blocked') {
+            return new LicenseSnapshot(LicenseState::Locked, __('This application is suspended: MusicDesk.tech has blocked this installation. Contact MusicDesk.tech support.'), $result ?? null, $activation);
+        }
+
+        // Expired license: read-only for N days after the expiry date, then locked.
+        if ($expiry = $this->expiryWindow($activation, $result)) {
+            return $expiry;
+        }
+
+        if (isset($cacheError)) {
+            return new LicenseSnapshot(LicenseState::Restricted, $cacheError, null, $activation);
         }
 
         if (! $result) {
             return new LicenseSnapshot(LicenseState::Restricted, __('No verified license data is available. Click "Verify now" to contact MusicDesk.'), null, $activation);
         }
 
-        // Annual licenses keep running after expiry (updates pause); pending
-        // licenses work during the payment window. Anything else is refused.
+        // Pending licenses work during the payment window. Anything else is refused.
         if (! in_array($result->status, LicenseResult::USABLE_STATUSES, true)) {
             return new LicenseSnapshot(LicenseState::Restricted, LicenseException::fromApi('license_'.$result->status, null)->getMessage(), $result, $activation);
         }
@@ -114,6 +128,49 @@ class LicenseValidationService
             $result,
             $activation,
             $graceEnds,
+        );
+    }
+
+    /**
+     * The expiry policy: from the license's expiry date (signed "expires" claim,
+     * or the day LabelDesk first saw it expired) the application is read-only;
+     * from the start of day expiry + N + 1 (label time zone) it is locked.
+     */
+    protected function expiryWindow(LicenseActivation $activation, ?LicenseResult $result): ?LicenseSnapshot
+    {
+        $expiredAt = null;
+
+        if ($result?->expiresAt !== null && $result->expiresAt->isPast()) {
+            $expiredAt = $result->expiresAt;
+        } elseif ($result?->status === 'expired' || $activation->license_status === 'expired') {
+            $expiredAt = $activation->expired_detected_at
+                ? CarbonImmutable::parse($activation->expired_detected_at)
+                : ($result?->issuedAt ?? CarbonImmutable::now());
+        }
+
+        if ($expiredAt === null) {
+            return null;
+        }
+
+        $tz = (string) config('labeldesk.display_timezone', 'UTC');
+        $days = (int) config('licensing.expired_read_only_days', 10);
+        $lockAt = $expiredAt->setTimezone($tz)->startOfDay()->addDays($days + 1);
+        $format = fn (CarbonImmutable $d) => $d->setTimezone($tz)->format((string) config('labeldesk.date_format', 'd M Y'));
+
+        if (! $lockAt->isFuture()) {
+            return new LicenseSnapshot(
+                LicenseState::Locked,
+                __('This application is suspended because its license expired on :date. Renew the license at MusicDesk.tech to restore access.', ['date' => $format($expiredAt)]),
+                $result, $activation, null, $expiredAt, $lockAt,
+            );
+        }
+
+        return new LicenseSnapshot(
+            LicenseState::Expired,
+            __('The license expired on :date. LabelDesk is read-only and will be locked on :lock unless the license is renewed.', [
+                'date' => $format($expiredAt), 'lock' => $format($lockAt),
+            ]),
+            $result, $activation, null, $expiredAt, $lockAt,
         );
     }
 
@@ -155,12 +212,20 @@ class LicenseValidationService
             // recorded; network errors leave the stored token untouched.
             $definitive = str_starts_with($e->errorCode, 'license_') || $e->errorCode === 'activation_deactivated';
             if (! $e->retryable && $definitive) {
-                $activation->forceFill(['license_status' => $e->errorCode === 'activation_deactivated' ? 'deactivated' : substr($e->errorCode, 8)])->save();
-                $activation->caches()->delete();
+                $status = $e->errorCode === 'activation_deactivated' ? 'deactivated' : substr($e->errorCode, 8);
+                $activation->forceFill([
+                    'license_status' => $status,
+                    'expired_detected_at' => $status === 'expired' ? ($activation->expired_detected_at ?? now()) : $activation->expired_detected_at,
+                ])->save();
+                // Expired: keep the last token so the read-only window still shows the plan's modules.
+                if ($status !== 'expired') {
+                    $activation->caches()->delete();
+                }
             }
 
             $this->activations->log($activation, 'verify_failed', 'failure', $e->errorCode, $e->getMessage(), $user, $ip);
             $this->forget();
+            app(LicenseFailureAlert::class)->send($activation, $e, (string) $this->installation->installationId());
             throw $e;
         }
 
@@ -185,7 +250,7 @@ class LicenseValidationService
 
         $last = $activation->last_attempt_at ? CarbonImmutable::parse($activation->last_attempt_at) : null;
         $requested = $activation->check_in_requested && (! $last || $last->addMinutes(15)->isPast());
-        if (! $requested && $last && $last->addHours((int) config('licensing.cache_duration', 24))->isFuture()) {
+        if (! $requested && $last && $last->addMinutes((int) config('licensing.cache_duration_minutes', 60))->isFuture()) {
             return;
         }
 

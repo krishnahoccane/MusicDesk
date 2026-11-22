@@ -17,7 +17,6 @@
         @foreach ([
             __('Point your domain\'s document root to the LabelDesk "public" folder so application files are not web-accessible.'),
             __('Use HTTPS for the application URL.'),
-            __('Set up a cron job for "php artisan schedule:run" every minute (see the documentation).'),
             __('Schedule regular database and file backups in your hosting panel and in LabelDesk → Backups.'),
             __('Keep your administrator password private and enable accounts only for people who need them.'),
         ] as $tip)

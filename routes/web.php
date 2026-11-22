@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\BrandingController;
+use App\Http\Controllers\License\LicenseLockedController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -19,6 +20,11 @@ Route::get('/', function () {
         ? redirect()->route('dashboard')
         : redirect()->route('login');
 })->name('home');
+
+// Expired license past its read-only window: suspension notice (public) and re-check.
+Route::get('suspended', [LicenseLockedController::class, 'show'])->name('license.locked');
+Route::post('suspended/check', [LicenseLockedController::class, 'check'])
+    ->middleware('throttle:5,1')->name('license.locked.check');
 
 // Uploaded logo, favicon and sign-in images (public: shown on the sign-in page and installer).
 Route::get('branding/{file}', BrandingController::class)

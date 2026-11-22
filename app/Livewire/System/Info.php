@@ -4,6 +4,7 @@ namespace App\Livewire\System;
 
 use App\Services\Backup\BackupService;
 use App\Services\Installation\RequirementsChecker;
+use App\Services\System\AutomaticTasks;
 use App\Services\System\UpgradeService;
 use App\Support\Format;
 use Carbon\CarbonImmutable;
@@ -21,8 +22,6 @@ use Throwable;
  */
 class Info extends Component
 {
-    public const HEARTBEAT_KEY = 'labeldesk.scheduler.heartbeat';
-
     public function upgrade(UpgradeService $upgrade): void
     {
         abort_unless(auth()->user()->can('settings.manage'), 403);
@@ -56,8 +55,7 @@ class Info extends Component
             'select coalesce(sum(data_length + index_length), 0) as s from information_schema.tables where table_schema = database()'
         )->s, null, false);
 
-        $heartbeat = Cache::get(self::HEARTBEAT_KEY);
-        $schedulerOk = $heartbeat && now()->timestamp - (int) $heartbeat < 600;
+        $lastAuto = Cache::get(AutomaticTasks::LAST_RUN_KEY);
         $pendingJobs = Schema::hasTable('jobs') ? DB::table('jobs')->count() : 0;
         $failedJobs = Schema::hasTable('failed_jobs') ? DB::table('failed_jobs')->count() : 0;
 
@@ -98,7 +96,7 @@ class Info extends Component
                     'state' => $latestBackup && $latestBackup['created_at']->gt(now()->subDays(8)) ? 'ok' : 'warning'],
             ])],
             ['title' => __('Background tasks'), 'icon' => 'cpu', 'items' => $this->section([
-                ['label' => __('Scheduler (cron)'), 'value' => $heartbeat ? __('Last ran :time', ['time' => CarbonImmutable::createFromTimestamp((int) $heartbeat)->diffForHumans()]) : __('Not running'), 'state' => $schedulerOk ? 'ok' : 'warning'],
+                ['label' => __('Automatic tasks'), 'value' => $lastAuto ? __('Last ran :time', ['time' => CarbonImmutable::createFromTimestamp((int) $lastAuto)->diffForHumans()]) : __('Not run yet'), 'state' => $lastAuto ? 'ok' : 'warning'],
                 ['label' => __('Queued jobs'), 'value' => (string) $pendingJobs, 'state' => $pendingJobs > 20 ? 'warning' : 'ok'],
                 ['label' => __('Failed jobs'), 'value' => (string) $failedJobs, 'state' => $failedJobs > 0 ? 'warning' : 'ok'],
                 ['label' => __('Email'), 'value' => config('mail.default') === 'log' ? __('Log only (not sent)') : (string) config('mail.default'), 'state' => config('mail.default') === 'log' ? 'warning' : 'ok'],
@@ -111,7 +109,10 @@ class Info extends Component
             'upgradeNeeded' => $upgrade->needed(),
             'pending' => $upgrade->pendingMigrations(),
             'installedVersion' => $upgrade->installedVersion(),
-            'cron' => 'php '.base_path('artisan').' schedule:run >> /dev/null 2>&1',
+            'tasks' => collect(AutomaticTasks::TASKS)->except('license')->map(fn ($minutes, $task) => [
+                'every' => $minutes,
+                'last' => AutomaticTasks::lastRun($task),
+            ])->all(),
         ])->title(__('System'))->layoutData(['breadcrumbs' => [['label' => __('Administration')], ['label' => __('System')]]]);
     }
 }

@@ -37,7 +37,9 @@ An artist account is a login for an artist. It sees **only** the artist profiles
 
 ## Bulk upload
 
-**Catalog → Bulk upload** adds many artists or releases at once.
+**Catalog → Bulk upload** adds many artists or releases at once. It is part of the **Bulk upload**
+add-on: install and activate it in Administration → Add-ons with its license key from your
+MusicDesk.tech account (see `docs/plugins.md`). The menu item appears only while the add-on is active.
 
 1. Download the Excel or CSV template. Keep its first row (the headings); columns marked * are required.
 2. Fill one row per artist, or for releases **one row per track**. Rows with the same UPC (or the same
@@ -54,7 +56,7 @@ Rules:
   artists**.
 - Up to 2,000 rows per file.
 
-**Who may use it** (Settings → Catalogue → Bulk upload):
+**Who may use it** (Settings → Bulk upload):
 
 | Who | Access |
 |---|---|
@@ -96,6 +98,52 @@ Filter on screen, then export to Excel or CSV. Exports are logged.
 - **Logo and favicon:** logo, dark-mode logo and favicon.
 - **Sign-in page:** pick one of five designs, edit the texts, add a cover image. **Preview** shows the
   saved result.
+
+## License expiry
+
+- **Last 30 days:** staff dashboards show when the license expires.
+- **On the expiry date:** everything becomes read-only and a red ribbon shows on every page, with the
+  date the site will be locked.
+- **Ten days later:** the site is suspended. Nobody can sign in until the license is renewed at
+  MusicDesk.tech. Access returns automatically within an hour, or straight away with "I have renewed —
+  check again" on the suspension page. No data is deleted at any point.
+
+## Media storage (Google Drive, OneDrive, Dropbox, Zoho WorkDrive, FTP)
+
+**Settings → Media storage** copies master audio and original artwork to your own storage. You can add
+as many destinations as you like — for example two Google Drive accounts and an FTP server — and switch
+each one on or off. Every file goes to every enabled destination.
+
+Supported: Google Drive, OneDrive (personal), OneDrive for Business (Microsoft 365), Dropbox,
+Zoho WorkDrive and FTP / FTPS.
+
+1. **Add storage → choose the type.** For cloud drives, create an OAuth app first:
+   - Google Drive: Google Cloud Console → enable the Drive API → "Web application" OAuth client.
+   - OneDrive / OneDrive for Business: Microsoft Entra → App registrations → add a "Web" platform and a
+     client secret. For Business, enter your tenant (domain or tenant ID, or `organizations`).
+   - Dropbox: App Console → "Full Dropbox" app with files.content.read/write and account_info.read.
+   - Zoho WorkDrive: Zoho API Console (your data centre) → "Server-based application".
+
+   Add the redirect URI shown in the form (one URI per type, shared by every account of that type).
+2. **Save & connect:** sign in and allow access. FTP is tested straight away with the host, port,
+   user name, password, start folder and encryption you enter.
+3. **Folder:** choose a folder, or create one.
+4. **Switch it on.** Files already in the catalogue are queued for the new destination.
+
+Optionally tick **Delete the file from this server after upload** and enter the number of days
+(0 = 12 hours). A server copy is only removed once every enabled destination holds a verified copy.
+
+Each release gets a folder `Release title_UPC` holding:
+
+- the masters, named by ISRC (`GBAYE2600001.wav`);
+- the artwork, named by UPC (`036000291452.png`).
+
+Files are byte-for-byte originals, in their original format, checked by size and checksum after
+upload. Files without a UPC or ISRC wait until the code is added. Renaming a release or changing a code
+renames the folder or file in each destination.
+
+Files removed from the server still play and download (streamed from a destination), but are no longer
+in server backups. While such files exist only in one destination, that destination cannot be removed.
 
 ## Backups, upgrades and system health
 

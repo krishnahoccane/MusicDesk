@@ -233,8 +233,8 @@ StatementService → statement page / CSV / XLSX
   release) share revenue equally, the last one absorbing the rounding remainder; the artist share comes
   from the contract in force on the sale date, otherwise `royalties.default_artist_share`; label amount =
   revenue − artist amount, so totals always reconcile to the cent.
-- **Queue**: imports run on the database queue (scheduler runs `queue:work --stop-when-empty` every
-  minute); "Process now" runs a queued import inline for hosts without cron.
+- **Queue**: imports run on the database queue, processed every minute by the automatic tasks (`queue:work --stop-when-empty`
+  after page loads — no cron job); "Process now" runs a queued import inline.
 - **Integrity**: locked periods refuse imports, reverts, matching and recalculation; ledger entries are
   append-only (reversals are opposite adjustments); payments lock the artist row and cannot exceed the
   balance.
@@ -287,10 +287,13 @@ ReportExportController ─► ReportExporter ─► OpenSpout CSV / XLSX streame
   call `ArtistAccess::ensureOwned()` so an artist account can only credit its own profiles.
 - Staff, console commands and queued jobs are never scoped (no artist-account user).
 
-## Bulk upload (Milestone 10)
+## Bulk upload (add-on `addons/bulk-upload`)
+
+Since Milestone 10 a module, now the add-on `bulk-upload` (code `bulk_upload`, namespace
+`LabelDesk\Addons\BulkUpload\`, see `docs/plugins.md`). Core has no bulk upload code.
 
 ```
-Livewire BulkUpload\Index ─► BulkUploadService (access, templates, log)
+Livewire\Index ─► Services\BulkUploadService (access, templates, log)
    ├─ BulkSheet (StatementReader: CSV/XLSX → rows keyed by template column; key or label headings)
    ├─ ArtistBulkImporter  (validate → ArtistService::create + links)
    └─ ReleaseBulkImporter (group rows into releases → ReleaseService::create + TrackService::save)
@@ -299,8 +302,14 @@ Livewire BulkUpload\Index ─► BulkUploadService (access, templates, log)
 - "Check file" analyses without writing; "Import" re-reads and re-validates the uploaded file on the
   server, so the browser's preview is never trusted. Each release is created in its own transaction.
 - Access: administrators always; staff with `catalog.bulk_upload` when `bulk_upload.staff` is on;
-  artist accounts (releases only, own artists) when `bulk_upload.artists` is on. Gate `bulk-upload`.
-- `bulk_uploads` keeps the history (counts and row problems).
+  artist accounts (releases only, own artists) when `bulk_upload.artists` is on (the Artist role's
+  permissions are fixed by core, so the switch is the control). Gate `bulk-upload`, defined by the
+  add-on's provider; the switches are the add-on's settings tab (Settings → Bulk upload).
+- The permission `catalog.bulk_upload` is registered by the add-on. Its first activation on an
+  installation gives it to Super Admin, Label Manager and Artist Manager unless a role already holds it
+  (upgrades from core), and records `bulk_upload.defaults_granted` so it never re-grants.
+- `bulk_uploads` keeps the history (counts and row problems). The core migration no longer creates it;
+  the add-on's migration creates it only when missing, so upgraded installations keep their history.
 
 ## Sales report import (Milestone 10)
 

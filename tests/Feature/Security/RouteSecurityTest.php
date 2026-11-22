@@ -18,7 +18,7 @@ class RouteSecurityTest extends TestCase
     use RefreshDatabase;
 
     /** Public by design: installer (locked after installation), auth screens, Livewire assets, health check. */
-    protected const PUBLIC_PREFIXES = ['install', 'login', 'forgot-password', 'reset-password', 'livewire/', 'up', 'branding/', '/'];
+    protected const PUBLIC_PREFIXES = ['install', 'login', 'forgot-password', 'reset-password', 'livewire/', 'up', 'branding/', 'suspended', '/'];
 
     protected function isPublic(Route $route): bool
     {
@@ -62,7 +62,7 @@ class RouteSecurityTest extends TestCase
         $viewer = $this->makeUser(SystemRole::Viewer);
 
         foreach (['/users', '/users/create', '/roles/create', '/settings', '/settings/appearance', '/settings/catalog', '/settings/mail',
-            '/backups', '/system', '/activity', '/royalties', '/reports/import', '/bulk-upload', '/artists/create', '/releases/create'] as $url) {
+            '/backups', '/system', '/activity', '/royalties', '/reports/import', '/artists/create', '/releases/create'] as $url) {
             $this->actingAs($viewer)->get($url)->assertForbidden();
         }
     }

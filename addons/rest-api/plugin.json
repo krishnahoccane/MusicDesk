@@ -1,0 +1,11 @@
+{
+    "slug": "rest-api",
+    "name": "REST API",
+    "version": "1.0.0",
+    "addon": "rest_api",
+    "description": "Versioned JSON API for artists, releases, tracks and contributors, with personal access tokens.",
+    "author": "MusicDesk",
+    "requires": "1.0.0",
+    "namespace": "LabelDesk\\Addons\\RestApi\\",
+    "provider": "LabelDesk\\Addons\\RestApi\\RestApiServiceProvider"
+}

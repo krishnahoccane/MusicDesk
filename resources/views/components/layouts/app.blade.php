@@ -26,13 +26,14 @@
         <div class="ld-backdrop" data-sidebar-close></div>
 
         <div class="ld-main">
+            @include('partials.license-ribbon', ['ribbonSnapshot' => $licenseSnapshot ?? null])
             @include('partials.topbar')
 
             <main id="main-content" class="ld-content" tabindex="-1">
                 @if (count($breadcrumbs))
                     <x-breadcrumbs :items="$breadcrumbs" class="mb-2" />
                 @endif
-                @if (isset($licenseSnapshot) && $licenseSnapshot->state !== \App\Enums\LicenseState::Active)
+                @if (isset($licenseSnapshot) && ! in_array($licenseSnapshot->state, [\App\Enums\LicenseState::Active, \App\Enums\LicenseState::Expired], true))
                     <x-alert :variant="$licenseSnapshot->state->variant()" class="mb-4" :title="$licenseSnapshot->state->label()">
                         {{ $licenseSnapshot->reason }}
                         @can('license.view')

@@ -33,6 +33,25 @@ class LicenseException extends RuntimeException
         return new self('invalid_response', __('The licensing service returned an unexpected response. Please try again later.'), true);
     }
 
+    /**
+     * A firewall / CDN in front of musicdesk.tech answered instead of the license server.
+     */
+    public static function blockedByFirewall(int $status, ?string $ray): self
+    {
+        return new self('blocked_by_firewall', trim(__('The MusicDesk.tech firewall (Cloudflare) blocked the license request from this server (HTTP :status). This can happen with some hosting providers. Contact MusicDesk support with the reference below and this server\'s IP address, or use offline activation.', ['status' => $status])
+            .($ray ? ' '.__('Reference: Cloudflare Ray ID :ray.', ['ray' => $ray]) : '')), true);
+    }
+
+    public static function wrongEndpoint(string $url): self
+    {
+        return new self('wrong_endpoint', __('The license server at :url answered "not found". Something between this server and MusicDesk.tech may be redirecting the request; contact MusicDesk support.', ['url' => $url]), true);
+    }
+
+    public static function unexpectedResponse(int $status): self
+    {
+        return new self('unexpected_response', __('The license server could not be reached properly: it answered with HTTP :status instead of a license response. A proxy or firewall on this server or on the way to MusicDesk.tech may be interfering. Try again, or use offline activation.', ['status' => $status]), true);
+    }
+
     public static function invalidSignature(): self
     {
         return new self('invalid_signature', __('The license token could not be verified. It was refused.'));
