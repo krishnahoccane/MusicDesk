@@ -1,0 +1,39 @@
+# ---------------------------------------------------------------------------
+# LabelDesk — safety net for hosts where the whole application folder is
+# web-accessible (for example extracted into public_html without pointing
+# the document root at "public").
+#
+# Recommended: set the domain's document root to the "public" folder; this
+# file is then never used. If that is not possible, this file:
+#   1. refuses .env, the source code, storage, vendor and other private files;
+#   2. sends every other request to public/ so LabelDesk works normally.
+# ---------------------------------------------------------------------------
+
+Options -Indexes
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Hidden files (.env, .git, .htaccess …)
+    RewriteRule (^|/)\. - [F,L]
+
+    # Private application folders and files
+    RewriteRule ^(app|bootstrap|config|database|lang|node_modules|resources|routes|scripts|storage|tests|vendor)(/|$) - [F,L,NC]
+    RewriteRule ^(artisan|composer\.(json|lock)|package(-lock)?\.json|phpunit\.xml|vite\.config\.js|[^/]+\.md)$ - [F,L,NC]
+
+    # Static files from public/ (built assets, favicon, robots.txt)
+    RewriteRule ^(build/.+|favicon\.(ico|svg)|robots\.txt)$ public/$1 [L,NC]
+
+    # Everything else goes to LabelDesk (index.php next to this file)
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^ index.php [L]
+</IfModule>
+
+<IfModule !mod_rewrite.c>
+    # Without mod_rewrite, refuse everything rather than expose private files.
+    Require all denied
+</IfModule>
+
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>

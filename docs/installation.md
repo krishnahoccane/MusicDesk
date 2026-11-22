@@ -17,21 +17,52 @@ The installer's *Requirements* step checks all of the above and tells you exactl
 
 ## 2. cPanel / shared hosting
 
-1. In **cPanel → MySQL Databases**, create a database and a user, and add the user to the database with **All Privileges**.
-2. In **cPanel → Select PHP Version**, choose PHP 8.3 and enable the extensions listed above.
-3. Upload the LabelDesk ZIP with **File Manager** and extract it, e.g. to `/home/USER/labeldesk`.
-4. Point your domain or subdomain's **document root** to `/home/USER/labeldesk/public`
-   (cPanel → Domains → Manage). Only the `public` folder should be reachable from the web.
-5. Enable SSL (cPanel → SSL/TLS Status → Run AutoSSL) so the site opens on `https://`.
-6. Open `https://your-domain/` — the installation wizard starts automatically.
-7. After installation add a **cron job** (cPanel → Cron Jobs, *Once per minute*):
-   ```
-   php /home/USER/labeldesk/artisan schedule:run >> /dev/null 2>&1
-   ```
-   This runs the daily license heartbeat, queued jobs and (later) contract reminders and backups.
+Use the **release ZIP** (`labeldesk-<version>.zip` from your MusicDesk.tech account). It already contains
+`vendor/` (PHP libraries) and `public/build/` (compiled styles and scripts), so no Composer, Node or SSH
+is needed. The source code on its own does not run: you would see "The upload is incomplete" (or, with
+older versions, `Failed opening required …/vendor/autoload.php`).
 
-> If your host cannot change the document root, ask them to do it. Do not install LabelDesk
-> with the whole application folder inside `public_html`.
+**Before uploading:** in cPanel → MySQL Databases, create a database and a user, and add the user to
+the database with **All Privileges**. In cPanel → Select PHP Version, choose PHP 8.2 or newer (8.3
+recommended) and enable the extensions listed above.
+
+**Option A — recommended: point the document root at `public`**
+
+1. In cPanel → File Manager, upload the ZIP to your home folder (for example `/home/USER/labeldesk/`)
+   and choose **Extract**.
+2. In cPanel → Domains, set the domain's or subdomain's **document root** to
+   `/home/USER/labeldesk/public`.
+3. Enable SSL (cPanel → SSL/TLS Status → Run AutoSSL) so the site opens on `https://`.
+4. Open the domain in a browser. The installation wizard starts.
+
+**Option B — the files are already in `public_html` (document root cannot be changed)**
+
+Extract the ZIP so that `public_html` contains `app/`, `public/`, `vendor/`, `.htaccess`, `index.php` and
+the other files directly. Do not leave them in a sub-folder like `public_html/labeldesk-1.0.0/`. The
+included `.htaccess` then:
+
+- refuses `.env`, the source code, `storage/`, `vendor/` and every other private file (HTTP 403);
+- serves the built assets from `public/`;
+- sends everything else to LabelDesk.
+
+It needs Apache or LiteSpeed with `mod_rewrite` (standard on cPanel). Hidden files must be uploaded:
+in File Manager → Settings, tick **Show Hidden Files (dotfiles)** to check that `.htaccess` is there.
+Option A is still preferred because private files are then outside the web folder entirely.
+
+**After installation** add a cron job (cPanel → Cron Jobs, *Once per minute*), using the folder that
+contains `artisan` (for Option B that is `public_html`):
+
+```
+php /home/USER/labeldesk/artisan schedule:run >> /dev/null 2>&1
+```
+
+It runs the daily license check, queued jobs, the nightly backup and clean-up.
+
+**Checks after uploading** (either option):
+
+- Opening `https://your-domain/.env` must show **403 Forbidden**, never the file.
+- If the page says "The upload is incomplete", `vendor/` or `public/build/` was not uploaded or
+  extracted. Upload the release ZIP again (not the source code).
 
 ## 3. VPS (Ubuntu/Debian, Nginx)
 

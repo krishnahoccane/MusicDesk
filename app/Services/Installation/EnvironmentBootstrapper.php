@@ -19,7 +19,13 @@ final class EnvironmentBootstrapper
         $env = $basePath.DIRECTORY_SEPARATOR.'.env';
         $template = $basePath.DIRECTORY_SEPARATOR.'.env.example';
 
-        if (is_file($env) || ! is_file($template)) {
+        if (is_file($env)) {
+            self::ensureKey($basePath, $env);
+
+            return;
+        }
+
+        if (! is_file($template)) {
             return;
         }
 
@@ -38,6 +44,36 @@ final class EnvironmentBootstrapper
         }
 
         @chmod($env, 0640);
+    }
+
+    /**
+     * A .env copied by hand from .env.example has an empty APP_KEY. Before
+     * installation only, add one. An installed site is never given a new key:
+     * that would make its encrypted data (license key, SMTP password) unreadable.
+     */
+    private static function ensureKey(string $basePath, string $env): void
+    {
+        $contents = (string) @file_get_contents($env);
+        if (preg_match('/^APP_KEY=[ \t]*[^\s#]/m', $contents)) { // a value on the same line
+            return;
+        }
+
+        $installed = is_file($basePath.DIRECTORY_SEPARATOR.'storage'.DIRECTORY_SEPARATOR.'app'.DIRECTORY_SEPARATOR.'private'.DIRECTORY_SEPARATOR.'installed.lock')
+            || (getenv('LABELDESK_INSTALL_LOCK') && is_file((string) getenv('LABELDESK_INSTALL_LOCK')));
+        if ($installed) {
+            return;
+        }
+
+        if (! is_writable($env)) {
+            self::fail('The .env file has no APP_KEY and is not writable. Delete .env (LabelDesk recreates it) or make it writable, then reload this page.');
+        }
+
+        $key = 'base64:'.base64_encode(random_bytes(32));
+        $contents = preg_match('/^APP_KEY=.*$/m', $contents)
+            ? preg_replace('/^APP_KEY=.*$/m', 'APP_KEY='.$key, $contents, 1)
+            : rtrim($contents).PHP_EOL.'APP_KEY='.$key.PHP_EOL;
+
+        file_put_contents($env, $contents, LOCK_EX);
     }
 
     private static function fail(string $message): never

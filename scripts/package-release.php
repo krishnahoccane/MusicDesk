@@ -85,7 +85,7 @@ foreach (['app', 'bootstrap', 'config', 'database', 'lang', 'public', 'resources
         copyTree($root.'/'.$dir, $stage.'/'.$dir, ['hot', 'storage']);
     }
 }
-foreach (['artisan', 'composer.json', 'composer.lock', '.env.example', 'README.md', 'CHANGELOG.md', 'LICENSE_API_SPEC.md'] as $file) {
+foreach (['artisan', 'composer.json', 'composer.lock', '.env.example', '.htaccess', 'index.php', 'README.md', 'CHANGELOG.md', 'LICENSE_API_SPEC.md'] as $file) {
     if (is_file($root.'/'.$file)) {
         copy($root.'/'.$file, $stage.'/'.$file);
     }
