@@ -84,7 +84,7 @@ class Imports extends Component
         }
     }
 
-    public function upload(RoyaltyImportService $imports): void
+    public function importFile(RoyaltyImportService $imports): void
     {
         $this->ensureImport();
 

@@ -265,7 +265,7 @@ class PluginSystemTest extends TestCase
 
         $file = UploadedFile::fake()->createWithContent('hello-addon-1.0.0.zip', file_get_contents($this->package()));
         Livewire::actingAs($this->admin)->test(Index::class)
-            ->set('package', $file)->call('upload')->assertHasNoErrors()->assertDispatched('toast', type: 'success')
+            ->set('package', $file)->call('install')->assertHasNoErrors()->assertDispatched('toast', type: 'success')
             ->assertSee('Hello add-on');
 
         $plugin = Plugin::query()->sole();
@@ -279,6 +279,6 @@ class PluginSystemTest extends TestCase
         $this->assertFalse($plugin->fresh()->active);
 
         $bad = UploadedFile::fake()->createWithContent('bad.zip', 'not a zip');
-        Livewire::actingAs($this->admin)->test(Index::class)->set('package', $bad)->call('upload')->assertHasErrors('package');
+        Livewire::actingAs($this->admin)->test(Index::class)->set('package', $bad)->call('install')->assertHasErrors('package');
     }
 }

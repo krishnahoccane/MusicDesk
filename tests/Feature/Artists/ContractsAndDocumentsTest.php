@@ -144,7 +144,7 @@ class ContractsAndDocumentsTest extends TestCase
             ->assertSet('title', 'signed contract')
             ->set('category', 'contract')
             ->set('contract_id', (string) $contract->id)
-            ->call('upload')
+            ->call('storeDocument')
             ->assertHasNoErrors();
 
         $document = ArtistDocument::query()->firstOrFail();
@@ -180,7 +180,7 @@ class ContractsAndDocumentsTest extends TestCase
         Livewire::actingAs($this->admin)->test(Documents::class, ['artist' => $this->artist])
             ->set('file', new File('W-9 form.docx', fopen($path, 'r')))
             ->set('category', 'tax')
-            ->call('upload')
+            ->call('storeDocument')
             ->assertHasNoErrors();
 
         $this->assertSame('W-9 form.docx', ArtistDocument::query()->value('original_name'));
@@ -199,7 +199,7 @@ class ContractsAndDocumentsTest extends TestCase
         Livewire::actingAs($this->admin)->test(Documents::class, ['artist' => $this->artist])
             ->set('file', $spoofed)
             ->set('title', 'Invoice')
-            ->call('upload')
+            ->call('storeDocument')
             ->assertHasErrors('file');
 
         $this->assertSame(0, ArtistDocument::query()->count());

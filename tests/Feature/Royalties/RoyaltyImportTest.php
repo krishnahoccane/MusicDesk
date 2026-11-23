@@ -87,7 +87,7 @@ class RoyaltyImportTest extends TestCase
             ->set('source_name', 'Distributor')
             ->set('currency', $currency)
             ->set('exchange_rate', $rate)
-            ->call('upload')
+            ->call('importFile')
             ->assertHasNoErrors();
 
         $component->set('decimal_separator', $separator)->call('confirmMapping')->assertHasNoErrors();
@@ -184,7 +184,7 @@ class RoyaltyImportTest extends TestCase
             ->call('startUpload')
             ->set('file', $this->upload('copy.csv', $bytes))
             ->set('source_name', 'Again')
-            ->call('upload')
+            ->call('importFile')
             ->assertHasErrors('file');
         $this->assertSame(1, RoyaltyImport::query()->count());
     }
@@ -195,7 +195,7 @@ class RoyaltyImportTest extends TestCase
             ->call('startUpload')
             ->set('file', $this->upload('x.csv', $this->csv([['Title', 'Money'], ['Glass', '1']])))
             ->set('source_name', 'X')
-            ->call('upload');
+            ->call('importFile');
 
         $component->set('map.amount', '1')->call('confirmMapping')->assertHasErrors('map');
         $this->assertSame('uploaded', RoyaltyImport::query()->sole()->status->value);

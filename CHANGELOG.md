@@ -33,6 +33,9 @@ All notable changes to LabelDesk are documented here. The format follows
 
 ### Fixed
 - The account menu (top right) opened behind the page content.
+- Installing an add-on did nothing: after choosing the .zip and clicking Install the button stayed
+  greyed out (browser error "Cannot read properties of undefined (reading 'name')"). The same fault
+  stopped uploads of artist documents and royalty statements.
 - On Settings → License, the Deactivate dialog could not be used: the dark backdrop covered it and
   blocked typing the password.
 - Messages meant for the sign-in page (for example "The license is active again. You can sign in.")

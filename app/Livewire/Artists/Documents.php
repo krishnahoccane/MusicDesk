@@ -62,7 +62,7 @@ class Documents extends Component
         ];
     }
 
-    public function upload(DocumentService $documents): void
+    public function storeDocument(DocumentService $documents): void
     {
         $this->ensureLicenseAllowsWrites();
         $this->ensureFeature('documents');

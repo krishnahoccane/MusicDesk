@@ -1,6 +1,6 @@
 <div @if ($busy) wire:poll.5s @endif>
     @if ($uploading)
-        <form wire:submit="upload" class="card mb-3" novalidate>
+        <form wire:submit="importFile" class="card mb-3" novalidate>
             <div class="card-header">
                 <x-icon name="upload" size="18" class="text-muted" />
                 <h2 class="card-title">{{ __('Upload a sales statement') }}</h2>
@@ -49,7 +49,7 @@
             </div>
             <div class="card-body border-top d-flex justify-content-end gap-2">
                 <button type="button" class="btn btn-light" wire:click="$set('uploading', false)">{{ __('Cancel') }}</button>
-                <button type="submit" class="btn btn-primary" wire:loading.attr="disabled" wire:target="upload,file">{{ __('Upload and map columns') }}</button>
+                <button type="submit" class="btn btn-primary" wire:loading.attr="disabled" wire:target="importFile,file">{{ __('Upload and map columns') }}</button>
             </div>
         </form>
     @endif

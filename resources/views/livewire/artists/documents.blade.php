@@ -1,6 +1,6 @@
 <div>
     @if ($canManage)
-        <form wire:submit="upload" class="card mb-3" novalidate>
+        <form wire:submit="storeDocument" class="card mb-3" novalidate>
             <div class="card-header">
                 <x-icon name="upload" size="18" class="text-muted" />
                 <h2 class="card-title">{{ __('Upload a document') }}</h2>
@@ -42,8 +42,8 @@
                 </div>
             </div>
             <div class="card-body border-top d-flex justify-content-end">
-                <button type="submit" class="btn btn-primary" wire:loading.attr="disabled" wire:target="upload,file">
-                    <span wire:loading wire:target="upload" class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                <button type="submit" class="btn btn-primary" wire:loading.attr="disabled" wire:target="storeDocument,file">
+                    <span wire:loading wire:target="storeDocument" class="spinner-border spinner-border-sm" aria-hidden="true"></span>
                     <x-icon name="upload" size="16" /> {{ __('Upload') }}
                 </button>
             </div>

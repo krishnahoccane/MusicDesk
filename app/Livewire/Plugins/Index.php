@@ -38,7 +38,7 @@ class Index extends Component
         return app(PluginManager::class);
     }
 
-    public function upload(): void
+    public function install(): void
     {
         $this->guard();
         $this->validate(['package' => ['required', 'file', 'max:204800', 'mimetypes:application/zip,application/x-zip-compressed,application/octet-stream']], [], ['package' => __('add-on file')]);
