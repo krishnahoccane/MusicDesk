@@ -142,7 +142,12 @@ class LicenseStatusController extends Controller
         return OfflineRequestFile::download(ActivationContext::for((string) config('app.url'), (string) $this->installation->installationId()));
     }
 
-    public function deactivate(Request $request): RedirectResponse
+    /**
+     * Deactivate, step 1: confirm the password; MusicDesk.tech then emails a
+     * one-time code to the license owner. Offline activations have no server
+     * to ask, so they are deactivated here after the password.
+     */
+    public function deactivateRequest(Request $request): RedirectResponse
     {
         $request->validate(['password' => ['required', 'string']]);
 
@@ -153,15 +158,66 @@ class LicenseStatusController extends Controller
         $activation = $this->validation->activation();
         abort_unless($activation, 404);
 
-        try {
+        if ($activation->offline) {
             $this->activations->deactivate($activation, $this->validation->contextFor($activation), $request->user(), $request->ip());
-        } catch (LicenseException $e) {
-            return back()->with('error', $e->getMessage());
+            $this->validation->forget();
+
+            return back()->with('success', __('This installation has been deactivated. LabelDesk is now read-only until a license is activated.'));
         }
 
+        try {
+            $sent = $this->activations->requestDeactivationCode($activation, $this->validation->contextFor($activation), $request->user(), $request->ip());
+        } catch (LicenseException $e) {
+            throw ValidationException::withMessages(['password' => $e->getMessage()]);
+        }
+
+        $request->session()->put('license_deactivate', [
+            'activation' => $activation->id,
+            'user' => $request->user()->id,
+            'sent_to' => $sent['sent_to'],
+            'until' => now()->addSeconds($sent['expires_in'])->timestamp,
+        ]);
+
+        return back()->with('deactivate_code_sent', __('A code was sent to :email (the email the license is registered to). It is valid for :minutes minutes.', [
+            'email' => $sent['sent_to'], 'minutes' => (int) ceil($sent['expires_in'] / 60),
+        ]));
+    }
+
+    /**
+     * Deactivate, step 2: the code from the license owner's email.
+     */
+    public function deactivate(Request $request): RedirectResponse
+    {
+        $pending = $request->session()->get('license_deactivate');
+        $activation = $this->validation->activation();
+        abort_unless($activation, 404);
+
+        if (! is_array($pending) || ($pending['activation'] ?? null) !== $activation->id || ($pending['user'] ?? null) !== $request->user()->id || ($pending['until'] ?? 0) < now()->timestamp) {
+            $request->session()->forget('license_deactivate');
+
+            return back()->with('error', __('The code request expired. Click "Deactivate…" and confirm your password again.'));
+        }
+
+        $request->merge(['code' => preg_replace('/\s+/', '', (string) $request->input('code'))]);
+        $request->validate(['code' => ['required', 'string', 'regex:/^[0-9A-Za-z]{4,12}$/']], [], ['code' => __('code')]);
+
+        try {
+            $this->activations->deactivate($activation, $this->validation->contextFor($activation), $request->user(), $request->ip(), (string) $request->input('code'));
+        } catch (LicenseException $e) {
+            throw ValidationException::withMessages(['code' => $e->getMessage()]);
+        }
+
+        $request->session()->forget('license_deactivate');
         $this->validation->forget();
 
         return back()->with('success', __('This installation has been deactivated and its activation slot released. LabelDesk is now read-only until a license is activated.'));
+    }
+
+    public function cancelDeactivate(Request $request): RedirectResponse
+    {
+        $request->session()->forget('license_deactivate');
+
+        return back();
     }
 
     public function transfer(Request $request): RedirectResponse

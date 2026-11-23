@@ -214,32 +214,60 @@
 
     @if ($activation)
         @can('license.manage')
-            <div class="modal fade" id="deactivate-modal" tabindex="-1" aria-labelledby="deactivate-title" aria-hidden="true">
-                <div class="modal-dialog modal-dialog-centered">
-                    <form method="POST" action="{{ route('license.deactivate') }}" class="modal-content">
-                        @csrf
-                        <div class="modal-header">
-                            <h2 class="modal-title h5" id="deactivate-title">{{ __('Deactivate this installation?') }}</h2>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ __('Close') }}"></button>
-                        </div>
-                        <div class="modal-body">
-                            <p>{{ __('LabelDesk will become read-only on this server until a license is activated again. Your data is kept.') }}</p>
-                            <label class="form-label" for="deactivate-password">{{ __('Confirm your password') }}</label>
-                            <input id="deactivate-password" type="password" name="password" class="form-control @error('password') is-invalid @enderror" required autocomplete="current-password">
-                            @error('password') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">{{ __('Cancel') }}</button>
-                            <button type="submit" class="btn btn-danger">{{ __('Deactivate') }}</button>
-                        </div>
-                    </form>
+            @push('modals')
+                @php($pendingCode = session('license_deactivate'))
+                @php($codeStep = is_array($pendingCode) && ($pendingCode['until'] ?? 0) >= now()->timestamp && ($pendingCode['activation'] ?? null) === $activation->id)
+                <div class="modal fade" id="deactivate-modal" tabindex="-1" aria-labelledby="deactivate-title" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        @if (! $codeStep)
+                            <form method="POST" action="{{ route('license.deactivate.request') }}" class="modal-content">
+                                @csrf
+                                <div class="modal-header">
+                                    <h2 class="modal-title h5" id="deactivate-title">{{ __('Deactivate this installation?') }}</h2>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ __('Close') }}"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <p>{{ __('LabelDesk will become read-only on this server until a license is activated again. Your data is kept.') }}</p>
+                                    @unless ($activation->offline)
+                                        <p class="small text-muted">{{ __('After your password, MusicDesk.tech emails a one-time code to the email the license is registered to. Enter that code to finish.') }}</p>
+                                    @endunless
+                                    <label class="form-label" for="deactivate-password">{{ __('Confirm your password') }}</label>
+                                    <input id="deactivate-password" type="password" name="password" class="form-control @error('password') is-invalid @enderror" required autocomplete="current-password" autofocus>
+                                    @error('password') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">{{ __('Cancel') }}</button>
+                                    <button type="submit" class="btn btn-danger">{{ $activation->offline ? __('Deactivate') : __('Send code') }}</button>
+                                </div>
+                            </form>
+                        @else
+                            <form method="POST" action="{{ route('license.deactivate') }}" class="modal-content">
+                                @csrf
+                                <div class="modal-header">
+                                    <h2 class="modal-title h5" id="deactivate-title">{{ __('Enter the code') }}</h2>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ __('Close') }}"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <p class="small">{{ session('deactivate_code_sent') ?: __('A code was sent to :email.', ['email' => $pendingCode['sent_to'] ?? '']) }}</p>
+                                    <label class="form-label" for="deactivate-code">{{ __('Code from the email') }}</label>
+                                    <input id="deactivate-code" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="12" class="form-control form-control-lg font-mono text-center @error('code') is-invalid @enderror" required autofocus>
+                                    @error('code') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="submit" form="deactivate-cancel" class="btn btn-light me-auto">{{ __('Start over') }}</button>
+                                    <button type="submit" class="btn btn-danger">{{ __('Deactivate') }}</button>
+                                </div>
+                            </form>
+                            <form id="deactivate-cancel" method="POST" action="{{ route('license.deactivate.cancel') }}" class="d-none">@csrf</form>
+                        @endif
+                    </div>
                 </div>
-            </div>
-            @if ($errors->has('password'))
-                <script>
-                    document.addEventListener('DOMContentLoaded', () => window.bootstrap?.Modal.getOrCreateInstance(document.getElementById('deactivate-modal')).show());
-                </script>
-            @endif
+                @if ($errors->has('password') || $errors->has('code') || session('deactivate_code_sent'))
+                    <script>
+                        document.addEventListener('DOMContentLoaded', () => window.bootstrap?.Modal.getOrCreateInstance(document.getElementById('deactivate-modal')).show());
+                    </script>
+                @endif
+            @endpush
         @endcan
     @endif
 </x-layouts.app>

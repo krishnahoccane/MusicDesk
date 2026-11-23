@@ -94,6 +94,7 @@ class CustomizeController extends InstallerController
             'sidebar' => $data['sidebar'],
             'login_layout' => $data['login_layout'],
             'login' => $login,
+            'registration' => $request->boolean('registration'),
             'files' => $files,
             'date_format' => $data['date_format'],
         ]);
@@ -182,6 +183,7 @@ class CustomizeController extends InstallerController
             'sidebar' => $c['sidebar'] ?? 'light',
             'login_layout' => $c['login_layout'] ?? 'spotlight',
             'login' => ($c['login'] ?? []) + Appearance::loginTextDefaults(),
+            'registration' => (bool) ($c['registration'] ?? false),
         ];
     }
 

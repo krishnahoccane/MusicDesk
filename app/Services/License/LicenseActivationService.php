@@ -132,7 +132,7 @@ class LicenseActivationService
         if ($current && $currentContext) {
             $token = $this->currentToken($current);
             if ($token !== null && ! $current->offline) {
-                rescue(fn () => $this->manager->provider($current->provider)->deactivate($currentContext, $token), report: false);
+                rescue(fn () => $this->manager->provider($current->provider)->deactivate($currentContext, $token, null, 'key_change'), report: false);
             }
             $this->log($current, 'key_changed', 'success', null, __('Replaced by a key ending :last4.', ['last4' => substr($newKey, -4)]), $user, $ip);
         }
@@ -157,13 +157,33 @@ class LicenseActivationService
      *
      * @throws LicenseException
      */
-    public function deactivate(LicenseActivation $activation, ActivationContext $context, ?User $user = null, ?string $ip = null): void
+    /**
+     * Ask MusicDesk.tech to email the license owner a code for a manual deactivation.
+     *
+     * @return array{sent_to: string, expires_in: int}
+     *
+     * @throws LicenseException
+     */
+    public function requestDeactivationCode(LicenseActivation $activation, ActivationContext $context, ?User $user = null, ?string $ip = null): array
+    {
+        $token = $this->currentToken($activation);
+        if ($token === null) {
+            throw LicenseException::fromApi('activation_not_found', null);
+        }
+
+        $sent = $this->manager->provider($activation->provider)->requestDeactivationCode($context, $token);
+        $this->log($activation, 'deactivation_code', 'success', null, __('Code sent to :email.', ['email' => $sent['sent_to']]), $user, $ip);
+
+        return $sent;
+    }
+
+    public function deactivate(LicenseActivation $activation, ActivationContext $context, ?User $user = null, ?string $ip = null, ?string $code = null): void
     {
         $token = $this->currentToken($activation);
 
         if ($token !== null && ! $activation->offline) {
             try {
-                $this->manager->provider($activation->provider)->deactivate($context, $token);
+                $this->manager->provider($activation->provider)->deactivate($context, $token, $code, 'manual');
             } catch (LicenseException $e) {
                 // Already gone on the server: deactivating locally is the right outcome.
                 if (! in_array($e->errorCode, ['activation_not_found', 'activation_deactivated'], true)) {
@@ -201,7 +221,7 @@ class LicenseActivationService
 
         if ($token !== null) {
             try {
-                $provider->deactivate($oldContext, $token);
+                $provider->deactivate($oldContext, $token, null, 'transfer');
             } catch (LicenseException $e) {
                 if (! in_array($e->errorCode, ['activation_not_found', 'activation_deactivated'], true)) {
                     $this->log($activation, 'transferred', 'failure', $e->errorCode, $e->getMessage(), $user, $ip);

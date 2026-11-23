@@ -7,6 +7,7 @@ use App\Enums\ReleaseType;
 use App\Livewire\Concerns\EnforcesLicense;
 use App\Livewire\Concerns\ManagesArtistCredits;
 use App\Models\Genre;
+use App\Models\Label;
 use App\Models\Language;
 use App\Models\Release;
 use App\Services\Catalog\ReleaseService;
@@ -50,6 +51,8 @@ class Form extends Component
 
     public string $label_name = '';
 
+    public string $label_id = '';
+
     public string $c_line = '';
 
     public string $p_line = '';
@@ -79,6 +82,7 @@ class Form extends Component
                 'upc' => (string) $release->upc,
                 'catalog_number' => (string) $release->catalog_number,
                 'label_name' => (string) $release->label_name,
+                'label_id' => (string) $release->label_id,
                 'c_line' => (string) $release->c_line,
                 'p_line' => (string) $release->p_line,
                 'notes' => (string) $release->notes,
@@ -120,6 +124,7 @@ class Form extends Component
             }],
             'catalog_number' => ['nullable', 'string', 'max:50', Rule::unique('releases', 'catalog_number')->ignore($ignore)],
             'label_name' => ['nullable', 'string', 'max:150'],
+            'label_id' => ['nullable', Rule::exists('labels', 'id')->whereNull('deleted_at')->where(fn ($q) => $q->where('is_active', true)->when($this->release?->label_id, fn ($q2) => $q2->orWhere('id', $this->release->label_id)))],
             'c_line' => ['nullable', 'string', 'max:200'],
             'p_line' => ['nullable', 'string', 'max:200'],
             'notes' => ['nullable', 'string', 'max:5000'],
@@ -158,6 +163,11 @@ class Form extends Component
 
         $data = $this->validate();
         $data['upc'] = Identifiers::normalizeUpc($this->upc);
+        // The label name sent to stores follows the chosen sub-label.
+        $data['label_id'] = $this->label_id !== '' ? (int) $this->label_id : null;
+        if ($data['label_id']) {
+            $data['label_name'] = (string) Label::query()->whereKey($data['label_id'])->value('name');
+        }
 
         $duplicate = $data['upc'] !== null && Release::withTrashed()->withoutGlobalScope('artist-account')->where('upc', $data['upc'])
             ->when($this->release, fn ($q) => $q->whereKeyNot($this->release->id))->exists();

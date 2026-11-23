@@ -4,6 +4,7 @@ namespace App\Services\Backup;
 
 use App\Models\User;
 use App\Services\Activity\ActivityLogger;
+use App\Services\License\LicenseValidationService;
 use App\Services\SettingsService;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\File;
@@ -47,8 +48,40 @@ class BackupService
     /**
      * @return array{name: string, size: int, tables: int, rows: int, files: int}
      */
+    /**
+     * New backups are paused from 30 days before the license expires (and while
+     * it is expired or suspended) until it is renewed. Existing backups stay
+     * downloadable. Returns why, or null when backups may run.
+     */
+    public function pausedReason(): ?string
+    {
+        try {
+            $snapshot = app(LicenseValidationService::class)->snapshot();
+        } catch (Throwable) {
+            return null;
+        }
+        $format = fn ($d) => $d->setTimezone((string) config('labeldesk.display_timezone', 'UTC'))->format((string) config('labeldesk.date_format', 'd M Y'));
+
+        if ($snapshot->expiredAt !== null) {
+            return __('Backups are paused because the license expired on :date. Renew the license at MusicDesk.tech to resume them. Existing backups can still be downloaded.', ['date' => $format($snapshot->expiredAt)]);
+        }
+        if ($snapshot->isExpiring()) {
+            $on = $snapshot->expiringOn();
+
+            return $on
+                ? __('Backups are paused because the license expires on :date (within 30 days). Renew the license at MusicDesk.tech to resume them. Existing backups can still be downloaded.', ['date' => $format($on)])
+                : __('Backups are paused because the license expires within 30 days. Renew the license at MusicDesk.tech to resume them. Existing backups can still be downloaded.');
+        }
+
+        return null;
+    }
+
     public function create(bool $includeFiles = true, ?User $user = null, string $trigger = 'manual'): array
     {
+        if ($paused = $this->pausedReason()) {
+            throw new RuntimeException($paused);
+        }
+
         if (! class_exists(ZipArchive::class)) {
             throw new RuntimeException(__('The PHP zip extension is required to create backups.'));
         }

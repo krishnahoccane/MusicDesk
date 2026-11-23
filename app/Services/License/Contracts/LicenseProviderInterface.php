@@ -29,6 +29,18 @@ interface LicenseProviderInterface
     /** Daily check-in with the current (possibly expired) token; returns a fresh token. */
     public function checkIn(ActivationContext $context, string $token): LicenseResult;
 
-    /** Release this domain from the license. */
-    public function deactivate(ActivationContext $context, string $token): void;
+    /**
+     * Ask the license server to email a one-time code to the license owner
+     * (the email that bought / holds the license on MusicDesk.tech).
+     *
+     * @return array{sent_to: string, expires_in: int}
+     */
+    public function requestDeactivationCode(ActivationContext $context, string $token): array;
+
+    /**
+     * Release this domain from the license. A manual deactivation needs the
+     * emailed code; transfers and key changes ($reason "transfer" / "key_change")
+     * are followed straight away by an activation from the same installation.
+     */
+    public function deactivate(ActivationContext $context, string $token, ?string $code = null, string $reason = 'manual'): void;
 }

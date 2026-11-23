@@ -280,6 +280,7 @@ class InstallationService
             'appearance.brand_color' => ! empty($c['custom_colors']) ? $c['brand_color'] : null,
             'appearance.brand_color_2' => ! empty($c['custom_colors']) ? $c['brand_color_2'] : null,
             'general.date_format' => $c['date_format'] ?? 'd M Y',
+            'auth.registration' => ! empty($c['registration']),
         ];
         $defaults = Appearance::loginTextDefaults();
         foreach (($c['login'] ?? []) as $key => $value) {

@@ -98,10 +98,25 @@
                                        @class(['form-control', 'is-invalid' => $errors->has('catalog_number')])>
                                 @error('catalog_number') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
-                            <div class="col-md-4">
-                                <label for="label_name" class="form-label">{{ __('Label') }}</label>
-                                <input id="label_name" type="text" wire:model="label_name" maxlength="150" class="form-control">
-                            </div>
+                            @php($labelOptions = ! auth()->user()->can('labels.view') ? collect() : \App\Models\Label::query()->where(fn ($q) => $q->where('is_active', true)->when($label_id !== '', fn ($q2) => $q2->orWhere('id', (int) $label_id)))->with('parent')->orderBy('name')->get())
+                            @if ($labelOptions->isNotEmpty())
+                                <div class="col-md-4">
+                                    <label for="label_id" class="form-label">{{ __('Label') }}</label>
+                                    <select id="label_id" wire:model.live="label_id" @class(['form-select', 'is-invalid' => $errors->has('label_id')])>
+                                        <option value="">{{ \App\Support\CatalogDefaults::labelName() ?: __('Main label') }} ({{ __('main label') }})</option>
+                                        @foreach ($labelOptions as $option)
+                                            <option value="{{ $option->id }}">{{ $option->path() }}</option>
+                                        @endforeach
+                                    </select>
+                                    @error('label_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                                </div>
+                            @endif
+                            @if ($label_id === '')
+                                <div class="col-md-4">
+                                    <label for="label_name" class="form-label">{{ $labelOptions->isNotEmpty() ? __('Label name (as delivered)') : __('Label') }}</label>
+                                    <input id="label_name" type="text" wire:model="label_name" maxlength="150" class="form-control">
+                                </div>
+                            @endif
                             <div class="col-md-4">
                                 <label for="c_line" class="form-label">{{ __('© line') }}</label>
                                 <div class="input-group">

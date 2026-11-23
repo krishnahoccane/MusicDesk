@@ -9,13 +9,16 @@
                     <h2 class="card-title">{{ __('Create a backup') }}</h2>
                 </div>
                 <div class="card-body">
+                    @if ($paused)
+                        <x-alert variant="warning" class="mb-3">{{ $paused }}</x-alert>
+                    @endif
                     <p class="small text-muted mb-3">{{ __('A backup contains every database table plus master audio, artwork, documents and statement files. Server passwords and the application key (.env) are never included, so keep a separate copy of your .env file somewhere safe.') }}</p>
                     <div class="d-flex flex-wrap align-items-center gap-3">
                         <div class="form-check form-switch mb-0">
                             <input class="form-check-input" type="checkbox" role="switch" id="include-files" wire:model="includeFiles">
                             <label class="form-check-label" for="include-files">{{ __('Include uploaded files') }}</label>
                         </div>
-                        <button type="button" class="btn btn-primary ms-auto" wire:click="create" wire:loading.attr="disabled" wire:target="create">
+                        <button type="button" class="btn btn-primary ms-auto" wire:click="create" wire:loading.attr="disabled" wire:target="create" @disabled($paused)>
                             <span wire:loading wire:target="create" class="spinner-border spinner-border-sm" aria-hidden="true"></span>
                             <span wire:loading.remove wire:target="create"><x-icon name="database-backup" size="16" /></span>
                             {{ __('Back up now') }}

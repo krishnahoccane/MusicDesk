@@ -3,6 +3,10 @@
     <h1 class="ld-login__title">{{ $loginTexts['welcome'] }}</h1>
     <p class="text-muted mb-4">{{ __('Sign in to :name to continue.', ['name' => config('app.name')]) }}</p>
 
+    @if (session('status') && ! ($preview ?? false))
+        <x-alert variant="success" class="mb-3">{{ session('status') }}</x-alert>
+    @endif
+
     <form method="POST" action="{{ ($preview ?? false) ? '#' : route('login.store') }}" novalidate>
         @csrf
         <fieldset @disabled($preview ?? false) class="border-0 p-0 m-0">
@@ -50,6 +54,12 @@
         </button>
         </fieldset>
     </form>
+    @if (app(\App\Services\Auth\RegistrationService::class)->enabled())
+        <p class="text-center small text-muted mt-4 mb-0">
+            {{ __('New here?') }}
+            <a href="{{ ($preview ?? false) ? '#' : route('register') }}" class="fw-semibold">{{ __('Create an account') }}</a>
+        </p>
+    @endif
     @foreach (app(\App\Plugins\PluginRegistry::class)->loginButtons as $button)
         @include($button['view'], ['preview' => $preview ?? false])
     @endforeach

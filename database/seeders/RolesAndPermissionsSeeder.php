@@ -58,21 +58,21 @@ class RolesAndPermissionsSeeder extends Seeder
                 'tracks.view', 'tracks.create', 'tracks.update',
                 'contributors.view', 'contributors.manage',
                 'contracts.view', 'documents.view', 'documents.manage',
-                'distribution.view', 'reports.view',
+                'distribution.view', 'reports.view', 'labels.view',
             ],
             SystemRole::DistributionManager->value => [
                 'artists.view', 'releases.view', 'releases.review', 'tracks.view', 'tracks.download_master',
-                'contributors.view', 'distribution.view', 'distribution.manage', 'dsps.manage',
+                'contributors.view', 'distribution.view', 'distribution.manage', 'dsps.manage', 'labels.view',
                 'reports.view', 'reports.export',
             ],
             SystemRole::Accountant->value => [
-                'artists.view', 'releases.view', 'tracks.view', 'contracts.view',
+                'artists.view', 'releases.view', 'tracks.view', 'contracts.view', 'labels.view',
                 'royalties.view', 'royalties.import', 'royalties.manage', 'payments.view', 'payments.manage',
                 'reports.view', 'reports.export', 'reports.financial',
             ],
             SystemRole::Viewer->value => [
                 'artists.view', 'releases.view', 'tracks.view', 'contributors.view',
-                'distribution.view', 'reports.view',
+                'distribution.view', 'reports.view', 'labels.view',
             ],
             SystemRole::Artist->value => self::ARTIST_PERMISSIONS,
         ];

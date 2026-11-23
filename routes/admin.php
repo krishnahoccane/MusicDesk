@@ -86,6 +86,7 @@ Route::middleware(['auth', 'auth.session', 'active', 'license'])->group(function
         Route::get('releases/{release}/edit', ReleaseForm::class)->middleware('permission:releases.update')->name('releases.edit');
         Route::get('releases/{release}/artwork', [CatalogFileController::class, 'artwork'])->middleware('permission:releases.view')->withTrashed()->name('releases.artwork');
         Route::get('contributors', ContributorIndex::class)->middleware('permission:contributors.view')->name('contributors.index');
+        Route::get('labels', App\Livewire\Labels\Index::class)->middleware('permission:labels.view')->name('labels.index');
 
         // Tracks (license feature "tracks")
         Route::middleware('feature:tracks')->group(function () {
@@ -182,7 +183,9 @@ Route::middleware(['auth', 'auth.session', 'active', 'license'])->group(function
             Route::post('verify', [LicenseStatusController::class, 'verify'])->name('verify');
             Route::post('activate', [LicenseStatusController::class, 'activate'])->name('activate');
             Route::post('change-key', [LicenseStatusController::class, 'changeKey'])->name('change-key');
+            Route::post('deactivate/request', [LicenseStatusController::class, 'deactivateRequest'])->name('deactivate.request');
             Route::post('deactivate', [LicenseStatusController::class, 'deactivate'])->name('deactivate');
+            Route::post('deactivate/cancel', [LicenseStatusController::class, 'cancelDeactivate'])->name('deactivate.cancel');
             Route::post('transfer', [LicenseStatusController::class, 'transfer'])->name('transfer');
             Route::post('offline', [LicenseStatusController::class, 'offline'])->name('offline');
             Route::get('request-file', [LicenseStatusController::class, 'requestFile'])->name('request-file');

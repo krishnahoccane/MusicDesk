@@ -137,6 +137,8 @@ body::after {
 
 .ld-main { position: relative; }
 .ld-main > * { position: relative; z-index: 1; }
+// The top bar stays above the page (its menus overlap content) and sticky.
+.ld-main > .ld-topbar { position: sticky; z-index: 1030; }
 
 // ------------------------------------------------------------------- type
 .eyebrow,

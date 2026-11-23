@@ -3,5 +3,5 @@
     @if ($ldNote !== '')
         <p class="mb-2">{{ $ldNote }}</p>
     @endif
-    <span>{{ config('app.name') }} &middot; {{ __('Powered by :product', ['product' => config('labeldesk.product.name')]) }}</span>
+    <span>&copy; {{ now()->year }} {{ config('app.name') }}</span>
 </div>

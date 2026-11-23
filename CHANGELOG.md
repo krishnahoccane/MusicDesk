@@ -3,6 +3,41 @@
 All notable changes to LabelDesk are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses Semantic Versioning.
 
+## [4.3.2] — 2026-11-23
+
+### Added
+- **Sign-up for artists and labels** (off by default): "Create an account" on the sign-in page with a
+  form for artists (artist name) and labels (label name, website). Turn it on during installation
+  (step 6) or in Settings → General → Sign-up, and choose whether artists, labels or both may sign up.
+  New accounts cannot sign in until an administrator activates them in Users; administrators are
+  emailed for every sign-up and the person is emailed when approved. Artists get an artist account
+  linked to their new artist profile; label sign-ups create an inactive sub-label that is activated with
+  the account (the administrator chooses the account's role). Strong passwords, a bot trap and a limit
+  of 5 sign-ups a minute.
+- **Catalog → Labels**: sub-labels and imprints under the main label, nestable (a label can be part of
+  another), with code, contact, website, country and active/inactive status. Each release can be
+  assigned to a label; the label name delivered to stores follows it. Labels with releases or
+  sub-labels cannot be deleted. New permissions "View labels" and "Manage labels".
+- **Deactivation needs an emailed code**: after the administrator's password, MusicDesk.tech emails a
+  one-time code to the email the license is registered to; the installation is deactivated only with
+  that code. Offline activations still need only the password.
+- `docs/musicdesk-portal-changes-4.3.2.md`: what the MusicDesk.tech portal and license server need
+  for this version.
+
+### Changed
+- **Backups pause from 30 days before the license expires** (and while it is expired or suspended):
+  "Back up now" and the nightly backup are turned off with an explanation until the license is
+  renewed. Existing backups can still be downloaded.
+- The footer shows only the version (e.g. v4.3.2); the sidebar shows only your logo and label name;
+  the sign-in and suspension pages no longer say "Powered by LabelDesk".
+
+### Fixed
+- The account menu (top right) opened behind the page content.
+- On Settings → License, the Deactivate dialog could not be used: the dark backdrop covered it and
+  blocked typing the password.
+- Messages meant for the sign-in page (for example "The license is active again. You can sign in.")
+  were not shown.
+
 ## [4.3.1] — 2026-11-23
 
 ### Added — change the license key

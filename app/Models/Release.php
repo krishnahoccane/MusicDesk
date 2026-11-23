@@ -25,7 +25,7 @@ class Release extends Model
     /** @var list<string> */
     protected $fillable = [
         'title', 'version', 'type', 'upc', 'catalog_number', 'label_name', 'c_line', 'p_line',
-        'release_date', 'original_release_date', 'genre_id', 'language_id', 'explicit', 'notes',
+        'release_date', 'original_release_date', 'genre_id', 'language_id', 'explicit', 'notes', 'label_id',
     ];
 
     /** @var array<string, mixed> */
@@ -46,6 +46,11 @@ class Release extends Model
             'submitted_at' => 'datetime',
             'approved_at' => 'datetime',
         ];
+    }
+
+    public function label(): BelongsTo
+    {
+        return $this->belongsTo(Label::class);
     }
 
     public function artists(): BelongsToMany

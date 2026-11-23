@@ -90,6 +90,31 @@
                         @error('retention_days') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
                     </div>
                 </div>
+
+                <div class="card mt-3" x-data="{ on: @entangle('registration') }">
+                    <div class="card-header">
+                        <x-icon name="user-plus" size="18" class="text-muted" />
+                        <h2 class="card-title">{{ __('Sign-up') }}</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-check form-switch mb-2">
+                            <input class="form-check-input" type="checkbox" role="switch" id="registration" wire:model="registration" x-model="on">
+                            <label class="form-check-label" for="registration">{{ __('Allow new accounts to sign up') }}</label>
+                        </div>
+                        <div class="ms-4" x-show="on" x-cloak>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="registration_artists" wire:model="registration_artists">
+                                <label class="form-check-label" for="registration_artists">{{ __('Artists') }}</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="registration_labels" wire:model="registration_labels">
+                                <label class="form-check-label" for="registration_labels">{{ __('Labels (sub-labels)') }}</label>
+                            </div>
+                            @error('registration_artists') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
+                        </div>
+                        <div class="form-text">{{ __('Shows "Create an account" on the sign-in page. New accounts cannot sign in until an administrator activates them in Users; administrators get an email for each sign-up. Off by default.') }}</div>
+                    </div>
+                </div>
             </div>
         </div>
 

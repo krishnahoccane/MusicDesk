@@ -92,11 +92,26 @@ class MockLicenseProvider implements LicenseProviderInterface
         return $this->issue($context, (string) $current->activationId, $plan, 30);
     }
 
-    public function deactivate(ActivationContext $context, string $token): void
+    /** Development code for manual deactivation (no email is sent by the mock). */
+    public const DEACTIVATION_CODE = '246810';
+
+    public function requestDeactivationCode(ActivationContext $context, string $token): array
+    {
+        $this->guard();
+        [$payload, $signature] = LicenseSignatureVerifier::split($token);
+        $this->verifier->verify($payload, $signature, $this->publicKey(), $context, allowExpiredToken: true);
+
+        return ['sent_to' => 'o•••@example.com', 'expires_in' => 600];
+    }
+
+    public function deactivate(ActivationContext $context, string $token, ?string $code = null, string $reason = 'manual'): void
     {
         $this->guard();
         [$payload, $signature] = LicenseSignatureVerifier::split($token);
         $current = $this->verifier->verify($payload, $signature, $this->publicKey(), $context, allowExpiredToken: true);
+        if ($reason === 'manual' && $code !== self::DEACTIVATION_CODE) {
+            throw LicenseException::fromApi('invalid_code', null);
+        }
         static::$deactivated[(string) $current->activationId] = true;
     }
 

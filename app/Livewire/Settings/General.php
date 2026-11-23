@@ -32,6 +32,13 @@ class General extends Component
 
     public int|string $retention_days = ActivityLog::DEFAULT_RETENTION_DAYS;
 
+    /** Sign-up on the sign-in page (off by default). */
+    public bool $registration = false;
+
+    public bool $registration_artists = true;
+
+    public bool $registration_labels = true;
+
     public function mount(SettingsService $settings): void
     {
         abort_unless(auth()->user()->can('settings.manage'), 403);
@@ -43,6 +50,9 @@ class General extends Component
         $this->date_format = (string) $settings->get('general.date_format', config('labeldesk.date_format'));
         $this->time_format = (string) $settings->get('general.time_format', 'H:i');
         $this->retention_days = (int) $settings->get('activity.retention_days', ActivityLog::DEFAULT_RETENTION_DAYS);
+        $this->registration = (bool) $settings->get('auth.registration', false);
+        $this->registration_artists = (bool) $settings->get('auth.registration_artists', true);
+        $this->registration_labels = (bool) $settings->get('auth.registration_labels', true);
     }
 
     public function save(SettingsService $settings, SettingsApplier $applier, ActivityLogger $activity): void
@@ -58,7 +68,16 @@ class General extends Component
             'date_format' => ['required', Rule::in(array_keys(SettingsApplier::DATE_FORMATS))],
             'time_format' => ['required', Rule::in(array_keys(SettingsApplier::TIME_FORMATS))],
             'retention_days' => ['required', 'integer', 'min:0', 'max:3650'],
+            'registration' => ['boolean'],
+            'registration_artists' => ['boolean'],
+            'registration_labels' => ['boolean'],
         ], [], ['app_name' => __('label name'), 'retention_days' => __('retention period')]);
+
+        if ($this->registration && ! $this->registration_artists && ! $this->registration_labels) {
+            $this->addError('registration_artists', __('Choose who may sign up, or turn sign-up off.'));
+
+            return;
+        }
 
         $values = [
             'general.app_name' => trim($this->app_name),
@@ -68,6 +87,9 @@ class General extends Component
             'general.date_format' => $this->date_format,
             'general.time_format' => $this->time_format,
             'activity.retention_days' => (int) $this->retention_days,
+            'auth.registration' => $this->registration,
+            'auth.registration_artists' => $this->registration_artists,
+            'auth.registration_labels' => $this->registration_labels,
         ];
 
         $before = $settings->all();

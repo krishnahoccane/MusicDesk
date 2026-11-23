@@ -77,6 +77,8 @@ class LicenseException extends RuntimeException
             'token_expired' => __('The license token has expired. Activate again with your license key.'),
             'domain_mismatch' => __('This license token was issued for a different domain.'),
             'rate_limited' => __('Too many licensing requests. Please wait a minute and try again.'),
+            'invalid_code' => __('The code is not correct or has expired. Request a new code and try again.'),
+            'code_required' => __('Enter the code sent to the license owner\'s email.'),
             'validation_failed' => __('The license server rejected the request: :message', ['message' => strip_tags((string) $message)]),
         ];
 

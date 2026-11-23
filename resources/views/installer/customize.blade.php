@@ -225,6 +225,14 @@
                         @endif
                         <input id="login_image" name="login_image" type="file" accept=".jpg,.jpeg,.png,.webp" class="form-control @error('login_image') is-invalid @enderror">
                     </div>
+                    <div class="col-12">
+                        <div class="form-check form-switch">
+                            <input type="hidden" name="registration" value="0">
+                            <input class="form-check-input" type="checkbox" role="switch" id="registration" name="registration" value="1" @checked(old('registration', $v['registration']))>
+                            <label class="form-check-label" for="registration">{{ __('Allow artists and labels to sign up') }}</label>
+                        </div>
+                        <div class="form-text">{{ __('Shows "Create an account" on the sign-in page. New accounts wait for an administrator\'s approval. You can change this later in Settings → General.') }}</div>
+                    </div>
                 </div>
             </div>
 

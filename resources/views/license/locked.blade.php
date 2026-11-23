@@ -82,7 +82,7 @@
                     </details>
                 </div>
             </main>
-            <div class="ld-login__note text-center">{{ config('app.name') }} &middot; {{ __('Powered by :product', ['product' => config('labeldesk.product.name')]) }}</div>
+            <div class="ld-login__note text-center">&copy; {{ now()->year }} {{ config('app.name') }}</div>
         </div>
     </div>
 </body>

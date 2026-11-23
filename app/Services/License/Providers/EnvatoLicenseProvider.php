@@ -44,7 +44,12 @@ class EnvatoLicenseProvider implements LicenseProviderInterface
         throw $this->unavailable();
     }
 
-    public function deactivate(ActivationContext $context, string $token): void
+    public function requestDeactivationCode(ActivationContext $context, string $token): array
+    {
+        throw $this->unavailable();
+    }
+
+    public function deactivate(ActivationContext $context, string $token, ?string $code = null, string $reason = 'manual'): void
     {
         throw $this->unavailable();
     }

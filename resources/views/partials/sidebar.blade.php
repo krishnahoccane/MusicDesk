@@ -4,7 +4,6 @@
         <x-logo size="34" />
         <span class="ld-sidebar__brand-text">
             <strong>{{ config('app.name') }}</strong>
-            <small>{{ config('labeldesk.product.name') }}</small>
         </span>
     </a>
 

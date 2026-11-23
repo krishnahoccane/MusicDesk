@@ -34,6 +34,12 @@ class Index extends Component
     {
         $this->ensureFeature('backups');
 
+        if ($paused = $backups->pausedReason()) {
+            $this->dispatch('toast', type: 'warning', message: $paused);
+
+            return;
+        }
+
         try {
             $result = $backups->create($this->includeFiles, auth()->user());
         } catch (Throwable $e) {
@@ -76,6 +82,7 @@ class Index extends Component
     {
         return view('livewire.backups.index', [
             'backups' => $backups->list(),
+            'paused' => $backups->pausedReason(),
             'directory' => 'storage/app/private/backups',
         ])->title(__('Backups'))->layoutData(['breadcrumbs' => [['label' => __('Administration')], ['label' => __('Backups')]]]);
     }

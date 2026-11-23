@@ -134,7 +134,7 @@ class AutomaticTasks
     protected function runBackup(): void
     {
         $backups = app(BackupService::class);
-        if ($backups->scheduled() && app(LicenseService::class)->canUse('backups')) {
+        if ($backups->scheduled() && app(LicenseService::class)->canUse('backups') && $backups->pausedReason() === null) {
             @set_time_limit(0);
             $backups->create(true, null, 'scheduled');
         }

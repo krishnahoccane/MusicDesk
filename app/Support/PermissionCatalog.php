@@ -48,6 +48,10 @@ class PermissionCatalog
                 'tracks.delete' => __('Delete tracks'),
                 'tracks.download_master' => __('Download master audio'),
             ]],
+            'labels' => ['label' => __('Labels'), 'permissions' => [
+                'labels.view' => __('View labels'),
+                'labels.manage' => __('Manage labels (sub-labels)'),
+            ]],
             'contributors' => ['label' => __('Contributors'), 'permissions' => [
                 'contributors.view' => __('View contributors'),
                 'contributors.manage' => __('Manage contributors'),

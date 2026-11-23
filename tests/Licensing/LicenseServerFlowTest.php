@@ -68,7 +68,7 @@ class LicenseServerFlowTest extends TestCase
     public function test_domain_deactivated_in_the_portal_makes_the_install_read_only(): void
     {
         $activation = $this->activateLicense();
-        $this->mockAuthority()->deactivate($this->context(), (string) app(LicenseActivationService::class)->currentToken($activation));
+        $this->mockAuthority()->deactivate($this->context(), (string) app(LicenseActivationService::class)->currentToken($activation), reason: 'portal');
 
         try {
             app(LicenseValidationService::class)->refresh();
@@ -150,7 +150,8 @@ class LicenseServerFlowTest extends TestCase
     {
         $activation = $this->activateLicense();
 
-        $this->actingAs($this->admin)->post('/settings/license/deactivate', ['password' => 'password'])->assertSessionHas('success');
+        $this->actingAs($this->admin)->post('/settings/license/deactivate/request', ['password' => 'password'])->assertSessionHas('deactivate_code_sent');
+        $this->actingAs($this->admin)->post('/settings/license/deactivate', ['code' => MockLicenseProvider::DEACTIVATION_CODE])->assertSessionHas('success');
 
         $this->assertSame('deactivated', $activation->fresh()->status);
         $this->assertSame(LicenseState::Unlicensed, app(LicenseValidationService::class)->snapshot(fresh: true)->state);

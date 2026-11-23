@@ -214,7 +214,7 @@ class ReleaseService
     protected function clean(array $data): array
     {
         $out = [];
-        foreach (['title', 'version', 'type', 'upc', 'catalog_number', 'label_name', 'c_line', 'p_line', 'release_date', 'original_release_date', 'genre_id', 'language_id', 'notes'] as $key) {
+        foreach (['title', 'version', 'type', 'upc', 'catalog_number', 'label_name', 'c_line', 'p_line', 'release_date', 'original_release_date', 'genre_id', 'language_id', 'notes', 'label_id'] as $key) {
             if (! array_key_exists($key, $data)) {
                 continue;
             }

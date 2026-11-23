@@ -7,6 +7,7 @@ use App\Exceptions\UserManagementException;
 use App\Models\Artist;
 use App\Models\User;
 use App\Services\Activity\ActivityLogger;
+use App\Services\Auth\RegistrationService;
 use App\Services\License\LicenseFeatureService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -282,6 +283,10 @@ class UserService
 
         if (! $active) {
             $this->terminateSessions($user);
+        }
+
+        if ($active) {
+            app(RegistrationService::class)->approved($user);
         }
 
         $this->activity->log(

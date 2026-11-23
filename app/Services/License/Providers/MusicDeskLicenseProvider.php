@@ -69,11 +69,22 @@ class MusicDeskLicenseProvider implements LicenseProviderInterface
         return $this->result($data, $context);
     }
 
-    public function deactivate(ActivationContext $context, string $token): void
+    public function requestDeactivationCode(ActivationContext $context, string $token): array
+    {
+        $this->ensureConfigured();
+        $data = $this->client->post('deactivate/code', ['token' => $token]);
+
+        return [
+            'sent_to' => (string) ($data['sent_to'] ?? __('the license owner')),
+            'expires_in' => max(60, min(3600, (int) ($data['expires_in'] ?? 600))),
+        ];
+    }
+
+    public function deactivate(ActivationContext $context, string $token, ?string $code = null, string $reason = 'manual'): void
     {
         $this->ensureConfigured();
 
-        $this->client->post('deactivate', ['token' => $token]);
+        $this->client->post('deactivate', array_filter(['token' => $token, 'code' => $code, 'reason' => $reason], fn ($v) => $v !== null));
     }
 
     /**

@@ -46,12 +46,13 @@
 
             <footer class="ld-footer d-flex flex-wrap justify-content-between gap-2">
                 <span>&copy; {{ now()->year }} {{ config('app.name') }}</span>
-                <span>{{ config('labeldesk.product.name') }} {{ config('labeldesk.product.version') }}</span>
+                <span class="font-mono">v{{ config('labeldesk.product.version') }}</span>
             </footer>
         </div>
     </div>
 
     @include('partials.flash')
     @livewireScripts
+    @stack('modals')
 </body>
 </html>
