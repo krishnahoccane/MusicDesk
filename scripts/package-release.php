@@ -71,7 +71,8 @@ function copyTree(string $from, string $to, array $skip = []): void
     }
     @mkdir($to, 0777, true);
     foreach (scandir($from) as $item) {
-        if ($item === '.' || $item === '..' || in_array($item, $skip, true)) {
+        // Local databases and dumps (e.g. database/database.sqlite from development) never ship.
+        if ($item === '.' || $item === '..' || in_array($item, $skip, true) || preg_match('/\.(sqlite3?|sqlite-journal|sqlite-wal|sqlite-shm|sql|sql\.gz|bak|dump)$/i', $item)) {
             continue;
         }
         copyTree($from.'/'.$item, $to.'/'.$item, $skip);
@@ -159,7 +160,8 @@ $forbidden = ['/.env', '/node_modules/', '/tests/', '/storage/logs/laravel', '/s
 for ($i = 0; $i < $zip->numFiles; $i++) {
     $entry = $zip->getNameIndex($i);
     foreach ($forbidden as $bad) {
-        if (str_contains($entry, $bad) && ! str_ends_with($entry, '.env.example')) {
+        $isDump = ! str_contains($entry, '/vendor/') && preg_match('/\.(sqlite3?|sql|sql\.gz|bak|dump)$/i', $entry);
+        if ($isDump || (str_contains($entry, $bad) && ! str_ends_with($entry, '.env.example'))) {
             fwrite(STDERR, "Refusing package: it contains {$entry}\n");
             $zip->close();
             unlink($zipPath);
