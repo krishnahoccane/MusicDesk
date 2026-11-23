@@ -55,6 +55,49 @@ class LicenseApiClient
     }
 
     /**
+     * Download a package (update ZIP) to $sink. Errors are answered with the usual JSON
+     * error body and raise the same exceptions as post().
+     *
+     * @param  array<string, mixed>  $body
+     * @return array{sha256: string, bytes: int}
+     *
+     * @throws LicenseException
+     */
+    public function download(string $endpoint, array $body, string $sink): array
+    {
+        $url = $this->url($endpoint);
+
+        try {
+            $response = $this->http
+                ->withHeaders(['Accept' => 'application/zip, application/json'] + $this->headers())
+                ->asJson()
+                ->connectTimeout((int) config('licensing.connection_timeout', 5))
+                ->timeout(600)
+                ->sink($sink)
+                ->post($url, $body);
+        } catch (Throwable) {
+            @unlink($sink);
+            throw LicenseException::unreachable();
+        }
+
+        if (! $response->successful()) {
+            try {
+                $this->parse($response);
+            } finally {
+                @unlink($sink);
+            }
+            throw LicenseException::invalidResponse();
+        }
+
+        // Http::fake() returns the body without writing the sink.
+        if (! is_file($sink) || filesize($sink) === 0) {
+            file_put_contents($sink, $response->body());
+        }
+
+        return ['sha256' => (string) hash_file('sha256', $sink), 'bytes' => (int) filesize($sink)];
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function get(string $endpoint): array

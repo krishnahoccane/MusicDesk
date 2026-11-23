@@ -9,6 +9,7 @@ use App\Services\Installation\InstallationState;
 use App\Services\License\LicenseService;
 use App\Services\License\LicenseValidationService;
 use App\Services\MediaStorage\MediaSyncService;
+use App\Services\Updates\UpdateService;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
@@ -25,6 +26,8 @@ use Throwable;
  *   media      cloud uploads, local cleanup     every 5 minutes
  *   backup     nightly backup (when enabled)    once a day, from 02:00
  *   cleanup    old activity log entries         once a day
+ *   updates    check MusicDesk.tech for updates every 12 hours; installs the ones
+ *              set to update automatically (Administration → Updates)
  *
  * One run at a time (cache lock); a cheap "next check" timestamp means most
  * requests do nothing at all. Failures are logged, never shown to visitors.
@@ -34,7 +37,7 @@ class AutomaticTasks
     public const LAST_RUN_KEY = 'labeldesk:auto:last-run';
 
     /** task => minutes between runs */
-    public const TASKS = ['license' => 60, 'queue' => 1, 'media' => 5, 'backup' => 1440, 'cleanup' => 1440];
+    public const TASKS = ['license' => 60, 'queue' => 1, 'media' => 5, 'backup' => 1440, 'cleanup' => 1440, 'updates' => 720];
 
     public function __construct(protected InstallationState $installation) {}
 
@@ -138,6 +141,11 @@ class AutomaticTasks
             @set_time_limit(0);
             $backups->create(true, null, 'scheduled');
         }
+    }
+
+    protected function runUpdates(): void
+    {
+        app(UpdateService::class)->runAutomatic();
     }
 
     protected function runCleanup(): void

@@ -8,6 +8,7 @@ use App\Plugins\AddonLicenseService;
 use App\Plugins\PluginException;
 use App\Plugins\PluginManager;
 use App\Services\License\LicenseAuthority;
+use App\Services\Updates\UpdateService;
 use Illuminate\Contracts\View\View;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -123,6 +124,35 @@ class Index extends Component
         $this->dispatch('toast', type: 'success', message: __('The license key was removed from :name.', ['name' => $plugin->name]));
     }
 
+    /** Install the newer version from MusicDesk.tech (Administration → Updates does the same). */
+    public function updateAddon(int $id): void
+    {
+        abort_unless(auth()->user()->can('updates.manage'), 403);
+        $this->ensureLicenseAllowsWrites();
+        $plugin = Plugin::query()->findOrFail($id);
+
+        try {
+            $updated = app(UpdateService::class)->installAddon($plugin, auth()->user());
+        } catch (Throwable $e) {
+            report($e);
+            $this->dispatch('toast', type: 'danger', message: __(':name could not be updated: :reason', ['name' => $plugin->name, 'reason' => mb_substr($e->getMessage(), 0, 300)]));
+
+            return;
+        }
+
+        $this->dispatch('toast', type: 'success', message: __(':name was updated to :version.', ['name' => $updated->name, 'version' => $updated->version]));
+    }
+
+    public function toggleAutoUpdate(int $id): void
+    {
+        abort_unless(auth()->user()->can('updates.manage'), 403);
+        $plugin = Plugin::query()->findOrFail($id);
+        app(UpdateService::class)->setAutoAddon($plugin, ! $plugin->auto_update, auth()->user());
+        $this->dispatch('toast', type: 'success', message: $plugin->auto_update
+            ? __(':name will be updated automatically.', ['name' => $plugin->name])
+            : __('Automatic updates for :name are off.', ['name' => $plugin->name]));
+    }
+
     public function delete(int $id): void
     {
         $this->guard();
@@ -142,13 +172,20 @@ class Index extends Component
     public function render(): View
     {
         $manager = $this->manager();
+        $updates = app(UpdateService::class);
+        $canUpdate = (bool) auth()->user()?->can('updates.manage');
+        $updatesOn = $canUpdate && $updates->availability() === null;
 
         return view('livewire.plugins.index', [
+            'canUpdate' => $canUpdate,
+            'updatesOn' => $updatesOn,
             'plugins' => $manager->installed()->map(fn (Plugin $p) => [
                 'model' => $p,
                 'licensed' => $manager->licensed($p),
                 'running' => $manager->isRunning($p->slug),
                 'missing' => ! is_file($manager->path($p->slug).DIRECTORY_SEPARATOR.'plugin.json'),
+                'release' => $release = ($updatesOn ? $updates->addonUpdate($p) : null),
+                'updateBlocker' => $release ? $updates->blocker($release) : null,
             ]),
             'addonsUrl' => LicenseAuthority::ADDONS_URL,
             'writable' => is_dir($manager->path()) ? is_writable($manager->path()) : is_writable(dirname($manager->path())),

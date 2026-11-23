@@ -50,7 +50,7 @@ class RolesAndPermissionsSeeder extends Seeder
         return [
             SystemRole::SuperAdmin->value => '*',
             SystemRole::LabelManager->value => array_values(array_diff($all, [
-                'users.manage', 'roles.manage', 'settings.manage', 'backups.manage', 'license.manage', 'plugins.manage',
+                'users.manage', 'roles.manage', 'settings.manage', 'backups.manage', 'license.manage', 'plugins.manage', 'updates.manage',
             ])),
             SystemRole::ArtistManager->value => [
                 'artists.view', 'artists.create', 'artists.update',

@@ -77,7 +77,7 @@ final class PluginPackage
         return $package;
     }
 
-    private static function assertSafeName(string $name): void
+    public static function assertSafeName(string $name): void
     {
         if ($name === '' || str_contains($name, '\\') || str_starts_with($name, '/') || preg_match('#(^|/)\.\.(/|$)#', $name)
             || preg_match('/[\x00-\x1F:]/', $name) || strlen($name) > 400) {

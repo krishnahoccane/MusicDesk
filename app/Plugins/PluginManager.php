@@ -187,9 +187,15 @@ class PluginManager
             ? __('Updated add-on :name to :version', ['name' => $plugin->name, 'version' => $plugin->version])
             : __('Installed add-on :name :version', ['name' => $plugin->name, 'version' => $plugin->version]), $plugin);
 
-        // An update of an active add-on runs its new migrations straight away.
-        if ($plugin->active && $this->licensed($plugin)) {
+        // Like WordPress plugins: the add-on's database tables are created (or, for an update,
+        // brought up to date) as soon as it is installed. Migrations are forward-only and the
+        // files were verified against the MusicDesk.tech signature above.
+        try {
+            $this->autoload($manifest);
             $this->migrate($plugin);
+        } catch (Throwable $e) {
+            $plugin->forceFill(['last_error' => mb_substr($e->getMessage(), 0, 500)])->save();
+            throw $e instanceof PluginException ? $e : new PluginException(__('The add-on database update failed: :output', ['output' => mb_substr($e->getMessage(), 0, 300)]));
         }
         $this->refreshCaches();
 

@@ -166,6 +166,13 @@ Route::middleware(['auth', 'auth.session', 'active', 'license'])->group(function
         Route::get('system', SystemInfo::class)->name('system.index');
     });
 
+    // Administration → Updates (over-the-air updates from MusicDesk.tech)
+    Route::middleware('permission:updates.manage')->group(function () {
+        Route::get('updates', \App\Livewire\System\Updates::class)->name('updates.index');
+        Route::get('updates/progress', fn () => response()->json(app(\App\Services\Updates\UpdateService::class)->progress() ?? ['state' => 'idle'])
+            ->header('Cache-Control', 'no-store'))->middleware('throttle:120,1')->name('updates.progress');
+    });
+
     // Administration → Add-ons
     Route::middleware('permission:plugins.manage')->group(function () {
         Route::get('plugins', Index::class)->name('plugins.index');

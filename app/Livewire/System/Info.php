@@ -107,6 +107,7 @@ class Info extends Component
         return view('livewire.system.info', [
             'sections' => $sections,
             'upgradeNeeded' => $upgrade->needed(),
+            'upgradeFailure' => $upgrade->failure(),
             'pending' => $upgrade->pendingMigrations(),
             'installedVersion' => $upgrade->installedVersion(),
             'tasks' => collect(AutomaticTasks::TASKS)->except('license')->map(fn ($minutes, $task) => [

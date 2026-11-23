@@ -88,6 +88,7 @@ class PermissionCatalog
                 'activity.view' => __('View activity log'),
                 'backups.manage' => __('Manage backups'),
                 'plugins.manage' => __('Install and activate add-ons'),
+                'updates.manage' => __('Install LabelDesk and add-on updates'),
                 'license.view' => __('View license'),
                 'license.manage' => __('Manage license'),
             ]],

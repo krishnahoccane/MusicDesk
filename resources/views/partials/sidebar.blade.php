@@ -21,6 +21,9 @@
                        title="{{ __($item['label']) }}">
                         <x-icon :name="$item['icon']" size="18" />
                         <span class="ld-nav-link__text">{{ __($item['label']) }}</span>
+                        @if (($item['badge'] ?? null) === 'updates' && ($updateCount ??= app(\App\Services\Updates\UpdateService::class)->availableCount()) > 0)
+                            <span class="badge rounded-pill text-bg-primary ms-auto ld-nav-link__count" aria-label="{{ trans_choice(':count update available|:count updates available', $updateCount) }}">{{ $updateCount }}</span>
+                        @endif
                         @if ($item['locked'])
                             <x-icon name="lock" size="14" class="ld-nav-link__badge" aria-label="{{ __('Not included in your plan') }}" />
                         @endif

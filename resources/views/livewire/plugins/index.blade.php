@@ -27,6 +27,9 @@
                                     <span class="d-flex flex-wrap align-items-center gap-2">
                                         <span class="fw-semibold" style="color: var(--ld-heading)">{{ $m->name }}</span>
                                         <span class="font-mono small text-muted">v{{ $m->version }}</span>
+                                        @if ($p['release'])
+                                            <x-badge variant="accent">{{ __(':version available', ['version' => $p['release']['version']]) }}</x-badge>
+                                        @endif
                                         @if ($p['missing'])
                                             <x-badge variant="danger">{{ __('files missing') }}</x-badge>
                                         @elseif (! $p['licensed'])
@@ -68,8 +71,23 @@
                                     @if ($m->last_error)
                                         <span class="d-block small text-danger mt-1">{{ $m->last_error }}</span>
                                     @endif
+                                    @if ($p['updateBlocker'])
+                                        <span class="d-block small text-warning mt-1">{{ $p['updateBlocker'] }}</span>
+                                    @endif
+                                    @if ($updatesOn)
+                                        <span class="form-check form-switch d-inline-block mt-2 mb-0">
+                                            <input class="form-check-input" type="checkbox" role="switch" id="plugin-auto-{{ $m->id }}" @checked($m->auto_update) wire:click="toggleAutoUpdate({{ $m->id }})">
+                                            <label class="form-check-label small" for="plugin-auto-{{ $m->id }}">{{ __('Update automatically') }}</label>
+                                        </span>
+                                    @endif
                                 </span>
                                 <span class="d-flex gap-1">
+                                    @if ($p['release'] && ! $p['updateBlocker'])
+                                        <button type="button" class="btn btn-sm btn-primary" wire:click="updateAddon({{ $m->id }})" wire:loading.attr="disabled" wire:target="updateAddon({{ $m->id }})">
+                                            <span wire:loading wire:target="updateAddon({{ $m->id }})" class="spinner-border spinner-border-sm"></span>
+                                            {{ __('Update to :version', ['version' => $p['release']['version']]) }}
+                                        </button>
+                                    @endif
                                     @if ($m->active)
                                         <button type="button" class="btn btn-sm btn-light" wire:click="deactivate({{ $m->id }})" wire:loading.attr="disabled">{{ __('Deactivate') }}</button>
                                     @else

@@ -45,7 +45,7 @@ class AutomaticTasksTest extends TestCase
         $this->travelTo(CarbonImmutable::parse('2026-11-25 10:00:00'));
 
         $ran = app(AutomaticTasks::class)->runDue();
-        $this->assertSame(['license', 'queue', 'media', 'backup', 'cleanup'], $ran);
+        $this->assertSame(['license', 'queue', 'media', 'backup', 'cleanup', 'updates'], $ran);
         $this->assertNotNull(Cache::get(AutomaticTasks::LAST_RUN_KEY));
 
         // Within the same minute nothing runs (cheap gate).

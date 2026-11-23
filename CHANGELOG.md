@@ -3,6 +3,42 @@
 All notable changes to LabelDesk are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses Semantic Versioning.
 
+## [4.3.3] — 2026-11-23
+
+### Added
+- **Updates from MusicDesk.tech** (Administration → Updates, like WordPress): LabelDesk checks
+  MusicDesk.tech twice a day for new versions of itself and of every installed add-on, shows what is new
+  with a count in the menu, and installs an update with one click. Every package must carry the
+  MusicDesk.tech signature and match its checksum before a file is written.
+- **Automatic updates**, off by default: switch them on for LabelDesk and for each add-on separately
+  (on the Updates page, or "Update automatically" on each add-on under Administration → Add-ons).
+- Updating LabelDesk takes a database backup first (when backups are in your plan), shows a short
+  "being updated" page while files are replaced, and puts every file back if anything goes wrong.
+  `.env`, `storage/`, installed add-ons and your own `.htaccess` are never overwritten.
+- New permission "Install LabelDesk and add-on updates" (Super Admin).
+
+### Changed
+- **The database updates itself after new files are uploaded** — by an update from the Updates page or
+  by FTP / the hosting file manager. The first page opened afterwards runs the database changes and
+  clears the configuration, route, cache and compiled-view caches in the background, while visitors see a
+  "being updated" page for a few seconds. No terminal or SSH needed, so it works on shared hosting.
+  If it fails, the site keeps running, the error is shown on Administration → System and Updates, and it
+  is tried again every 15 minutes. `php artisan labeldesk:upgrade` and "Run upgrade" still work.
+- **Add-ons create their database tables when they are installed** (before, only on activation), like
+  WordPress plugins. Updating an add-on updates its tables straight away.
+- Release packages can be signed for over-the-air updates
+  (`php scripts/package-release.php --key=<plugin-signing.key>`).
+
+### Fixed
+- Installing an add-on did nothing: after choosing the .zip and clicking Install the button stayed
+  greyed out (browser error "Cannot read properties of undefined (reading 'name')"). The same fault
+  stopped uploads of artist documents and royalty statements.
+
+### MusicDesk.tech
+- Over-the-air updates need two new license-server endpoints and signed LabelDesk releases on
+  MusicDesk.tech; see `docs/musicdesk-portal-changes-4.3.3.md`. Until they are live, the Updates page
+  says it could not check for updates and everything else works as before.
+
 ## [4.3.2] — 2026-11-23
 
 ### Added
@@ -33,9 +69,6 @@ All notable changes to LabelDesk are documented here. The format follows
 
 ### Fixed
 - The account menu (top right) opened behind the page content.
-- Installing an add-on did nothing: after choosing the .zip and clicking Install the button stayed
-  greyed out (browser error "Cannot read properties of undefined (reading 'name')"). The same fault
-  stopped uploads of artist documents and royalty statements.
 - On Settings → License, the Deactivate dialog could not be used: the dark backdrop covered it and
   blocked typing the password.
 - Messages meant for the sign-in page (for example "The license is active again. You can sign in.")

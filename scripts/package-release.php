@@ -5,6 +5,7 @@
  *
  *   php scripts/package-release.php            (runs npm run build + composer --no-dev)
  *   php scripts/package-release.php --skip-build   (use the current public/build)
+ *   php scripts/package-release.php --key=<plugin-signing.key>   (sign it for over-the-air updates)
  *
  * The ZIP contains everything a customer uploads to their server: the
  * application, production vendor/ (no dev packages), built assets and an
@@ -15,6 +16,16 @@ $root = dirname(__DIR__);
 chdir($root);
 
 $skipBuild = in_array('--skip-build', $argv, true);
+$keyPath = null;
+foreach ($argv as $arg) {
+    if (str_starts_with($arg, '--key=')) {
+        $keyPath = substr($arg, 6);
+    }
+}
+if ($keyPath !== null && ! is_file($keyPath)) {
+    fwrite(STDERR, "Signing key not found: {$keyPath}\n");
+    exit(1);
+}
 // Read the version without booting Laravel (config files call env()).
 preg_match("/'version'\s*=>\s*'([^']+)'/", (string) file_get_contents($root.'/config/labeldesk.php'), $m);
 $version = preg_replace('/[^0-9A-Za-z.\-]/', '', $m[1] ?? 'dev');
@@ -116,6 +127,16 @@ This folder must be writable by the web server. Do not edit add-on files: their 
 // Production dependencies only.
 run('composer install --no-dev --optimize-autoloader --no-interaction --no-progress --no-scripts', $stage);
 run('composer dump-autoload --optimize --no-dev --no-scripts', $stage);
+
+// Sign every file (signature.json) so LabelDesk can install it over the air.
+// Same Ed25519 key as add-on packages; the key itself never goes into the package.
+if ($keyPath !== null) {
+    require_once $root.'/vendor/autoload.php';
+    App\Services\Updates\CorePackage::sign($stage, $version, (string) file_get_contents($keyPath));
+    echo "Signed for over-the-air updates.\n";
+} else {
+    echo "Not signed (no --key): MusicDesk.tech signs it when the release is published.\n";
+}
 
 // Zip it.
 $zip = new ZipArchive;

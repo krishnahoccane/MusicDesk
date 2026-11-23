@@ -38,6 +38,8 @@ final class LicenseAuthority
         'check_in' => '/check-in',
         'deactivate' => '/deactivate',
         'public_key' => '/public-key',
+        'updates_check' => '/updates/check',
+        'updates_download' => '/updates/download',
     ];
 
     public static function apiBaseUrl(): string

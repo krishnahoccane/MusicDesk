@@ -88,7 +88,8 @@ class PluginSystemTest extends TestCase
         $this->assertFalse($plugin->active);
         $this->assertFileExists($this->work.'/installed/hello-addon/src/HelloServiceProvider.php');
         $this->assertFileExists($this->work.'/installed/hello-addon/signature.json');
-        $this->assertFalse(Schema::hasTable('hello_notes'), 'nothing runs before activation');
+        $this->assertTrue(Schema::hasTable('hello_notes'), 'tables are created on install, like WordPress plugins');
+        $this->assertSame(0, \DB::table('hello_notes')->count(), 'the add-on code itself does not run before activation');
     }
 
     public function test_tampered_unsigned_or_foreign_packages_are_refused(): void

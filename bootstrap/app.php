@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\AutoUpgrade;
 use App\Http\Middleware\EnsureApplicationInstalled;
 use App\Http\Middleware\EnsureFeatureEnabled;
 use App\Http\Middleware\EnsureLicenseNotLocked;
@@ -36,6 +37,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->web(prepend: [
             EnsureApplicationInstalled::class,
+            AutoUpgrade::class,
         ], append: [
             EnsureLicenseNotLocked::class,
             SecurityHeaders::class,

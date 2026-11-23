@@ -53,6 +53,7 @@ return [
             ['label' => 'Activity Log', 'icon' => 'history', 'route' => 'activity.index', 'active' => 'activity.*', 'permission' => 'activity.view'],
             ['label' => 'Backups', 'icon' => 'database-backup', 'route' => 'backups.index', 'active' => 'backups.*', 'permission' => 'backups.manage'],
             ['label' => 'Add-ons', 'icon' => 'puzzle', 'route' => 'plugins.index', 'active' => 'plugins.*', 'permission' => 'plugins.manage'],
+            ['label' => 'Updates', 'icon' => 'refresh-cw', 'route' => 'updates.index', 'active' => 'updates.*', 'permission' => 'updates.manage', 'badge' => 'updates'],
             ['label' => 'System', 'icon' => 'server', 'route' => 'system.index', 'active' => 'system.*', 'permission' => 'settings.manage'],
             ['label' => 'Settings', 'icon' => 'settings', 'route' => 'settings.index', 'active' => 'settings.*', 'permission' => 'settings.manage'],
             ['label' => 'License', 'icon' => 'key-round', 'route' => 'license.show', 'active' => 'license.*', 'permission' => 'license.view'],

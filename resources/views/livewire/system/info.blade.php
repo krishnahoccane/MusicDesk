@@ -1,6 +1,14 @@
 <div>
     <x-page-header :title="__('System')" :subtitle="__('Health of this installation and database upgrades.')" />
 
+    @if ($upgradeFailure)
+        <x-alert variant="danger" class="mb-3">
+            <strong>{{ __('The automatic database update to :version failed.', ['version' => $upgradeFailure['version']]) }}</strong>
+            {{ $upgradeFailure['error'] }}
+            {{ __('It is tried again every 15 minutes; you can also run it below.') }}
+        </x-alert>
+    @endif
+
     @if ($upgradeNeeded)
         <div class="card mb-3 border-warning">
             <div class="card-body d-flex flex-wrap align-items-center gap-3">
@@ -8,7 +16,7 @@
                 <div class="flex-grow-1">
                     <div class="fw-semibold" style="color: var(--ld-heading)">{{ __('A database upgrade is ready') }}</div>
                     <div class="small text-muted">
-                        {{ __('Files for :version were uploaded (database is at :installed, :count changes waiting). Take a backup, then run the upgrade.', [
+                        {{ __('Files for :version were uploaded (database is at :installed, :count changes waiting). It runs on its own the next time a page is opened; you can also run it now.', [
                             'version' => config('labeldesk.product.version'), 'installed' => $installedVersion ?? '—', 'count' => count($pending),
                         ]) }}
                     </div>

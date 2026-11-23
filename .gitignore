@@ -21,3 +21,6 @@ Homestead.json
 Homestead.yaml
 Thumbs.db
 /build
+
+# LabelDesk upgrade / update state files
+/storage/framework/labeldesk-*

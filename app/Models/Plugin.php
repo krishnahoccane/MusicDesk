@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class Plugin extends Model
 {
-    protected $fillable = ['slug', 'name', 'version', 'addon', 'description', 'manifest', 'active', 'installed_at', 'activated_at', 'last_error',
+    protected $fillable = ['slug', 'name', 'version', 'addon', 'description', 'manifest', 'active', 'auto_update', 'installed_at', 'activated_at', 'last_error',
         'license_key', 'license_token', 'license_status', 'license_expires_at', 'license_checked_at', 'license_error'];
 
     protected $hidden = ['license_key', 'license_token'];
@@ -20,6 +20,7 @@ class Plugin extends Model
         return [
             'manifest' => 'array',
             'active' => 'boolean',
+            'auto_update' => 'boolean',
             'installed_at' => 'datetime',
             'activated_at' => 'datetime',
             'license_key' => 'encrypted',

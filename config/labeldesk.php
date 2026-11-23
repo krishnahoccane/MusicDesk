@@ -16,9 +16,26 @@ return [
     'product' => [
         'name' => 'LabelDesk',
         'code' => 'LABELDESK',
-        'version' => '4.3.2',
+        'version' => '4.3.3',
         'vendor' => 'MusicDesk',
         'website' => 'https://musicdesk.tech',
+    ],
+
+    /*
+     | After new files are uploaded (by hand or by an over-the-air update), the
+     | first web request brings the database up to date in the background
+     | (migrations, permissions, caches) — no SSH or terminal needed.
+     */
+    'auto_upgrade' => (bool) env('LABELDESK_AUTO_UPGRADE', true),
+
+    /*
+     | Over-the-air updates from MusicDesk.tech (Administration → Updates).
+     | "root" is the folder updates are installed into (the application root).
+     */
+    'updates' => [
+        'enabled' => (bool) env('LABELDESK_UPDATES', true),
+        'backup_first' => true,
+        'root' => null,
     ],
 
     /*
