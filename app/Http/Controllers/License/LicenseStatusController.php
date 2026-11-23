@@ -83,6 +83,35 @@ class LicenseStatusController extends Controller
     }
 
     /**
+     * Change the license key (e.g. a new key after renewal or an upgrade).
+     */
+    public function changeKey(Request $request): RedirectResponse
+    {
+        $request->merge(['new_license_key' => LicenseActivationService::normalizeKey((string) $request->input('new_license_key'))]);
+        $request->validate([
+            'new_license_key' => ['required', 'string', 'max:64', 'regex:'.LicenseActivationService::KEY_PATTERN],
+            'change_password' => ['required', 'string'],
+        ], [], ['new_license_key' => __('license key'), 'change_password' => __('password')]);
+
+        if (! Hash::check((string) $request->input('change_password'), (string) $request->user()->password)) {
+            throw ValidationException::withMessages(['change_password' => __('The password is incorrect.')]);
+        }
+
+        $current = $this->validation->activation();
+        $context = ActivationContext::for((string) config('app.url'), (string) $this->installation->installationId());
+
+        try {
+            $this->activations->changeKey($current, $current ? $this->validation->contextFor($current) : null, $context, (string) $request->input('new_license_key'), $request->user(), $request->ip());
+        } catch (LicenseException $e) {
+            throw ValidationException::withMessages(['new_license_key' => $e->getMessage()]);
+        }
+
+        $this->validation->forget();
+
+        return back()->with('success', __('The license key was changed. The previous key was released for this domain.'));
+    }
+
+    /**
      * Offline activation with a .ldlic file from the MusicDesk portal.
      */
     public function offline(Request $request): RedirectResponse

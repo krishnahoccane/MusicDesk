@@ -133,21 +133,26 @@ Upload the zip to MusicDesk.tech so customers with the add-on can download it.
 
 ## License server (add-on keys)
 
-Each add-on purchase gets its own key on MusicDesk.tech (any format of 8–64 letters, digits and
-dashes). LabelDesk calls, under `https://musicdesk.tech/api/license/v1`:
+Each add-on is its own license with its own key (`LDAD-XXXX-XXXX-XXXX-XXXX`), attached to a main
+license. It has no domain slots: it activates only on domains that are live on its main license.
+Plans can include add-ons (keys issued automatically). Full server-side description:
+MusicDesk-Frontend `docs/licensing.md` ("Add-ons", "Add-on API", "Add-on packages").
+LabelDesk calls, under `https://musicdesk.tech/api/license/v1`:
 
 | Method | Path | Body | Success |
 |---|---|---|---|
-| POST | `/addons/activate` | `{key, addon, domain, version, php_version, instance_id}` | `200 {token, status, expires_at}` |
-| POST | `/addons/check-in` | `{token, version}` | `200 {token, status, expires_at}` |
+| POST | `/addons/activate` | `{key, addon, domain, version, php_version, instance_id}` | `200 {token, status, expires_at, support_until, addon}` |
+| POST | `/addons/check-in` | `{token, version}` (hourly) | `200 {token, status, expires_at, support_until, addon}` |
 | POST | `/addons/deactivate` | `{token}` | `204` |
 
 The token is an EdDSA JWT signed with the license server key (same key and `kid` as license tokens)
-with claims `iss`, `iat`, `exp`, `typ: "addon"`, `addon`, `dom`, `act`, `status`
-(`active` / `expiring`), `expires` (Unix time or `null` for lifetime). Errors use the license API
+with claims `iss`, `iat`, `exp`, `typ: "addon"`, `addon`, `dom`, `act`, `lic`, `status`
+(`active` / `expiring`), `expires` (Unix time or `null` for lifetime). Unlike LabelDesk itself, an
+add-on whose key has expired stops. Errors use the license API
 error format and codes (`invalid_key`, `license_revoked`, `license_suspended`, `license_expired`,
-`activation_not_found`, `activation_deactivated`, `domain_limit_reached`, plus `addon_mismatch` when
-the key belongs to another add-on).
+`activation_not_found`, `activation_deactivated`, plus `addon_mismatch` (409: key for another add-on,
+or a main `LDSK-` key) and `addon_domain_not_licensed` (409: the domain is not live on the main
+license). These stop the add-on at the next hourly check; network errors do not.
 
 Development keys `MD-LD-TEST-ADDN-XXXX-XXXX` (and `…-REVK-…`, `…-SUSP-…`, `…-EXPD-…` for refusals)
 work with the development license provider in tests and `php artisan serve`.

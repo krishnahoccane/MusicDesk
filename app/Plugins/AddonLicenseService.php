@@ -24,7 +24,8 @@ use Throwable;
  *   POST /addons/check-in  {token, version}                                         → {token, status, expires_at}
  *   POST /addons/deactivate {token}                                                 → 204
  *
- * Token claims: iss, iat, exp, typ = "addon", addon, dom, act, status, expires (Unix or null).
+ * Token claims: iss, iat, exp, typ = "addon", addon, dom, act, lic, status (active | expiring),
+ * expires (Unix or null). Contract: MusicDesk-Frontend docs/licensing.md, "Add-on API".
  * The add-on runs while its token is valid for this domain and add-on, the
  * status is usable, and the token is no older than exp + 14 days (offline grace).
  */
@@ -122,7 +123,7 @@ class AddonLicenseService
         } catch (LicenseException $e) {
             $plugin->forceFill(['license_error' => mb_substr($e->getMessage(), 0, 500)])->save();
             // A definitive answer stops the add-on; network problems keep the token (offline grace).
-            if (! $e->retryable && (str_starts_with($e->errorCode, 'license_') || in_array($e->errorCode, ['activation_deactivated', 'activation_not_found', 'invalid_key', 'invalid_token', 'domain_blocked'], true))) {
+            if (! $e->retryable && (str_starts_with($e->errorCode, 'license_') || in_array($e->errorCode, ['activation_deactivated', 'activation_not_found', 'invalid_key', 'invalid_token', 'domain_blocked', 'addon_mismatch', 'addon_domain_not_licensed'], true))) {
                 $plugin->forceFill(['license_status' => str_starts_with($e->errorCode, 'license_') ? substr($e->errorCode, 8) : $e->errorCode])->save();
             }
             throw $e;

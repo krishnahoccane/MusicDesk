@@ -16,7 +16,7 @@ return [
     'product' => [
         'name' => 'LabelDesk',
         'code' => 'LABELDESK',
-        'version' => '1.0.0-dev',
+        'version' => '4.3.1',
         'vendor' => 'MusicDesk',
         'website' => 'https://musicdesk.tech',
     ],

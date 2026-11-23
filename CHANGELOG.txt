@@ -4,8 +4,45 @@ LabelDesk - Change log
 Music label management for independent labels. Licensed by MusicDesk.tech.
 All notable changes, newest first. Versions follow Semantic Versioning.
 
-Version 1.0.0 (unreleased, in development)
-==========================================
+Version 4.3.1 (2026-11-23)
+==========================
+
+Added — change the license key
+------------------------------
+  * Change license key on Settings → License: enter the new key and confirm your password. The
+    new key is checked with MusicDesk.tech first; only when it is accepted is the old key
+    released for this domain and replaced. Refused keys change nothing.
+  * On the suspension page (no one can sign in there): "Administrator: use a different license
+    key" asks for the new key plus the email and password of an active administrator allowed to
+    manage the license. Nobody is signed in by it; on success the sign-in page opens. Limited to
+    5 attempts a minute and logged.
+  * The suspension page shows the actual reason when the installation was blocked by
+    MusicDesk.tech rather than expired.
+
+Added — add-ons (plugins)
+-------------------------
+  * Administration → Add-ons: upload add-ons downloaded from MusicDesk.tech, then activate,
+    deactivate or delete them, like WordPress plugins. Packages must be signed by MusicDesk.tech
+    (Ed25519 signature over every file); unsigned, changed or unsafe packages are refused before
+    anything is extracted. Uploading a newer version updates an add-on in place.
+  * Every add-on has its own license key (LDAD-…), verified with MusicDesk.tech for this domain
+    and re-checked every hour. An add-on runs only while it is active and its key is valid; a
+    revoked, suspended or expired key, or a domain removed from the main license, pauses it (its
+    data is kept).
+  * Add-ons can add pages, sidebar items, permissions, Settings tabs, sign-in buttons, /api
+    routes and database tables. Developer guide: docs/plugins.md; signed builds with
+    scripts/build-plugin.php.
+  * Available add-ons: Bulk upload, REST API, Incoming webhooks, Single sign-on (SSO).
+
+Changed — bulk upload is an add-on
+----------------------------------
+  * Bulk upload moved out of LabelDesk core into the Bulk upload add-on (addons/bulk-upload,
+    add-on code bulk_upload). Catalog → Bulk upload appears only while the add-on is active with
+    a valid key. Its access switches moved from Settings → Catalogue to their own tab, Settings
+    → Bulk upload. The permission "Bulk upload artists and releases" (catalog.bulk_upload) now
+    belongs to the add-on; roles keep it on upgrade, and on a new installation it is given to
+    Label Manager and Artist Manager the first time the add-on is activated. Upload history
+    (bulk_uploads) is kept.
 
 Added — license enforcement and cloud media storage
 ---------------------------------------------------
@@ -83,7 +120,7 @@ Added — Milestone 10 (Commercial release) and artist accounts
   * Bulk upload (Catalog → Bulk upload): artists and releases with tracks from Excel / CSV
     templates, check-before-import with row-level problems, optional creation of missing
     artists, upload history. Administrators always; the label team and artist accounts each have
-    an on/off switch (Settings → Catalogue).
+    an on/off switch (Settings → Catalogue). *Now the Bulk upload add-on, see Unreleased.*
   * Import sales reports (Reports → Import sales reports): choose or create a period, upload,
     map and process distributor / store sales reports; recent imports across all periods.
   * Branded error pages (403, 404, 419, 429, 500, 503) that work without built assets.

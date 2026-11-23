@@ -16,6 +16,7 @@ use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Schema;
 use Livewire\Livewire;
 use Spatie\Permission\Models\Permission;
@@ -206,6 +207,24 @@ class PluginSystemTest extends TestCase
         app(AddonLicenseService::class)->refreshDue();
         $this->assertTrue($plugin->fresh()->license_checked_at->isAfter(now()->subMinute()));
         $this->assertTrue($this->manager()->licensed($plugin->fresh()));
+    }
+
+    public function test_a_domain_removed_from_the_main_license_stops_the_add_on_at_the_next_check(): void
+    {
+        $plugin = $this->manager()->install($this->package());
+        $this->manager()->activate($plugin, self::ADDON_KEY);
+
+        // Same key, now answered by the real license API.
+        config(['licensing.testing.driver' => 'musicdesk']);
+        Http::fake(['musicdesk.tech/api/license/v1/addons/check-in' => Http::response(
+            ['error' => ['code' => 'addon_domain_not_licensed', 'message' => 'Add the domain to the main license first.', 'field' => 'domain']], 409)]);
+        $plugin->fresh()->forceFill(['license_key' => 'LDAD-AAAA-BBBB-CCCC-DDDD', 'license_checked_at' => now()->subHours(2)])->save();
+
+        app(AddonLicenseService::class)->refreshDue();
+
+        $this->assertSame('addon_domain_not_licensed', $plugin->fresh()->license_status);
+        $this->assertFalse($this->manager()->licensed($plugin->fresh()));
+        Http::assertSent(fn ($r) => str_ends_with($r->url(), '/addons/check-in') && isset($r['token']) && ! isset($r['key']));
     }
 
     public function test_updates_downgrades_and_delete(): void

@@ -114,6 +114,33 @@ class LicenseActivationService
     }
 
     /**
+     * Replace the license key: the new key is activated for this domain first;
+     * only when that succeeds is the old activation released on the license
+     * server (best effort) and retired here. A refused key changes nothing.
+     *
+     * @throws LicenseException
+     */
+    public function changeKey(?LicenseActivation $current, ?ActivationContext $currentContext, ActivationContext $context, string $newKey, ?User $user = null, ?string $ip = null): LicenseActivation
+    {
+        $newKey = self::normalizeKey($newKey);
+        if ($current && $current->license_key && hash_equals((string) $current->license_key_hash, hash('sha256', $newKey))) {
+            throw new LicenseException('same_key', __('This key is already in use here. To pick up a renewal, use "Verify now" (or "Check again").'));
+        }
+
+        $result = $this->activate($context, $newKey);
+
+        if ($current && $currentContext) {
+            $token = $this->currentToken($current);
+            if ($token !== null && ! $current->offline) {
+                rescue(fn () => $this->manager->provider($current->provider)->deactivate($currentContext, $token), report: false);
+            }
+            $this->log($current, 'key_changed', 'success', null, __('Replaced by a key ending :last4.', ['last4' => substr($newKey, -4)]), $user, $ip);
+        }
+
+        return $this->persist($context, $newKey, $result, null, $user, $ip);
+    }
+
+    /**
      * The installation's current token (the latest stored one, even if expired).
      */
     public function currentToken(LicenseActivation $activation): ?string

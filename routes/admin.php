@@ -181,6 +181,7 @@ Route::middleware(['auth', 'auth.session', 'active', 'license'])->group(function
         Route::middleware(['permission:license.manage', 'throttle:license-activation'])->group(function () {
             Route::post('verify', [LicenseStatusController::class, 'verify'])->name('verify');
             Route::post('activate', [LicenseStatusController::class, 'activate'])->name('activate');
+            Route::post('change-key', [LicenseStatusController::class, 'changeKey'])->name('change-key');
             Route::post('deactivate', [LicenseStatusController::class, 'deactivate'])->name('deactivate');
             Route::post('transfer', [LicenseStatusController::class, 'transfer'])->name('transfer');
             Route::post('offline', [LicenseStatusController::class, 'offline'])->name('offline');

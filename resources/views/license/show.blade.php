@@ -157,6 +157,26 @@
                 </div>
                 <div class="col-lg-6">
                     <div class="card h-100">
+                        <div class="card-header"><x-icon name="key-round" size="18" class="text-muted" /><h2 class="card-title">{{ __('Change license key') }}</h2></div>
+                        <div class="card-body">
+                            <p class="small text-muted">{{ __('Use a different key, for example after renewing with a new key or upgrading your plan. The new key is checked with MusicDesk.tech first; the current key is only released when the new one is accepted.') }}</p>
+                            <form method="POST" action="{{ route('license.change-key') }}" class="row g-2" novalidate>
+                                @csrf
+                                <div class="col-12">
+                                    <input name="new_license_key" class="form-control font-monospace text-uppercase @error('new_license_key') is-invalid @enderror" placeholder="LDSK-XXXX-XXXX-XXXX-XXXX" value="{{ old('new_license_key') }}" maxlength="64" autocomplete="off" aria-label="{{ __('New license key') }}">
+                                    @error('new_license_key') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                                </div>
+                                <div class="col-sm-7">
+                                    <input type="password" name="change_password" class="form-control @error('change_password') is-invalid @enderror" placeholder="{{ __('Confirm your password') }}" autocomplete="current-password" aria-label="{{ __('Password') }}">
+                                    @error('change_password') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                                </div>
+                                <div class="col-sm-5"><button type="submit" class="btn btn-primary w-100">{{ __('Change key') }}</button></div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="card h-100">
                         <div class="card-header"><x-icon name="power" size="18" class="text-muted" /><h2 class="card-title">{{ __('Deactivate installation') }}</h2></div>
                         <div class="card-body">
                             <p class="small text-muted">{{ __('Releases this installation\'s activation slot so the key can be used elsewhere. LabelDesk becomes read-only here; no data is deleted.') }}</p>

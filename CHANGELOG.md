@@ -3,7 +3,30 @@
 All notable changes to LabelDesk are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses Semantic Versioning.
 
-## [Unreleased]
+## [4.3.1] — 2026-11-23
+
+### Added — change the license key
+- **Change license key** on Settings → License: enter the new key and confirm your password. The new key
+  is checked with MusicDesk.tech first; only when it is accepted is the old key released for this domain
+  and replaced. Refused keys change nothing.
+- **On the suspension page** (no one can sign in there): "Administrator: use a different license key"
+  asks for the new key plus the email and password of an active administrator allowed to manage the
+  license. Nobody is signed in by it; on success the sign-in page opens. Limited to 5 attempts a minute
+  and logged.
+- The suspension page shows the actual reason when the installation was blocked by MusicDesk.tech
+  rather than expired.
+
+### Added — add-ons (plugins)
+- **Administration → Add-ons**: upload add-ons downloaded from MusicDesk.tech, then activate,
+  deactivate or delete them, like WordPress plugins. Packages must be signed by MusicDesk.tech
+  (Ed25519 signature over every file); unsigned, changed or unsafe packages are refused before anything
+  is extracted. Uploading a newer version updates an add-on in place.
+- **Every add-on has its own license key** (`LDAD-…`), verified with MusicDesk.tech for this domain and
+  re-checked every hour. An add-on runs only while it is active and its key is valid; a revoked,
+  suspended or expired key, or a domain removed from the main license, pauses it (its data is kept).
+- Add-ons can add pages, sidebar items, permissions, Settings tabs, sign-in buttons, `/api` routes and
+  database tables. Developer guide: `docs/plugins.md`; signed builds with `scripts/build-plugin.php`.
+- Available add-ons: **Bulk upload**, **REST API**, **Incoming webhooks**, **Single sign-on (SSO)**.
 
 ### Changed — bulk upload is an add-on
 - **Bulk upload** moved out of LabelDesk core into the **Bulk upload** add-on (`addons/bulk-upload`,

@@ -25,6 +25,8 @@ Route::get('/', function () {
 Route::get('suspended', [LicenseLockedController::class, 'show'])->name('license.locked');
 Route::post('suspended/check', [LicenseLockedController::class, 'check'])
     ->middleware('throttle:5,1')->name('license.locked.check');
+Route::post('suspended/change-key', [LicenseLockedController::class, 'changeKey'])
+    ->middleware('throttle:5,1')->name('license.locked.change-key');
 
 // Uploaded logo, favicon and sign-in images (public: shown on the sign-in page and installer).
 Route::get('branding/{file}', BrandingController::class)
