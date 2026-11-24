@@ -11,27 +11,6 @@
                 "--port=8000"
             ],
             "port": 8000
-        },
-        {
-            "name": "ota-test",
-            "runtimeExecutable": "php",
-            "runtimeArgs": [
-                "C:/Users/aksph/AppData/Local/Temp/claude/62ed4e70de00d40d/22a839c1-88d8-456a-8089-e7a8b74526e9/scratchpad/ota/site/artisan",
-                "serve",
-                "--host=127.0.0.1",
-                "--port=8123"
-            ],
-            "port": 8123
-        },
-        {
-            "name": "release-zip",
-            "runtimeExecutable": "php",
-            "runtimeArgs": [
-                "-S",
-                "127.0.0.1:8130",
-                "C:/Users/aksph/AppData/Local/Temp/claude/62ed4e70de00d40d/7d94531f-1eb1-40ce-9a3a-84316d94e17f/scratchpad/serve-zip.php"
-            ],
-            "port": 8130
         }
     ]
 }
