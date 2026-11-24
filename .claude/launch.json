@@ -11,6 +11,17 @@
                 "--port=8000"
             ],
             "port": 8000
+        },
+        {
+            "name": "ota-test",
+            "runtimeExecutable": "php",
+            "runtimeArgs": [
+                "C:/Users/aksph/AppData/Local/Temp/claude/62ed4e70de00d40d/22a839c1-88d8-456a-8089-e7a8b74526e9/scratchpad/ota/site/artisan",
+                "serve",
+                "--host=127.0.0.1",
+                "--port=8123"
+            ],
+            "port": 8123
         }
     ]
 }
