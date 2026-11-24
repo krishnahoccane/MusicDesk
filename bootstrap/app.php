@@ -23,6 +23,11 @@ use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
 require_once __DIR__.'/../app/Services/Installation/EnvironmentBootstrapper.php';
 EnvironmentBootstrapper::ensure(dirname(__DIR__));
 
+// After new files are uploaded (update or FTP), drop bootstrap/cache lists that name classes
+// or files of the previous version, so Laravel rebuilds them instead of failing on every request.
+require_once __DIR__.'/../app/Support/StaleCacheGuard.php';
+App\Support\StaleCacheGuard::check(dirname(__DIR__));
+
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
