@@ -1,13 +1,13 @@
 <?php
 
-namespace App\Services\MediaStorage\Drivers;
+namespace LabelDesk\Addons\MediaStorage\Drivers;
 
-use App\Models\MediaStorageTarget;
-use App\Services\MediaStorage\MediaStorageException;
 use Illuminate\Http\Client\Factory as HttpFactory;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Cache;
+use LabelDesk\Addons\MediaStorage\Models\MediaStorageTarget;
+use LabelDesk\Addons\MediaStorage\Services\MediaStorageException;
 
 /**
  * A storage destination reached over its API. OAuth drives (Google Drive,

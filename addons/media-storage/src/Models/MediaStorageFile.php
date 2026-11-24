@@ -1,7 +1,9 @@
 <?php
 
-namespace App\Models;
+namespace LabelDesk\Addons\MediaStorage\Models;
 
+use App\Models\Release;
+use App\Models\Track;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 

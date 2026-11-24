@@ -121,6 +121,18 @@ abstract class AddonServiceProvider extends ServiceProvider
         $this->registry()->loginButton($view, $this->slug());
     }
 
+    /** Background work every $minutes (no cron needed); see PluginRegistry::task(). */
+    protected function backgroundTask(string $name, int $minutes, callable $run, ?string $label = null): void
+    {
+        $this->registry()->task($name, $minutes, $run, $this->slug(), $label);
+    }
+
+    /** Serve track masters that are no longer on the server; see PluginRegistry::fileSource(). */
+    protected function fileSource(callable $resolver): void
+    {
+        $this->registry()->fileSource($resolver, $this->slug());
+    }
+
     protected function dashboardWidget(string $view): void
     {
         $this->registry()->dashboardWidget($view, $this->slug());

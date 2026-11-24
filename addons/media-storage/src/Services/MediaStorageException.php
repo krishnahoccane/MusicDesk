@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\MediaStorage;
+namespace LabelDesk\Addons\MediaStorage\Services;
 
 use RuntimeException;
 

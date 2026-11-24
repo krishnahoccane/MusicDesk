@@ -1,21 +1,22 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace LabelDesk\Addons\MediaStorage\Http;
 
-use App\Models\MediaStorageTarget;
+use App\Http\Controllers\Controller;
 use App\Services\Activity\ActivityLogger;
-use App\Services\MediaStorage\MediaStorageException;
-use App\Services\MediaStorage\MediaStorageManager;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use LabelDesk\Addons\MediaStorage\Models\MediaStorageTarget;
+use LabelDesk\Addons\MediaStorage\Services\MediaStorageException;
+use LabelDesk\Addons\MediaStorage\Services\MediaStorageManager;
 
 /**
  * OAuth 2.0 for Settings → Media storage. One redirect URI per storage type
  * (so several Google Drive accounts can share one OAuth app); the destination
  * being connected travels in the session with the state value.
  */
-class MediaStorageOAuthController extends Controller
+class OAuthController extends Controller
 {
     public static function redirectUri(string $driver): string
     {

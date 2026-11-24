@@ -1,35 +1,39 @@
 <?php
 
-namespace Tests\Feature\MediaStorage;
+namespace LabelDesk\Addons\MediaStorage\Tests;
 
 use App\Enums\SystemRole;
-use App\Livewire\Settings\MediaStorage;
 use App\Models\Artist;
-use App\Models\MediaStorageFile;
-use App\Models\MediaStorageFolder;
-use App\Models\MediaStorageTarget;
+use App\Models\Plugin;
 use App\Models\Release;
 use App\Models\Track;
 use App\Models\User;
-use App\Services\Catalog\ReleaseService;
-use App\Services\MediaStorage\Drivers\Dropbox;
-use App\Services\MediaStorage\MediaStorageManager;
-use App\Services\MediaStorage\MediaSyncService;
+use App\Plugins\PluginManager;
+use App\Plugins\PluginRegistry;
 use App\Services\SettingsService;
 use App\Services\System\AutomaticTasks;
 use Database\Seeders\RolesAndPermissionsSeeder;
+use Illuminate\Contracts\Console\Kernel as ConsoleKernel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
-use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
+use LabelDesk\Addons\MediaStorage\Drivers\Dropbox;
+use LabelDesk\Addons\MediaStorage\Livewire\Settings;
+use LabelDesk\Addons\MediaStorage\Models\MediaStorageFile;
+use LabelDesk\Addons\MediaStorage\Models\MediaStorageFolder;
+use LabelDesk\Addons\MediaStorage\Models\MediaStorageTarget;
+use LabelDesk\Addons\MediaStorage\Services\MediaStorageManager;
+use LabelDesk\Addons\MediaStorage\Services\MediaSyncService;
 use Livewire\Livewire;
+use Tests\Concerns\InstallsAddons;
 use Tests\TestCase;
 
 class MediaStorageTest extends TestCase
 {
-    use RefreshDatabase;
+    use InstallsAddons, RefreshDatabase;
 
     protected User $admin;
 
@@ -44,6 +48,10 @@ class MediaStorageTest extends TestCase
         parent::setUp();
         Storage::fake('local');
         Cache::flush();
+        // The add-on requires LabelDesk 4.3.4 (media storage left core in that release).
+        if (version_compare((string) config('labeldesk.product.version'), '4.3.4', '<')) {
+            config(['labeldesk.product.version' => '4.3.4']);
+        }
         $this->seed(RolesAndPermissionsSeeder::class);
         $this->admin = $this->makeUser(SystemRole::SuperAdmin);
         $this->activateLicense();
@@ -54,6 +62,15 @@ class MediaStorageTest extends TestCase
         Storage::disk('local')->put('releases/'.$this->release->id.'/audio/master.wav', $this->audio);
         $this->track = $this->release->tracks()->create(['title' => 'Glass City', 'isrc' => 'GB-AYE-26-00001', 'position' => 1]);
         $this->track->forceFill(['audio_path' => 'releases/'.$this->release->id.'/audio/master.wav', 'audio_mime' => 'audio/wav'])->save();
+
+        if ($this->name() !== 'test_settings_page_and_tasks_exist_only_while_the_add_on_is_active') {
+            $this->install();
+        }
+    }
+
+    protected function install(bool $activate = true): Plugin
+    {
+        return $this->installAddon(base_path('addons/media-storage'), $activate);
     }
 
     protected function addTarget(string $driver = 'google_drive', array $attributes = [], array $credentials = []): MediaStorageTarget
@@ -96,6 +113,110 @@ class MediaStorageTest extends TestCase
                 : Http::response(['id' => 'FILE1', 'name' => 'GBAYE2600001.wav', 'size' => (string) strlen($this->audio), 'trashed' => false]),
         ]);
     }
+
+    // ------------------------------------------------------------ add-on lifecycle
+
+    public function test_settings_page_and_tasks_exist_only_while_the_add_on_is_active(): void
+    {
+        $this->actingAs($this->admin)->get('/settings/media-storage')->assertNotFound();
+        $this->actingAs($this->admin)->get('/settings')->assertOk()->assertDontSee('/settings/media-storage', false);
+        $this->assertArrayNotHasKey('media', AutomaticTasks::all());
+
+        $plugin = $this->install(activate: false);
+        $this->actingAs($this->admin)->get('/settings/media-storage')->assertNotFound();
+
+        app(PluginManager::class)->activate($plugin, 'MD-LD-TEST-ADDN-AAAA-BBBB');
+        $this->assertTrue(Schema::hasTable('media_storage_targets') && Schema::hasTable('media_storage_folders') && Schema::hasTable('media_storage_files'));
+        $this->actingAs($this->admin)->get('/settings')->assertOk()->assertSee(route('settings.media'), false);
+        $this->actingAs($this->admin)->get('/settings/media-storage')->assertOk()->assertSee('Storage destinations');
+        $this->actingAs($this->makeUser(SystemRole::LabelManager))->get('/settings/media-storage')->assertForbidden();
+        $this->assertSame(5, AutomaticTasks::all()['media']);
+        $this->assertContains('media-storage', array_column(app(PluginRegistry::class)->fileSources, 'plugin'));
+
+        // The OAuth redirect URI customers registered with Google / Microsoft / Dropbox / Zoho is unchanged.
+        $this->assertSame(url('settings/media-storage/callback/google_drive'), route('settings.media.callback', 'google_drive'));
+
+        $target = $this->addTarget();
+        app(PluginManager::class)->deactivate($plugin->fresh());
+        $this->actingAs($this->admin)->get('/settings/media-storage')->assertNotFound();
+        $this->actingAs($this->admin)->get('/settings/media-storage/callback/google_drive')->assertNotFound();
+
+        // Deleting the add-on keeps destinations and upload records.
+        app(PluginManager::class)->delete($plugin->fresh());
+        $this->assertTrue(Schema::hasTable('media_storage_files'));
+        $this->assertModelExists($target);
+    }
+
+    public function test_existing_core_tables_and_data_are_kept_when_installed(): void
+    {
+        // The add-on is installed in setUp; installing a newer copy must not touch existing rows.
+        $target = $this->addTarget(attributes: ['name' => 'Kept drive']);
+        (include base_path('addons/media-storage/database/migrations/2026_12_05_000000_media_storage_addon_tables.php'))->up();
+
+        $this->assertSame('Kept drive', $target->fresh()->name);
+        $this->assertSame('secret', $target->fresh()->credential('client_secret'));
+    }
+
+    // ------------------------------------------------------------ queueing hooks
+
+    public function test_uploads_are_queued_when_tracks_and_releases_change(): void
+    {
+        $target = $this->addTarget();
+
+        // New track with audio.
+        Storage::disk('local')->put('releases/'.$this->release->id.'/audio/two.flac', 'flac-bytes');
+        $two = $this->release->tracks()->create(['title' => 'Two', 'isrc' => 'GBAYE2600002', 'position' => 2]);
+        $two->forceFill(['audio_path' => 'releases/'.$this->release->id.'/audio/two.flac', 'audio_mime' => 'audio/flac'])->save();
+        $this->assertTrue(MediaStorageFile::query()->where(['target_id' => $target->id, 'kind' => 'audio', 'track_id' => $two->id, 'status' => 'pending'])->exists());
+
+        // New artwork.
+        $this->release->forceFill(['artwork_original_path' => 'releases/'.$this->release->id.'/artwork-original.png'])->save();
+        $this->assertTrue(MediaStorageFile::query()->where(['target_id' => $target->id, 'kind' => 'artwork', 'release_id' => $this->release->id])->exists());
+
+        // A renamed release re-queues every track (folder rename).
+        MediaStorageFile::query()->update(['status' => 'uploaded']);
+        $this->release->update(['title' => 'Renamed']);
+        $this->assertSame(3, MediaStorageFile::query()->where('status', 'pending')->count(), 'artwork + both tracks');
+
+        // A disabled storage gets nothing.
+        $target->update(['enabled' => false]);
+        MediaStorageFile::query()->delete();
+        $this->track->forceFill(['isrc' => 'GBAYE2600009'])->save();
+        $this->assertSame(0, MediaStorageFile::query()->count());
+    }
+
+    public function test_the_background_task_uploads_through_automatic_tasks(): void
+    {
+        $this->addTarget();
+        $this->fakeGoogle();
+        app(MediaSyncService::class)->queueTrack($this->track);
+
+        // Only the add-on's task is due: core tasks count as just run.
+        foreach (array_keys(AutomaticTasks::TASKS) as $task) {
+            Cache::forever('labeldesk:auto:'.$task, now()->timestamp);
+        }
+        $ran = app(AutomaticTasks::class)->runDue(force: true);
+
+        $this->assertSame(['media'], $ran);
+
+        $this->assertSame('uploaded', MediaStorageFile::query()->sole()->status);
+    }
+
+    public function test_sync_command(): void
+    {
+        $this->addTarget();
+        $this->fakeGoogle();
+        // The add-on was activated after this process built its console application
+        // (a real "php artisan" run boots active add-ons first): rebuild it.
+        $this->app->make(ConsoleKernel::class)->setArtisan(null);
+
+        $this->artisan('labeldesk:media:sync', ['--all' => true, '--budget' => 60])
+            ->expectsOutputToContain('Queued 1 files.')
+            ->expectsOutputToContain('uploaded 1')
+            ->assertSuccessful();
+    }
+
+    // ------------------------------------------------------------ uploads (ported from core)
 
     public function test_folder_and_file_names_follow_release_title_upc_and_isrc(): void
     {
@@ -201,15 +322,27 @@ class MediaStorageTest extends TestCase
         Storage::disk('local')->assertMissing($this->track->audio_path);
         $this->assertNotNull($record->fresh()->local_deleted_at);
 
-        // Playback and download still work, streamed from Google Drive.
+        // Playback and download still work, streamed from Google Drive through core's file-source hook.
         $response = $this->actingAs($this->admin)->get(route('tracks.download', $this->track));
         $response->assertOk();
         $this->assertSame($this->audio, $response->streamedContent());
         $this->assertStringContainsString('attachment', $response->headers->get('Content-Disposition'));
+        $this->assertStringContainsString('no-store', (string) $response->headers->get('Cache-Control'));
+
+        $player = $this->actingAs($this->admin)->get(route('tracks.audio', $this->track));
+        $player->assertOk();
+        $this->assertSame($this->audio, $player->streamedContent());
 
         // Removing the storage is refused while files exist only there.
-        Livewire::actingAs($this->admin)->test(MediaStorage::class)->call('delete', $target->id)->assertDispatched('toast', type: 'danger');
+        Livewire::actingAs($this->admin)->test(Settings::class)->call('delete', $target->id)->assertDispatched('toast', type: 'danger');
         $this->assertModelExists($target);
+    }
+
+    public function test_a_file_without_a_cloud_copy_is_not_found(): void
+    {
+        Storage::disk('local')->delete($this->track->audio_path);
+
+        $this->actingAs($this->admin)->get(route('tracks.download', $this->track))->assertNotFound();
     }
 
     public function test_server_copy_is_kept_until_every_enabled_storage_has_it(): void
@@ -327,18 +460,7 @@ class MediaStorageTest extends TestCase
         @unlink($path);
     }
 
-    public function test_original_artwork_is_kept_byte_for_byte(): void
-    {
-        $file = UploadedFile::fake()->image('cover.png', 3000, 3000);
-        $bytes = file_get_contents($file->getRealPath());
-
-        app(ReleaseService::class)->setArtwork($this->admin, $this->release, $file);
-        $this->release->refresh();
-
-        $this->assertStringEndsWith('-original.png', $this->release->artwork_original_path);
-        $this->assertSame($bytes, Storage::disk('local')->get($this->release->artwork_original_path));
-        $this->assertStringEndsWith('.jpg', $this->release->artwork_path, 'display copy is still the re-encoded JPEG');
-    }
+    // ------------------------------------------------------------ settings page (ported from core)
 
     public function test_oauth_connect_and_callback_per_destination(): void
     {
@@ -350,7 +472,6 @@ class MediaStorageTest extends TestCase
         $this->assertStringStartsWith('https://accounts.google.com/o/oauth2/v2/auth?', $location);
         $this->assertStringContainsString('access_type=offline', $location);
         $this->assertStringContainsString(rawurlencode(route('settings.media.callback', 'google_drive')), $location);
-        parse_str((string) parse_url($location, PHP_URL_QUERY), $query);
 
         // A forged state is refused.
         $this->actingAs($this->admin)->get(route('settings.media.callback', ['driver' => 'google_drive', 'state' => 'forged', 'code' => 'x']))
@@ -363,7 +484,7 @@ class MediaStorageTest extends TestCase
             'www.googleapis.com/drive/v3/about*' => Http::response(['user' => ['emailAddress' => 'label@example.com']]),
         ]);
         $this->actingAs($this->admin)->get(route('settings.media.callback', ['driver' => 'google_drive', 'state' => $query['state'], 'code' => 'auth-code']))
-            ->assertRedirect()->assertSessionHas('success');
+            ->assertRedirect(route('settings.media'))->assertSessionHas('success');
 
         $target->refresh();
         $this->assertSame('1//refresh', $target->credential('refresh_token'));
@@ -380,7 +501,7 @@ class MediaStorageTest extends TestCase
 
         // Adding a second Google Drive redirects to its own OAuth connect.
         $this->addTarget(attributes: ['name' => 'Google Drive']);
-        Livewire::actingAs($this->admin)->test(MediaStorage::class)
+        Livewire::actingAs($this->admin)->test(Settings::class)
             ->call('startAdd', 'google_drive')->assertSet('name', 'Google Drive 2')
             ->assertSee(route('settings.media.callback', 'google_drive'))
             ->set('creds.client_id', 'second-client')->set('creds.client_secret', 'second-secret')
@@ -391,11 +512,11 @@ class MediaStorageTest extends TestCase
         $this->assertSame('second-secret', $new->credential('client_secret'));
 
         // Cannot enable before it is connected and has a folder.
-        Livewire::actingAs($this->admin)->test(MediaStorage::class)->call('toggle', $new->id)->assertDispatched('toast', type: 'danger');
+        Livewire::actingAs($this->admin)->test(Settings::class)->call('toggle', $new->id)->assertDispatched('toast', type: 'danger');
         $this->assertFalse($new->fresh()->enabled);
 
         // Editing keeps the stored secret when the field is left blank.
-        Livewire::actingAs($this->admin)->test(MediaStorage::class)
+        Livewire::actingAs($this->admin)->test(Settings::class)
             ->call('edit', $new->id)->assertSet('creds.client_secret', '')->set('name', 'Archive drive')->call('saveTarget')->assertHasNoErrors();
         $this->assertSame('second-secret', $new->fresh()->credential('client_secret'));
         $this->assertSame('Archive drive', $new->fresh()->name);
@@ -404,16 +525,16 @@ class MediaStorageTest extends TestCase
         $new->update(['folder_id' => 'ROOT_X', 'folder_name' => 'My Drive / X', 'account' => 'x@example.com', 'connected_at' => now()]);
         $new->setCredentials(['refresh_token' => 'r']);
         $new->save();
-        Livewire::actingAs($this->admin)->test(MediaStorage::class)->call('toggle', $new->id)->assertDispatched('toast', type: 'success');
+        Livewire::actingAs($this->admin)->test(Settings::class)->call('toggle', $new->id)->assertDispatched('toast', type: 'success');
         $this->assertTrue($new->fresh()->enabled);
         $this->assertSame(1, MediaStorageFile::query()->where('target_id', $new->id)->where('kind', 'audio')->count());
 
-        Livewire::actingAs($this->admin)->test(MediaStorage::class)->call('toggle', $new->id);
+        Livewire::actingAs($this->admin)->test(Settings::class)->call('toggle', $new->id);
         $this->assertFalse($new->fresh()->enabled);
         $this->assertFalse(app(MediaStorageManager::class)->activeTargets()->contains('id', $new->id));
 
         // Shared options.
-        Livewire::actingAs($this->admin)->test(MediaStorage::class)
+        Livewire::actingAs($this->admin)->test(Settings::class)
             ->set('delete_local', true)->set('delete_after_days', 400)->call('saveOptions')->assertHasErrors('delete_after_days')
             ->set('delete_after_days', 3)->call('saveOptions')->assertHasNoErrors();
         $this->assertTrue((bool) app(SettingsService::class)->get('media.delete_local'));
@@ -421,7 +542,7 @@ class MediaStorageTest extends TestCase
 
     public function test_ftp_details_are_tested_when_saved(): void
     {
-        Livewire::actingAs($this->admin)->test(MediaStorage::class)
+        Livewire::actingAs($this->admin)->test(Settings::class)
             ->call('startAdd', 'ftp')
             ->set('creds.host', 'bad host!')->call('saveTarget')->assertHasErrors('creds.host')
             ->set('creds.host', '127.0.0.1')->set('creds.port', '1')->set('creds.username', 'label')->set('creds.password', 'pw')
@@ -432,10 +553,5 @@ class MediaStorageTest extends TestCase
         $this->assertFalse($target->enabled);
         $this->assertSame('pw', $target->credential('password'));
         $this->assertStringNotContainsString('"pw"', (string) $target->getRawOriginal('credentials'));
-    }
-
-    public function test_media_sync_runs_every_five_minutes_without_cron(): void
-    {
-        $this->assertSame(5, AutomaticTasks::TASKS['media']);
     }
 }

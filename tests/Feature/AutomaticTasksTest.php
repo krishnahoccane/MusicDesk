@@ -45,7 +45,7 @@ class AutomaticTasksTest extends TestCase
         $this->travelTo(CarbonImmutable::parse('2026-11-25 10:00:00'));
 
         $ran = app(AutomaticTasks::class)->runDue();
-        $this->assertSame(['license', 'queue', 'media', 'backup', 'cleanup', 'updates'], $ran);
+        $this->assertSame(['license', 'queue', 'backup', 'cleanup', 'updates'], $ran);
         $this->assertNotNull(Cache::get(AutomaticTasks::LAST_RUN_KEY));
 
         // Within the same minute nothing runs (cheap gate).
@@ -55,9 +55,14 @@ class AutomaticTasksTest extends TestCase
         $this->travel(2)->minutes();
         $this->assertSame(['queue'], app(AutomaticTasks::class)->runDue());
 
-        // Six minutes later the media sync is due again.
-        $this->travel(5)->minutes();
-        $this->assertSame(['queue', 'media'], app(AutomaticTasks::class)->runDue());
+        // An add-on's task (PluginRegistry::task) runs on its own schedule too.
+        $runs = 0;
+        app(\App\Plugins\PluginRegistry::class)->task('addon-sync', 5, function () use (&$runs) { $runs++; }, 'test');
+        $this->travel(2)->minutes();
+        $this->assertSame(['queue', 'addon-sync'], app(AutomaticTasks::class)->runDue());
+        $this->assertSame(1, $runs);
+        $this->travel(2)->minutes();
+        $this->assertSame(['queue'], app(AutomaticTasks::class)->runDue());
     }
 
     public function test_nightly_backup_runs_once_a_day_from_two_am(): void
@@ -93,7 +98,7 @@ class AutomaticTasksTest extends TestCase
 
         $this->actingAs($this->makeUser(SystemRole::SuperAdmin))->get('/system')->assertOk()
             ->assertSee('No cron job needed')
-            ->assertDontSee('License check with MusicDesk.tech')->assertSee('Cloud media uploads and clean-up')
+            ->assertDontSee('License check with MusicDesk.tech')->assertSee('Check MusicDesk.tech for updates')
             ->assertDontSee('schedule:run');
     }
 }

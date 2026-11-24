@@ -4,6 +4,37 @@ LabelDesk - Change log
 Music label management for independent labels. Licensed by MusicDesk.tech.
 All notable changes, newest first. Versions follow Semantic Versioning.
 
+Version 4.3.4 (2026-11-24)
+==========================
+
+Changed
+-------
+  * Media storage is now an add-on. Copying master audio and artwork to Google Drive, OneDrive,
+    OneDrive for Business, Dropbox, Zoho WorkDrive or FTP (Settings → Media storage) moved out
+    of LabelDesk into the Media storage add-on from MusicDesk.tech (add-on code media_storage).
+    Install it under Administration → Add-ons and activate it with its own key: Settings → Media
+    storage comes back with the same destinations, folders, upload history and options, and the
+    sign-in links of the drives keep the same address, so connected accounts don't need to be
+    set up again.
+  * Nothing is deleted. Existing destinations, the record of what was uploaded and the files on
+    the drives stay as they are. Until the add-on is active, nothing new is uploaded, and
+    masters that were already removed from the server after upload can't be played or downloaded
+    in LabelDesk. They are still on the drive and come back as soon as the add-on is active.
+  * New installations no longer create the cloud media tables; the add-on creates them when it
+    is installed.
+
+Added
+-----
+  * Add-ons can run their own background work without a cron job, shown under Administration →
+    System (backgroundTask()), and serve track masters that are no longer on the server
+    (fileSource()).
+
+Fixed
+-----
+  * "Page not found" pages now show LabelDesk's own explanation when there is one (for example
+    why a master can't be fetched), instead of always the generic text.
+  * Release packages never include local database files (such as a development database.sqlite).
+
 Version 4.3.3 (2026-11-23)
 ==========================
 

@@ -50,7 +50,7 @@ in File Manager → Settings, tick **Show Hidden Files (dotfiles)** to check tha
 Option A is still preferred because private files are then outside the web folder entirely.
 
 **No cron job is needed.** LabelDesk runs its background work by itself while it is being used, after
-each page has been sent: hourly license check, queued jobs, cloud media uploads, the nightly backup and
+each page has been sent: hourly license check, queued jobs, the nightly backup and
 clean-up (Administration → System shows when each last ran).
 
 **Checks after uploading** (either option):

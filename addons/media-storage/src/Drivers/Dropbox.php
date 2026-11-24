@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\MediaStorage\Drivers;
+namespace LabelDesk\Addons\MediaStorage\Drivers;
 
 use Illuminate\Http\Client\Response;
 

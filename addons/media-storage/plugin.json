@@ -1,0 +1,11 @@
+{
+    "slug": "media-storage",
+    "name": "Media storage",
+    "version": "1.0.0",
+    "addon": "media_storage",
+    "description": "Copy master audio and original artwork to Google Drive, OneDrive, OneDrive for Business, Dropbox, Zoho WorkDrive or FTP, and optionally remove server copies once every destination holds a verified copy.",
+    "author": "MusicDesk",
+    "requires": "4.3.4",
+    "namespace": "LabelDesk\\Addons\\MediaStorage\\",
+    "provider": "LabelDesk\\Addons\\MediaStorage\\MediaStorageServiceProvider"
+}

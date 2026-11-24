@@ -1,19 +1,19 @@
 <?php
 
-namespace App\Livewire\Settings;
+namespace LabelDesk\Addons\MediaStorage\Livewire;
 
-use App\Http\Controllers\MediaStorageOAuthController;
 use App\Livewire\Concerns\EnforcesLicense;
-use App\Models\MediaStorageFile;
-use App\Models\MediaStorageTarget;
 use App\Services\Activity\ActivityLogger;
-use App\Services\MediaStorage\Drivers\CloudDrive;
-use App\Services\MediaStorage\MediaStorageException;
-use App\Services\MediaStorage\MediaStorageManager;
-use App\Services\MediaStorage\MediaSyncService;
 use App\Services\SettingsService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Validation\Rule;
+use LabelDesk\Addons\MediaStorage\Drivers\CloudDrive;
+use LabelDesk\Addons\MediaStorage\Http\OAuthController;
+use LabelDesk\Addons\MediaStorage\Models\MediaStorageFile;
+use LabelDesk\Addons\MediaStorage\Models\MediaStorageTarget;
+use LabelDesk\Addons\MediaStorage\Services\MediaStorageException;
+use LabelDesk\Addons\MediaStorage\Services\MediaStorageManager;
+use LabelDesk\Addons\MediaStorage\Services\MediaSyncService;
 use Livewire\Component;
 
 /**
@@ -21,7 +21,7 @@ use Livewire\Component;
  * Drives, OneDrive, OneDrive for Business, Dropbox, Zoho WorkDrive, FTP),
  * each enabled or disabled, with its own folder.
  */
-class MediaStorage extends Component
+class Settings extends Component
 {
     use EnforcesLicense;
 
@@ -337,7 +337,7 @@ class MediaStorage extends Component
 
         $class = MediaStorageManager::DRIVERS[$this->type] ?? MediaStorageManager::DRIVERS['google_drive'];
 
-        return view('livewire.settings.media-storage', [
+        return view('media-storage::settings', [
             'types' => collect(MediaStorageManager::DRIVERS)->map(fn ($c) => $c::label())->all(),
             'targets' => $targets->map(fn (MediaStorageTarget $t) => [
                 'model' => $t,
@@ -350,7 +350,7 @@ class MediaStorage extends Component
             'fields' => $class::fields(),
             'formLabel' => $class::label(),
             'formOAuth' => $class::usesOAuth(),
-            'redirectUri' => MediaStorageOAuthController::redirectUri($this->type),
+            'redirectUri' => OAuthController::redirectUri($this->type),
             'hasSecret' => fn (string $key) => $this->editingId && filled($this->target($this->editingId)->credential($key)),
             'browsingName' => $this->browsingId ? $this->target($this->browsingId)->name : null,
             'problems' => MediaStorageFile::query()->whereIn('status', ['failed', 'waiting'])

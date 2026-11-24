@@ -10,3 +10,4 @@ and publish it on MusicDesk.tech.
 | rest-api | rest_api | new |
 | incoming-webhooks | incoming_webhooks | new |
 | sso | sso | new |
+| media-storage | media_storage | moved out of core (4.3.4) |

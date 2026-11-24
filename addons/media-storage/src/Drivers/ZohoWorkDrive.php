@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Services\MediaStorage\Drivers;
+namespace LabelDesk\Addons\MediaStorage\Drivers;
 
-use App\Services\MediaStorage\MediaStorageException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
+use LabelDesk\Addons\MediaStorage\Services\MediaStorageException;
 
 /**
  * Zoho WorkDrive API v1 (https://workdrive.zoho.com/apidocs/v1). Zoho runs

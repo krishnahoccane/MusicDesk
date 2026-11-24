@@ -8,7 +8,7 @@ use App\Models\Track;
 use App\Services\Activity\ActivityLogger;
 use App\Services\Catalog\ReleaseService;
 use App\Services\Catalog\TrackService;
-use App\Services\MediaStorage\MediaSyncService;
+use App\Plugins\PluginRegistry;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -67,8 +67,14 @@ class CatalogFileController extends Controller
         $safe = trim(preg_replace('/[\x00-\x1F\x7F"<>:|?*\/\\\\]+/u', '_', $name) ?? 'track', ' .') ?: 'track';
 
         if (! $disk->exists($track->audio_path)) {
-            // Removed from the server after upload: stream it from the cloud drive.
-            return $this->fromCloud($track, $disposition, $safe.'.'.$extension, Str::ascii($safe).'.'.$extension);
+            // Not on the server any more (e.g. moved to cloud storage by an add-on): ask the add-ons.
+            foreach (app(PluginRegistry::class)->fileSources as $source) {
+                $response = ($source['resolver'])($track, $disposition, $safe.'.'.$extension, Str::ascii($safe).'.'.$extension);
+                if ($response instanceof Response) {
+                    return $response;
+                }
+            }
+            abort(404, __('This file is not on the server. If it was moved to cloud storage, the Media storage add-on must be active to fetch it.'));
         }
 
         $response = new BinaryFileResponse($disk->path($track->audio_path), 200, [
@@ -80,43 +86,5 @@ class CatalogFileController extends Controller
         $response->setContentDisposition($disposition, $safe.'.'.$extension, Str::ascii($safe).'.'.$extension);
 
         return $response;
-    }
-
-    /**
-     * Proxies the cloud copy (with Range support for the player). The drive's
-     * URL and token are never exposed to the browser.
-     */
-    protected function fromCloud(Track $track, string $disposition, string $filename, string $fallback): StreamedResponse
-    {
-        $remote = app(MediaSyncService::class)->remoteCopy('audio', $track->release_id, $track->id, $track->audio_path);
-        abort_unless($remote !== null, 404);
-        [$drive, $record] = $remote;
-
-        $range = request()->header('Range');
-        $range = is_string($range) && preg_match('/^bytes=\d*-\d*$/', $range) ? $range : null;
-        $upstream = $drive->download((string) $record->remote_id, $range);
-        abort_unless(in_array($upstream->status(), [200, 206], true), 502, __('The file could not be fetched from :drive.', ['drive' => $drive->label()]));
-
-        $headers = array_filter([
-            'Content-Type' => $track->audio_mime ?: 'application/octet-stream',
-            'Content-Length' => $upstream->header('Content-Length') ?: null,
-            'Content-Range' => $upstream->header('Content-Range') ?: null,
-            'Accept-Ranges' => 'bytes',
-            'X-Content-Type-Options' => 'nosniff',
-            'Cache-Control' => 'private, no-store',
-            'Content-Disposition' => HeaderUtils::makeDisposition($disposition, $filename, $fallback),
-        ]);
-
-        $body = $upstream->toPsrResponse()->getBody();
-        if ($body->isSeekable()) {
-            $body->rewind();
-        }
-
-        return new StreamedResponse(function () use ($body) {
-            while (! $body->eof()) {
-                echo $body->read(1024 * 256);
-                flush();
-            }
-        }, $upstream->status(), $headers);
     }
 }

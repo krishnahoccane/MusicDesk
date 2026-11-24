@@ -4,11 +4,11 @@ namespace App\Services\System;
 
 use App\Models\ActivityLog;
 use App\Plugins\AddonLicenseService;
+use App\Plugins\PluginRegistry;
 use App\Services\Backup\BackupService;
 use App\Services\Installation\InstallationState;
 use App\Services\License\LicenseService;
 use App\Services\License\LicenseValidationService;
-use App\Services\MediaStorage\MediaSyncService;
 use App\Services\Updates\UpdateService;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
@@ -23,11 +23,13 @@ use Throwable;
  *
  *   license    check with MusicDesk.tech        every 60 minutes
  *   queue      queued jobs (imports, emails)    every minute
- *   media      cloud uploads, local cleanup     every 5 minutes
  *   backup     nightly backup (when enabled)    once a day, from 02:00
  *   cleanup    old activity log entries         once a day
  *   updates    check MusicDesk.tech for updates every 12 hours; installs the ones
  *              set to update automatically (Administration → Updates)
+ *
+ * Running add-ons add their own tasks (PluginRegistry::task(), e.g. the
+ * Media storage add-on's cloud uploads every 5 minutes).
  *
  * One run at a time (cache lock); a cheap "next check" timestamp means most
  * requests do nothing at all. Failures are logged, never shown to visitors.
@@ -37,9 +39,17 @@ class AutomaticTasks
     public const LAST_RUN_KEY = 'labeldesk:auto:last-run';
 
     /** task => minutes between runs */
-    public const TASKS = ['license' => 60, 'queue' => 1, 'media' => 5, 'backup' => 1440, 'cleanup' => 1440, 'updates' => 720];
+    public const TASKS = ['license' => 60, 'queue' => 1, 'backup' => 1440, 'cleanup' => 1440, 'updates' => 720];
 
     public function __construct(protected InstallationState $installation) {}
+
+    /** @return array<string, int> core tasks and those of running add-ons, name => minutes */
+    public static function all(): array
+    {
+        $addons = array_map(fn (array $t) => $t['minutes'], app(PluginRegistry::class)->tasks);
+
+        return self::TASKS + $addons;
+    }
 
     /**
      * Called after each response; returns the tasks that ran (for tests).
@@ -68,14 +78,19 @@ class AutomaticTasks
             @set_time_limit(300);
             @ignore_user_abort(true);
 
-            foreach (self::TASKS as $task => $minutes) {
+            foreach (self::all() as $task => $minutes) {
                 if (! $this->isDue($task, $minutes)) {
                     continue;
                 }
                 Cache::forever($this->key($task), now()->timestamp);
 
                 try {
-                    $this->{'run'.ucfirst($task)}();
+                    $addon = app(PluginRegistry::class)->tasks[$task] ?? null;
+                    if (isset(self::TASKS[$task])) {
+                        $this->{'run'.ucfirst($task)}();
+                    } elseif ($addon) {
+                        ($addon['run'])();
+                    }
                     $ran[] = $task;
                 } catch (Throwable $e) {
                     Log::warning('Automatic task failed', ['task' => $task, 'error' => $e->getMessage()]);
@@ -127,11 +142,6 @@ class AutomaticTasks
     protected function runQueue(): void
     {
         Artisan::call('queue:work', ['--stop-when-empty' => true, '--max-time' => 25, '--tries' => 3, '--quiet' => true]);
-    }
-
-    protected function runMedia(): void
-    {
-        app(MediaSyncService::class)->run(25);
     }
 
     protected function runBackup(): void

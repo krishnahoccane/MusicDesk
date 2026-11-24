@@ -1,20 +1,20 @@
 <?php
 
-namespace App\Services\MediaStorage;
+namespace LabelDesk\Addons\MediaStorage\Services;
 
-use App\Models\MediaStorageTarget;
-use App\Services\MediaStorage\Drivers\CloudDrive;
-use App\Services\MediaStorage\Drivers\Dropbox;
-use App\Services\MediaStorage\Drivers\Ftp;
-use App\Services\MediaStorage\Drivers\GoogleDrive;
-use App\Services\MediaStorage\Drivers\OneDrive;
-use App\Services\MediaStorage\Drivers\OneDriveBusiness;
-use App\Services\MediaStorage\Drivers\ZohoWorkDrive;
 use App\Services\SettingsService;
 use Carbon\CarbonInterface;
 use Illuminate\Http\Client\Factory as HttpFactory;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Schema;
+use LabelDesk\Addons\MediaStorage\Drivers\CloudDrive;
+use LabelDesk\Addons\MediaStorage\Drivers\Dropbox;
+use LabelDesk\Addons\MediaStorage\Drivers\Ftp;
+use LabelDesk\Addons\MediaStorage\Drivers\GoogleDrive;
+use LabelDesk\Addons\MediaStorage\Drivers\OneDrive;
+use LabelDesk\Addons\MediaStorage\Drivers\OneDriveBusiness;
+use LabelDesk\Addons\MediaStorage\Drivers\ZohoWorkDrive;
+use LabelDesk\Addons\MediaStorage\Models\MediaStorageTarget;
 use Throwable;
 
 /**

@@ -1,20 +1,20 @@
 <?php
 
-namespace App\Console\Commands;
+namespace LabelDesk\Addons\MediaStorage\Console;
 
 use App\Services\Installation\InstallationState;
-use App\Services\MediaStorage\MediaSyncService;
 use Illuminate\Console\Command;
+use LabelDesk\Addons\MediaStorage\Services\MediaSyncService;
 
 /**
- * Uploads queued master audio and artwork to the connected cloud drive and
+ * Uploads queued master audio and artwork to every enabled Media storage destination and
  * removes local copies that are due (Settings → Media storage).
  */
 class SyncMedia extends Command
 {
     protected $signature = 'labeldesk:media:sync {--budget=240 : Seconds to spend uploading before stopping} {--all : Queue every existing file first}';
 
-    protected $description = 'Upload media files to Google Drive / OneDrive and remove local copies that are due';
+    protected $description = 'Upload master audio and artwork to the Media storage destinations and remove server copies that are due';
 
     public function handle(InstallationState $installation, MediaSyncService $sync): int
     {

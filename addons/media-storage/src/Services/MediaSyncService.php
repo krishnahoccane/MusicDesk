@@ -1,18 +1,18 @@
 <?php
 
-namespace App\Services\MediaStorage;
+namespace LabelDesk\Addons\MediaStorage\Services;
 
-use App\Models\MediaStorageFile;
-use App\Models\MediaStorageFolder;
-use App\Models\MediaStorageTarget;
 use App\Models\Release;
 use App\Models\Track;
 use App\Services\Catalog\ReleaseService;
 use App\Services\Catalog\TrackService;
-use App\Services\MediaStorage\Drivers\CloudDrive;
 use App\Support\Identifiers;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use LabelDesk\Addons\MediaStorage\Drivers\CloudDrive;
+use LabelDesk\Addons\MediaStorage\Models\MediaStorageFile;
+use LabelDesk\Addons\MediaStorage\Models\MediaStorageFolder;
+use LabelDesk\Addons\MediaStorage\Models\MediaStorageTarget;
 use Throwable;
 
 /**

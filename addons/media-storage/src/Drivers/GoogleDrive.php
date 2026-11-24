@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Services\MediaStorage\Drivers;
+namespace LabelDesk\Addons\MediaStorage\Drivers;
 
-use App\Services\MediaStorage\MediaStorageException;
 use Illuminate\Http\Client\Response;
+use LabelDesk\Addons\MediaStorage\Services\MediaStorageException;
 
 /**
  * Google Drive API v3 (https://developers.google.com/drive/api/reference/rest/v3).

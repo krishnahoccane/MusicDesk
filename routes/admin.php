@@ -6,7 +6,6 @@ use App\Http\Controllers\BackupDownloadController;
 use App\Http\Controllers\Catalog\CatalogFileController;
 use App\Http\Controllers\License\LicenseStatusController;
 use App\Http\Controllers\LoginPreviewController;
-use App\Http\Controllers\MediaStorageOAuthController;
 use App\Http\Controllers\ReportExportController;
 use App\Http\Controllers\Royalties\StatementController;
 use App\Livewire\Activity\Index as ActivityIndex;
@@ -36,13 +35,11 @@ use App\Livewire\Settings\Appearance as AppearanceSettings;
 use App\Livewire\Settings\Catalog as CatalogSettings;
 use App\Livewire\Settings\General as GeneralSettings;
 use App\Livewire\Settings\Mail as MailSettings;
-use App\Livewire\Settings\MediaStorage;
 use App\Livewire\System\Info as SystemInfo;
 use App\Livewire\Tracks\Form as TrackForm;
 use App\Livewire\Tracks\Index as TrackIndex;
 use App\Livewire\Users\Form as UserForm;
 use App\Livewire\Users\Index as UserIndex;
-use App\Services\MediaStorage\MediaStorageManager;
 use App\Support\Appearance;
 use Illuminate\Support\Facades\Route;
 
@@ -156,11 +153,6 @@ Route::middleware(['auth', 'auth.session', 'active', 'license'])->group(function
         Route::get('settings/mail', MailSettings::class)->name('settings.mail');
         Route::get('settings/appearance', AppearanceSettings::class)->name('settings.appearance');
         Route::get('settings/catalog', CatalogSettings::class)->name('settings.catalog');
-        Route::get('settings/media-storage', MediaStorage::class)->name('settings.media');
-        Route::get('settings/media-storage/{target}/connect', [MediaStorageOAuthController::class, 'connect'])
-            ->middleware('throttle:10,1')->name('settings.media.connect');
-        Route::get('settings/media-storage/callback/{driver}', [MediaStorageOAuthController::class, 'callback'])
-            ->whereIn('driver', array_keys(MediaStorageManager::DRIVERS))->middleware('throttle:10,1')->name('settings.media.callback');
         Route::get('settings/appearance/login-preview/{design}', LoginPreviewController::class)
             ->whereIn('design', array_keys(Appearance::LOGIN_LAYOUTS))->name('settings.appearance.login-preview');
         Route::get('system', SystemInfo::class)->name('system.index');

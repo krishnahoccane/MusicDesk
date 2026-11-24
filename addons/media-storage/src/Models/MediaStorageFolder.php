@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Models;
+namespace LabelDesk\Addons\MediaStorage\Models;
 
 use Illuminate\Database\Eloquent\Model;
 

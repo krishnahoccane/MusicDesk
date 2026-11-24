@@ -21,6 +21,12 @@ class PluginRegistry
     /** @var list<array{view: string, plugin: string}> */
     public array $dashboardWidgets = [];
 
+    /** @var array<string, array{minutes: int, run: callable, plugin: string, label: string}> background work, run without cron */
+    public array $tasks = [];
+
+    /** @var list<array{resolver: callable, plugin: string}> where to fetch a master that is not on the server any more */
+    public array $fileSources = [];
+
     /**
      * Add a sidebar item to a section (matched by its label, e.g. "Catalog",
      * "Business", "Administration"); a new section is created if needed.
@@ -79,6 +85,25 @@ class PluginRegistry
     public function dashboardWidget(string $view, string $plugin): void
     {
         $this->dashboardWidgets[] = compact('view', 'plugin');
+    }
+
+    /**
+     * Background work run by AutomaticTasks (after a response is sent, no cron needed)
+     * every $minutes. $name must be unique, e.g. "media"; $label is shown on Administration → System.
+     */
+    public function task(string $name, int $minutes, callable $run, string $plugin, ?string $label = null): void
+    {
+        $this->tasks[$name] = ['minutes' => max(1, $minutes), 'run' => $run, 'plugin' => $plugin, 'label' => $label ?? $name];
+    }
+
+    /**
+     * Asked when a track's master is not on the server (for example moved to cloud storage):
+     * fn (Track $track, string $disposition, string $filename, string $asciiFilename): ?Response.
+     * Return null when this add-on does not have the file.
+     */
+    public function fileSource(callable $resolver, string $plugin): void
+    {
+        $this->fileSources[] = compact('resolver', 'plugin');
     }
 
     /** @return list<string> */

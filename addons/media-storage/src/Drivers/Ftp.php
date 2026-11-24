@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Services\MediaStorage\Drivers;
+namespace LabelDesk\Addons\MediaStorage\Drivers;
 
-use App\Services\MediaStorage\MediaStorageException;
 use FTP\Connection;
 use GuzzleHttp\Psr7\Response as PsrResponse;
 use GuzzleHttp\Psr7\Utils;
 use Illuminate\Http\Client\Response;
+use LabelDesk\Addons\MediaStorage\Services\MediaStorageException;
 
 /**
  * FTP / FTPS (explicit TLS) server. Folders and files are addressed by path.

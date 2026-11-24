@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\MediaStorage\Drivers;
+namespace LabelDesk\Addons\MediaStorage\Drivers;
 
 /**
  * OneDrive for Business (Microsoft 365 work or school accounts) through

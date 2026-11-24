@@ -65,10 +65,10 @@
             <p class="text-muted">{{ __('LabelDesk runs its background work by itself while people use it, after each page has been sent (nobody waits for it).') }}</p>
             @php($labels = [
                 'queue' => __('Queued jobs (statement imports, emails)'),
-                'media' => __('Cloud media uploads and clean-up'),
                 'backup' => __('Nightly backup (when turned on)'),
                 'cleanup' => __('Activity log clean-up'),
-            ])
+                'updates' => __('Check MusicDesk.tech for updates'),
+            ] + array_map(fn ($t) => $t['label'], app(\App\Plugins\PluginRegistry::class)->tasks))
             <dl class="ld-dl mb-3">
                 @foreach ($tasks as $task => $info)
                     <dt>{{ $labels[$task] ?? $task }}</dt>

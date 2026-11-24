@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Services\MediaStorage\Drivers;
+namespace LabelDesk\Addons\MediaStorage\Drivers;
 
-use App\Services\MediaStorage\MediaStorageException;
 use Illuminate\Http\Client\Response;
+use LabelDesk\Addons\MediaStorage\Services\MediaStorageException;
 
 /**
  * OneDrive / OneDrive for Business through Microsoft Graph v1.0

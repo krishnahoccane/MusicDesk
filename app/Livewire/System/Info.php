@@ -110,7 +110,7 @@ class Info extends Component
             'upgradeFailure' => $upgrade->failure(),
             'pending' => $upgrade->pendingMigrations(),
             'installedVersion' => $upgrade->installedVersion(),
-            'tasks' => collect(AutomaticTasks::TASKS)->except('license')->map(fn ($minutes, $task) => [
+            'tasks' => collect(AutomaticTasks::all())->except('license')->map(fn ($minutes, $task) => [
                 'every' => $minutes,
                 'last' => AutomaticTasks::lastRun($task),
             ])->all(),
