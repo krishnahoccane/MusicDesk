@@ -1,1 +1,1 @@
-@include('errors.layout', ['code' => 500, 'title' => __('Something went wrong'), 'message' => __('An unexpected error occurred. It has been logged for your administrator.')])
+@include('errors.layout', ['code' => 500, 'title' => \App\Support\Text::t('Something went wrong'), 'message' => \App\Support\Text::t('An unexpected error occurred. It has been logged for your administrator.')])

@@ -5,6 +5,6 @@
 @endphp
 @include('errors.layout', [
     'code' => 403,
-    'title' => __('You do not have access'),
-    'message' => in_array($reason, $generic, true) ? __('Your role does not include this page. Ask an administrator if you need access.') : $reason,
+    'title' => \App\Support\Text::t('You do not have access'),
+    'message' => in_array($reason, $generic, true) ? \App\Support\Text::t('Your role does not include this page. Ask an administrator if you need access.') : $reason,
 ])

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta http-equiv="refresh" content="5">
     <meta name="robots" content="noindex">
-    <title>{{ __('Updating') }} · {{ config('app.name') }}</title>
+    <title>{{ \App\Support\Text::t('Updating') }} · {{ config('app.name') }}</title>
     {{-- Self-contained: shown while files and caches are being replaced, so no built assets. --}}
     <style>
         :root { color-scheme: light dark; --bg: #f5f6f8; --card: #fff; --text: #1b1d22; --muted: #616774; --accent: #6d4aff; }
@@ -26,8 +26,8 @@
 <body>
 <main role="status" aria-live="polite">
     <div class="spinner" aria-hidden="true"></div>
-    <h1>{{ __(':name is being updated', ['name' => config('app.name')]) }}</h1>
-    <p>{{ __('This usually takes less than a minute. The page reloads on its own.') }}</p>
+    <h1>{{ \App\Support\Text::t(':name is being updated', ['name' => config('app.name')]) }}</h1>
+    <p>{{ \App\Support\Text::t('This usually takes less than a minute. The page reloads on its own.') }}</p>
 </main>
 </body>
 </html>

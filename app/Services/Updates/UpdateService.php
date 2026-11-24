@@ -272,6 +272,10 @@ class UpdateService
         $from = (string) config('labeldesk.product.version');
         $to = (string) $release['version'];
 
+        // Download, checks and unpacking can take minutes on shared hosting.
+        @set_time_limit(0);
+        @ignore_user_abort(true);
+
         try {
             $this->setProgress('downloading', __('Downloading LabelDesk :version…', ['version' => $to]));
             $this->backupFirst($user);

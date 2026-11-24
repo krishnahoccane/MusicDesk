@@ -37,8 +37,8 @@
         <h1>{{ $title }}</h1>
         <p>{{ $message }}</p>
         <div class="actions">
-            <a class="primary" href="{{ url('/') }}">{{ __('Go to dashboard') }}</a>
-            <a class="light" href="javascript:history.back()">{{ __('Go back') }}</a>
+            <a class="primary" href="{{ url('/') }}">{{ \App\Support\Text::t('Go to dashboard') }}</a>
+            <a class="light" href="javascript:history.back()">{{ \App\Support\Text::t('Go back') }}</a>
         </div>
         <small>{{ config('app.name', 'LabelDesk') }}</small>
     </main>

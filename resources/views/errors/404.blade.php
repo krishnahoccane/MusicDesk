@@ -6,6 +6,6 @@
 @endphp
 @include('errors.layout', [
     'code' => 404,
-    'title' => __('Page not found'),
-    'message' => $framework ? __('This page does not exist, or it is not part of your catalogue.') : $reason,
+    'title' => \App\Support\Text::t('Page not found'),
+    'message' => $framework ? \App\Support\Text::t('This page does not exist, or it is not part of your catalogue.') : $reason,
 ])

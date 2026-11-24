@@ -1,1 +1,1 @@
-@include('errors.layout', ['code' => 429, 'title' => __('Too many requests'), 'message' => __('Please wait a minute and try again.')])
+@include('errors.layout', ['code' => 429, 'title' => \App\Support\Text::t('Too many requests'), 'message' => \App\Support\Text::t('Please wait a minute and try again.')])

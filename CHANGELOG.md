@@ -3,6 +3,23 @@
 All notable changes to LabelDesk are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses Semantic Versioning.
 
+## [4.3.5] — 2026-11-25
+
+### Fixed
+- **After an update every page showed "500 Internal Server Error"** on installations whose
+  `bootstrap/cache` still listed packages of the previous files (for example a site installed from a
+  development copy: `Class "Laravel\Pail\PailServiceProvider" not found`). LabelDesk now checks these
+  cached lists when it starts and rebuilds the ones that are out of date — after an update from the
+  Updates page and after uploading files by FTP or the file manager alike.
+- The updater removes those cached lists itself right after replacing the files.
+- Files that a new version no longer contains (such as the media storage code that moved to the add-on in
+  4.3.4) are removed during an update. They are moved to the rollback folder first, and only when the
+  installed version's file list carries a valid MusicDesk.tech signature.
+- The update no longer stops half-way on servers with a short PHP time limit: the limit is lifted before
+  the download and the package checks, not only before the files are replaced.
+- Error pages show even when LabelDesk cannot start completely, instead of the bare "Oops! An Error
+  Occurred" page.
+
 ## [4.3.4] — 2026-11-24
 
 ### Changed

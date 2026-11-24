@@ -1,1 +1,1 @@
-@include('errors.layout', ['code' => 419, 'title' => __('Your session expired'), 'message' => __('For your security the page expired. Go back, refresh and try again.')])
+@include('errors.layout', ['code' => 419, 'title' => \App\Support\Text::t('Your session expired'), 'message' => \App\Support\Text::t('For your security the page expired. Go back, refresh and try again.')])

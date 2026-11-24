@@ -128,6 +128,37 @@ final class CorePackage
         $this->files = $expected;
     }
 
+    /** The package's signature.json (written to the LabelDesk folder after an update). */
+    public function signatureJson(): string
+    {
+        return (string) $this->zip->getFromName($this->root.'/signature.json');
+    }
+
+    /**
+     * The file list of an installed version, from its signature.json — only when the
+     * MusicDesk.tech signature is valid, so nothing is ever deleted on a forged list.
+     *
+     * @return list<string>|null
+     */
+    public static function signedFiles(string $signatureJson): ?array
+    {
+        $signature = json_decode($signatureJson, true);
+        if (! is_array($signature) || ! is_string($signature['signed'] ?? null) || ! is_string($signature['signature'] ?? null)) {
+            return null;
+        }
+        $key = base64_decode(LicenseAuthority::pluginPublicKey(), true);
+        $signed = base64_decode($signature['signed'], true);
+        $sig = base64_decode($signature['signature'], true);
+        if ($key === false || strlen($key) !== SODIUM_CRYPTO_SIGN_PUBLICKEYBYTES || $signed === false || $sig === false || strlen($sig) !== SODIUM_CRYPTO_SIGN_BYTES
+            || ! sodium_crypto_sign_verify_detached($sig, $signed, $key)) {
+            return null;
+        }
+        $claims = json_decode($signed, true);
+
+        return is_array($claims) && ($claims['product'] ?? null) === 'labeldesk' && is_array($claims['files'] ?? null)
+            ? array_map('strval', array_keys($claims['files'])) : null;
+    }
+
     /** @return list<string> relative paths of every signed file */
     public function files(): array
     {

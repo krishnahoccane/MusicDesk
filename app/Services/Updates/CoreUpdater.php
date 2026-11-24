@@ -14,7 +14,10 @@ use Throwable;
  *  2. maintenance page on (Laravel's storage/framework/down, shows "being updated")
  *  3. move each current file into a rollback folder and the new file into place
  *     (renames on the same disk, so this takes seconds); any error puts every file back
- *  4. maintenance page off, opcode cache reset
+ *  4. files the previous version had and this one does not are moved to the rollback folder too
+ *     (only when the installed version's signature.json is valid)
+ *  5. bootstrap/cache lists (packages, services, config, routes, events) are removed so Laravel
+ *     rebuilds them for the new files; maintenance page off, opcode cache reset
  *
  * The database upgrade (migrate --force, caches) then runs on the next page view
  * (AutoUpgrade middleware). Never touched: .env, storage/, plugins/, bootstrap/cache,
@@ -99,6 +102,7 @@ class CoreUpdater
             }
             $plan[] = $relative;
         }
+        $obsolete = $this->obsoleteFiles($package->files());
 
         $moved = []; // [relative, hadOriginal]
         $this->maintenance(true);
@@ -119,6 +123,10 @@ class CoreUpdater
                 $moved[] = [$relative, $had];
                 $this->move($staging.'/'.$relative, $target);
             }
+            foreach ($obsolete as $relative) {
+                $this->move($this->root.'/'.$relative, $rollback.'/'.$relative);
+                $moved[] = [$relative, true];
+            }
         } catch (Throwable $e) {
             $this->restore($moved, $rollback);
             $this->maintenance(false);
@@ -127,6 +135,11 @@ class CoreUpdater
             throw new RuntimeException(__('The update could not be installed, nothing was changed: :reason', ['reason' => $e->getMessage()]), 0, $e);
         }
 
+        // Remember this version's file list (to remove files the next version drops).
+        if (($signature = $package->signatureJson()) !== '') {
+            @file_put_contents($this->root.'/signature.json', $signature);
+        }
+        $this->clearBootstrapCache();
         if (function_exists('opcache_reset')) {
             @opcache_reset();
         }
@@ -135,7 +148,36 @@ class CoreUpdater
         File::deleteDirectory($staging);
         $this->pruneRollbacks(basename($rollback));
 
-        return ['written' => count($plan), 'kept' => $kept, 'rollback' => $rollback];
+        return ['written' => count($plan), 'kept' => $kept, 'removed' => $obsolete, 'rollback' => $rollback];
+    }
+
+    /**
+     * Files of the installed version that the new one does not have (e.g. code moved to an add-on).
+     *
+     * @param  list<string>  $newFiles
+     * @return list<string>
+     */
+    public function obsoleteFiles(array $newFiles): array
+    {
+        $old = is_file($this->root.'/signature.json') ? CorePackage::signedFiles((string) file_get_contents($this->root.'/signature.json')) : null;
+        if ($old === null) {
+            return [];
+        }
+        $new = array_flip($newFiles);
+
+        return array_values(array_filter($old, fn (string $relative) => ! isset($new[$relative]) && ! $this->isProtected($relative)
+            && ! in_array($relative, self::KEEP_IF_PRESENT, true) && ! str_contains($relative, '..') && is_file($this->root.'/'.$relative)));
+    }
+
+    /** Laravel's cached lists name classes and files of the previous version: remove them so they are rebuilt. */
+    public function clearBootstrapCache(): void
+    {
+        foreach (['packages.php', 'services.php', 'config.php', 'events.php'] as $file) {
+            @unlink($this->root.'/bootstrap/cache/'.$file);
+        }
+        foreach (glob($this->root.'/bootstrap/cache/routes*.php') ?: [] as $routes) {
+            @unlink($routes);
+        }
     }
 
     public function isProtected(string $relative): bool
