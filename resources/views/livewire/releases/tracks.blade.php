@@ -25,14 +25,10 @@
                         <th class="text-end"><span class="visually-hidden">{{ __('Actions') }}</span></th>
                     </tr>
                 </thead>
-                @foreach ($discs as $disc => $discTracks)
-                    <tbody>
-                        @if ($discs->count() > 1)
-                            <tr><th colspan="6" class="small text-muted">{{ __('Disc :n', ['n' => $disc]) }}</th></tr>
-                        @endif
-                        @foreach ($discTracks as $track)
+                <tbody>
+                        @foreach ($tracks as $track)
                             <tr wire:key="track-{{ $track->id }}">
-                                <td class="text-muted">{{ $track->position }}</td>
+                                <td class="text-muted">{{ $loop->iteration }}</td>
                                 <td>
                                     <div class="fw-semibold">
                                         {{ $track->displayTitle() }}
@@ -75,7 +71,6 @@
                             </tr>
                         @endforeach
                     </tbody>
-                @endforeach
             </table>
         </div>
     @endif

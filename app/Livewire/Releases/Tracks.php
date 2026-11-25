@@ -82,7 +82,6 @@ class Tracks extends Component
 
         return view('livewire.releases.tracks', [
             'tracks' => $tracks,
-            'discs' => $tracks->groupBy('disc_number'),
             'totalDuration' => $tracks->sum('duration_seconds'),
             'canAdd' => auth()->user()->can('create', [Track::class, $this->release]),
             'canEdit' => auth()->user()->can('tracks.update') && $this->release->isEditable(),

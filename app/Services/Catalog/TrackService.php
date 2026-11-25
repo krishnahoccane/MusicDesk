@@ -60,12 +60,14 @@ class TrackService
                 'crbt_name' => filled($data['crbt_name'] ?? null) ? mb_substr(trim($data['crbt_name']), 0, 64) : null,
                 'crbt_start_seconds' => isset($data['crbt_start_seconds']) && $data['crbt_start_seconds'] !== '' ? (int) $data['crbt_start_seconds'] : null,
                 'is_draft' => (bool) ($data['is_draft'] ?? false),
-                'disc_number' => max(1, (int) ($data['disc_number'] ?? 1)),
             ]);
 
+            // The track number is the place in the release's track list (1, 2, 3 …). Discs are no
+            // longer edited; existing disc numbers are kept so earlier multi-disc releases keep their order.
             if (! $track->exists) {
                 $track->created_by = $actor->id;
-                $track->position = (int) $release->tracks()->where('disc_number', $track->disc_number)->max('position') + 1;
+                $track->disc_number = max(1, (int) $release->tracks()->max('disc_number'));
+                $track->position = (int) $release->tracks()->max('position') + 1;
             }
 
             // Duration comes from the audio file when there is one.
@@ -239,7 +241,7 @@ class TrackService
 
         DB::transaction(function () use ($track) {
             $track->delete();
-            $this->renumber($track->release_id, $track->disc_number);
+            $this->renumber($track->release_id);
         });
 
         if ($track->audio_path) {
@@ -251,26 +253,26 @@ class TrackService
     }
 
     /**
-     * Moves a track one place up (-1) or down (+1) within its disc.
+     * Moves a track one place up (-1) or down (+1) in the release's track list.
      */
     public function move(User $actor, Track $track, int $direction): void
     {
         $this->releases->ensureEditable($track->release);
 
         DB::transaction(function () use ($track, $direction) {
-            $this->renumber($track->release_id, $track->disc_number);
+            $this->renumber($track->release_id);
             $track->refresh();
 
             $neighbour = Track::query()
                 ->where('release_id', $track->release_id)
-                ->where('disc_number', $track->disc_number)
                 ->where('position', $track->position + ($direction < 0 ? -1 : 1))
                 ->first();
 
             if ($neighbour) {
-                [$a, $b] = [$track->position, $neighbour->position];
-                $track->forceFill(['position' => $b])->save();
-                $neighbour->forceFill(['position' => $a])->save();
+                // Swap the disc too, so the order (disc, position) stays the list order.
+                [$a, $b] = [[$track->disc_number, $track->position], [$neighbour->disc_number, $neighbour->position]];
+                $track->forceFill(['disc_number' => $b[0], 'position' => $b[1]])->save();
+                $neighbour->forceFill(['disc_number' => $a[0], 'position' => $a[1]])->save();
             }
         });
     }
@@ -278,10 +280,11 @@ class TrackService
     /**
      * Makes positions on a disc consecutive (1, 2, 3 …).
      */
-    protected function renumber(int $releaseId, int $disc): void
+    /** Track numbers 1 … n through the whole release, in list order. */
+    protected function renumber(int $releaseId): void
     {
-        $ids = Track::query()->where('release_id', $releaseId)->where('disc_number', $disc)
-            ->orderBy('position')->orderBy('id')->pluck('id');
+        $ids = Track::query()->where('release_id', $releaseId)
+            ->orderBy('disc_number')->orderBy('position')->orderBy('id')->pluck('id');
 
         foreach ($ids as $i => $id) {
             Track::query()->whereKey($id)->update(['position' => $i + 1]);

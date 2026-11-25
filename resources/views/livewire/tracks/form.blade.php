@@ -49,15 +49,13 @@
                                        @class(['form-control', 'is-invalid' => $errors->has('version')])>
                             </div>
                             <div class="col-sm-6 col-md-4">
+                                @if ($editing)
+                                    <span class="float-end small text-muted">{{ __('Track :n', ['n' => $trackNumber]) }}</span>
+                                @endif
                                 <label for="isrc" class="form-label">{{ __('ISRC') }}</label>
                                 <input id="isrc" type="text" wire:model="isrc" maxlength="20" placeholder="CC-XXX-YY-NNNNN" autocomplete="off" @disabled($disabled)
                                        @class(['form-control font-monospace text-uppercase', 'is-invalid' => $errors->has('isrc')])>
                                 @error('isrc') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                            </div>
-                            <div class="col-6 col-md-2">
-                                <label for="disc_number" class="form-label">{{ __('Disc') }}</label>
-                                <input id="disc_number" type="number" min="1" max="20" wire:model="disc_number" @disabled($disabled)
-                                       @class(['form-control', 'is-invalid' => $errors->has('disc_number')])>
                             </div>
                             <div class="col-md-4">
                                 <label for="language_id" class="form-label">{{ __('Lyrics language') }}</label>

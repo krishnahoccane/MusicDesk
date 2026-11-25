@@ -45,8 +45,6 @@ class Form extends Component
 
     public string $isrc = '';
 
-    public int|string $disc_number = 1;
-
     public bool $explicit = false;
 
     public string $language_id = '';
@@ -82,7 +80,6 @@ class Form extends Component
                 'title' => $track->title,
                 'version' => (string) $track->version,
                 'isrc' => (string) $track->formattedIsrc(),
-                'disc_number' => $track->disc_number,
                 'explicit' => $track->explicit,
                 'language_id' => (string) $track->language_id,
                 'mood_id' => (string) $track->mood_id,
@@ -193,7 +190,6 @@ class Form extends Component
                     $fail(__('The ISRC must look like CC-XXX-YY-NNNNN (12 characters).'));
                 }
             }],
-            'disc_number' => ['required', 'integer', 'between:1,20'],
             'explicit' => ['boolean'],
             'language_id' => ['nullable', Rule::exists('languages', 'id')],
             'mood_id' => ['nullable', Rule::exists('moods', 'id')],
@@ -289,7 +285,6 @@ class Form extends Component
                 'crbt_name' => $this->crbt_name,
                 'crbt_start_seconds' => $crbtStart,
                 'is_draft' => $draft,
-                'disc_number' => (int) $this->disc_number,
             ], $this->artistRowsForSave(), $credits);
         } catch (RuntimeException $e) {
             $this->addError('form', $e->getMessage());
@@ -346,6 +341,7 @@ class Form extends Component
             'languages' => Language::query()->orderBy('name')->pluck('name', 'id'),
             'moods' => Mood::query()->where(fn ($q) => $q->where('is_active', true)->orWhere('id', (int) $this->mood_id))->orderBy('sort')->orderBy('name')->pluck('name', 'id'),
             'single' => $this->isSingle(),
+            'trackNumber' => $editing ? $this->release->tracks()->pluck('id')->search($this->track->id) + 1 : null,
             'knownDuration' => $this->knownDuration(),
             'artistOptions' => $this->artistOptions(),
             'artistRoles' => ArtistRole::options(),
