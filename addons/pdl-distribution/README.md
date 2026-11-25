@@ -110,15 +110,16 @@ videos, YouTube Content ID options (`/album/platform/details/update`), go-live t
 1. **Production host and HTTPS.** The guide and Postman use `http://pdl.gaonaweb.com` (plain HTTP: the
    password, token and files travel unencrypted). What are the staging and production base URLs, and is
    HTTPS available?
-2. **Sign-in answer.** The guide does not show the `/user/system/signin` response or the token lifetime.
-   The add-on reads `data.token` (and a few usual alternatives) and caches it 50 minutes. Which field and
-   how long is it valid?
+2. ~~**Sign-in answer.**~~ Answered by staging: the token is `data.data.oauth2_token.access_token`
+   (`token_type` Bearer) with `expiry` (ISO 8601, about 10 days). The add-on caches it encrypted until
+   5 minutes before that expiry (50 minutes when no expiry is given) and renews it once on 401/403.
 3. **Date format.** The guide says `YYYY-MM-DD`; the Postman request sends `DD-MM-YYYY` (and
    `date_of_expiry` as `2/1/23`). Which does `/album/add/meta` expect? (A setting, default DD-MM-YYYY.)
 4. **Verify answer.** "The COSMOS album id is returned": in which field? (The add-on accepts `album_id`,
    `id`, `album.id`, … and otherwise looks the album up by ISRC.)
-5. **Album listing shape.** Which field holds the albums in `/album/page` (and `/album/list`), and are
-   `submitted`, `verified`, `reportissue_flag` and `releases[]` always included?
+5. **Album listing shape.** Staging's `/album/list` answers `data.albums`, `data.total_count`,
+   `data.filtered_count` (as the add-on expects). Still open: are `submitted`, `verified`,
+   `reportissue_flag` and `releases[]` always included in each album?
 6. **Field names.** The Postman request uses `"parental_advisory (EXPLICIT ETC)"` inside `data`; the guide
    says `parental_advisory`. Remixers are `track_remixer_artist` / `album_remixer_artist` in add/meta but
    `track_remixer` / `album_remixer` in the update and listing. Album category: `album_category` (guide)

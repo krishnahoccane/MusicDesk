@@ -24,7 +24,7 @@ use Illuminate\Support\Str;
  *   label                       Settings "PDL label name", else the release's label
  *   UPC / catalogue number      upc_id / catalog_number (PDL creates a UPC when empty)
  *   C-line / P-line             c_line / p_line (album and per song)
- *   release date                data.go_live_date; original release date → data.original_release_date_of_music
+ *   release date                data.go_live_date; original release date → data.original_release_date_of_music and _of_movie (COSMOS requires both)
  *   genre                       Settings genre map → data.genre + data.sub_genre
  *   language (track, release)   Settings language map → data.language; zxx/instrumental → is_instrumental Yes
  *   explicit (track or release) data.parental_advisory "Explicit" / "Not Explicit"
@@ -183,6 +183,7 @@ class PayloadBuilder
                     'publisher' => $this->publisher($release, $labelName),
                     'track_duration' => $this->duration($track->duration_seconds),
                     'time_for_crbt_cut' => $this->duration((int) $this->settings->get('crbt_start')),
+                    'original_release_date_of_movie' => $this->date($release->original_release_date ?? $release->release_date), // required by COSMOS even for non-film albums
                     'original_release_date_of_music' => $this->date($release->original_release_date ?? $release->release_date),
                     'go_live_date' => $this->date($release->release_date),
                     'c_line' => (string) $release->c_line,
