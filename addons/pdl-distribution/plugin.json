@@ -1,11 +1,11 @@
 {
     "slug": "pdl-distribution",
     "name": "PDL distribution",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "addon": "pdl_distribution",
     "description": "Send releases (metadata, artwork and audio) to Phonographic Digital Limited through the COSMOS ingestion API and follow their review and release status.",
     "author": "MusicDesk",
-    "requires": "4.3.5",
+    "requires": "4.3.6",
     "namespace": "LabelDesk\\Addons\\PdlDistribution\\",
     "provider": "LabelDesk\\Addons\\PdlDistribution\\PdlDistributionServiceProvider"
 }

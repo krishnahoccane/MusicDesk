@@ -11,8 +11,8 @@ This document describes the changes; nothing in that repository has been edited.
 | Add-on code | `pdl_distribution` (the `addon` value in `plugin.json`) |
 | Plugin slug | `pdl-distribution` |
 | Name | PDL distribution |
-| First release | 1.0.0, requires LabelDesk **4.3.5** |
-| Package | `build/plugins/pdl-distribution-1.0.0.zip` (signed with the plugin signing key, verified) |
+| First release | **1.1.0**, requires LabelDesk **4.3.6** (1.0.0 was built for 4.3.5 but is superseded; publish 1.1.0 only) |
+| Package | `build/plugins/pdl-distribution-1.1.0.zip` (signed with the plugin signing key, verified; contains `CHANGELOG.md` and `CHANGELOG.txt`) |
 
 The add-on API (`/api/license/v1/addons/activate|check-in|deactivate`) and the package checks need no
 code change: they work for any add-on code.
@@ -41,12 +41,12 @@ Update the add-on code list in `docs/licensing.md` (section "Add-ons", bullet **
 `bulk_upload`, `rest_api`, `incoming_webhooks`, `sso` (and `media_storage`, if not yet added) **and
 `pdl_distribution`**.
 
-## 2. Release 1.0.0
+## 2. Release 1.1.0
 
-**Releases › New**, Product *PDL distribution*, version `1.0.0`, channel stable, upload
-`pdl-distribution-1.0.0.zip`. It is already signed; the portal's `PluginPackager` verifies it and checks
-that `plugin.json` says `addon: pdl_distribution`, `version: 1.0.0`. Set the LabelDesk requirement to
-**4.3.5** (`requires_labeldesk` in `/updates/check`). Suggested notes:
+**Releases › New**, Product *PDL distribution*, version `1.1.0`, channel stable, upload
+`pdl-distribution-1.1.0.zip`. It is already signed; the portal's `PluginPackager` verifies it and checks
+that `plugin.json` says `addon: pdl_distribution`, `version: 1.1.0`. Set the LabelDesk requirement to
+**4.3.6** (`requires_labeldesk` in `/updates/check`). Suggested notes:
 
 - *new* — Send releases (metadata, artwork and WAV masters) to PDL through the COSMOS ingestion API, in
   the background, with retries.
@@ -54,6 +54,11 @@ that `plugin.json` says `addon: pdl_distribution`, `version: 1.0.0`. Set the Lab
   approved, delivered to stores, live), checked hourly and on demand.
 - *new* — Settings → PDL distribution: encrypted credentials, test connection, PDL label, genre and
   language mapping.
+- *new* — Each track's mood and CRBT cut (LabelDesk 4.3.6) are sent to PDL; draft tracks and tracks
+  without a composer, lyricist or mood are caught before sending.
+
+Publish it together with LabelDesk 4.3.6, not before (it will not install on 4.3.5). The full notes
+are in the zip's `CHANGELOG.md` / `CHANGELOG.txt`.
 
 ## 3. Product page / customer information
 

@@ -28,8 +28,9 @@ use Illuminate\Support\Str;
  *   genre                       Settings genre map → data.genre + data.sub_genre
  *   language (track, release)   Settings language map → data.language; zxx/instrumental → is_instrumental Yes
  *   explicit (track or release) data.parental_advisory "Explicit" / "Not Explicit"
- *   mood                        chosen when sending (default in Settings)
- *   CRBT                        data.crbt_cut_name (title, 64 chars), data.time_for_crbt_cut (Settings)
+ *   track mood (4.3.6)          data.mood = $track->mood->value (PDL spelling); the mood chosen when sending is only a fallback
+ *   track CRBT (4.3.6)          data.crbt_cut_name = crbt_name (else title, 64 chars); data.time_for_crbt_cut = crbt_start_seconds
+ *                               (else Settings CRBT start, else 0); crbt_cuts[0] name / start_time_in_sec in updates
  *   release artists by role     album_main_artist / album_featured_artist / album_remixer_artist
  *   track artists by role       track_main_artist / track_featured_artist / track_remixer_artist (release artists when a track has none)
  *   singers                     main and featured track artists (none for instrumentals)
@@ -49,7 +50,7 @@ class PayloadBuilder
      *
      * @return array{problems: list<string>, warnings: list<string>}
      */
-    public function check(Release $release, ?string $mood): array
+    public function check(Release $release, ?string $fallbackMood = null): array
     {
         $release = $this->load($release);
         $problems = [];
@@ -86,9 +87,6 @@ class PayloadBuilder
                 ? __('Map the genre ":genre" to a PDL genre and sub-genre in Settings → PDL distribution.', ['genre' => $release->genre->name])
                 : __('Set a genre on the release.');
         }
-        if (! in_array($mood, Cosmos::MOODS, true)) {
-            $problems[] = __('Choose a mood (PDL requires one).');
-        }
         if ($release->artists->where('pivot.role', ArtistRole::Primary->value)->isEmpty()) {
             $problems[] = __('Add a primary artist to the release.');
         }
@@ -114,14 +112,19 @@ class PayloadBuilder
                     ? __('Map the language ":language" to a PDL language in Settings → PDL distribution.', ['language' => $lang->name])
                     : __('Set a language on ":track" or on the release.', ['track' => $name]);
             }
-            $instrumental = $language === 'instrumental';
-            if (! $instrumental) {
-                if ($this->credited($track, [ContributorRole::Composer, ContributorRole::Songwriter])->isEmpty()) {
-                    $problems[] = __('":track" needs a composer (or songwriter) credit.', ['track' => $name]);
-                }
-                if ($this->credited($track, [ContributorRole::Lyricist, ContributorRole::Songwriter])->isEmpty()) {
-                    $problems[] = __('":track" needs a lyricist (or songwriter) credit.', ['track' => $name]);
-                }
+            if ($track->is_draft) {
+                $problems[] = __('":track" is still a draft. Finish it on the release before sending.', ['track' => $name]);
+            }
+            if ($this->credited($track, [ContributorRole::Composer, ContributorRole::Songwriter])->isEmpty()) {
+                $problems[] = __('":track" needs a composer (or songwriter) credit.', ['track' => $name]);
+            }
+            if ($this->credited($track, [ContributorRole::Lyricist, ContributorRole::Songwriter])->isEmpty()) {
+                $problems[] = __('":track" needs a lyricist (or songwriter) credit.', ['track' => $name]);
+            }
+            if ($track->mood && ! in_array($track->mood->value, Cosmos::MOODS, true)) {
+                $problems[] = __('The mood ":mood" of ":track" is not one of PDL\'s moods.', ['mood' => $track->mood->name, 'track' => $name]);
+            } elseif ($this->mood($track, $fallbackMood) === null) {
+                $problems[] = __('":track" has no mood. Set it on the track, or choose a mood for tracks without one.', ['track' => $name]);
             }
             [, $audioProblem, $audioWarning] = $this->audioFile($track, false);
             if ($audioProblem) {
@@ -140,7 +143,7 @@ class PayloadBuilder
      *
      * @return array{body: array<string, mixed>, files: list<array{key: string, kind: string, isrc: ?string, path: string, filename: string, size: int, md5: string}>}
      */
-    public function build(Release $release, string $mood, bool $isUpdate = false): array
+    public function build(Release $release, ?string $fallbackMood = null, bool $isUpdate = false): array
     {
         $release = $this->load($release);
         $files = [];
@@ -174,7 +177,7 @@ class PayloadBuilder
                 'isrc' => $isrc,
                 'track_no' => $index + 1,
                 'data' => [
-                    'crbt_cut_name' => Str::limit($track->title, 64, ''),
+                    'crbt_cut_name' => $this->crbtName($track),
                     'song_name' => $track->title,
                     'album_name' => $release->title,
                     'language' => $this->languageLabel($language),
@@ -182,13 +185,13 @@ class PayloadBuilder
                     'content_type' => $contentType,
                     'genre' => $genre,
                     'sub_genre' => $subGenre,
-                    'mood' => $mood,
+                    'mood' => (string) $this->mood($track, $fallbackMood),
                     'description' => '',
                     'isrc' => $isrc,
                     'label' => $labelName,
                     'publisher' => $this->publisher($release, $labelName),
                     'track_duration' => $this->duration($track->duration_seconds),
-                    'time_for_crbt_cut' => $this->duration((int) $this->settings->get('crbt_start')),
+                    'time_for_crbt_cut' => $this->duration($this->crbtStart($track)),
                     'original_release_date_of_movie' => $this->date($release->original_release_date ?? $release->release_date), // required by COSMOS even for non-film albums
                     'original_release_date_of_music' => $this->date($release->original_release_date ?? $release->release_date),
                     'go_live_date' => $this->date($release->release_date),
@@ -266,9 +269,10 @@ class PayloadBuilder
      * @param  array<string, mixed>  $remote
      * @return array<string, mixed>
      */
-    public function mergeForUpdate(array $remote, Release $release, string $mood): array
+    public function mergeForUpdate(array $remote, Release $release, ?string $fallbackMood = null): array
     {
-        $built = $this->build($release, $mood, true)['body']['albums'][0];
+        $built = $this->build($release, $fallbackMood, true)['body']['albums'][0];
+        $tracks = $release->tracks->keyBy(fn (Track $t) => $this->isrc($t));
         $iso = fn (?CarbonInterface $d) => $d ? $d->copy()->startOfDay()->format('Y-m-d\T00:00:00.000\Z') : null;
         $goLive = $iso($release->release_date);
 
@@ -283,7 +287,7 @@ class PayloadBuilder
         $album['date_of_release'] = $iso($release->original_release_date ?? $release->release_date);
 
         $byIsrc = collect($built['songs'])->keyBy('isrc');
-        $album['songs'] = array_values(array_map(function ($song) use ($byIsrc, $goLive) {
+        $album['songs'] = array_values(array_map(function ($song) use ($byIsrc, $goLive, $tracks) {
             if (! is_array($song)) {
                 return $song;
             }
@@ -296,6 +300,7 @@ class PayloadBuilder
                 return $kept;
             }
             $d = $mine['data'];
+            $kept['crbt_cuts'] = $this->crbtCuts((array) ($kept['crbt_cuts'] ?? []), $tracks[$song['isrc']]);
 
             return array_merge($kept, [
                 'title' => $d['song_name'], 'language' => $d['language'], 'genre' => $d['genre'], 'sub_genre' => $d['sub_genre'],
@@ -393,8 +398,53 @@ class PayloadBuilder
     {
         return $release->loadMissing([
             'genre', 'language', 'label', 'artists.links',
-            'tracks.language', 'tracks.artists.links', 'tracks.credits.contributor',
+            'tracks.language', 'tracks.mood', 'tracks.artists.links', 'tracks.credits.contributor',
         ]);
+    }
+
+    /** PDL mood of a track: its own mood (LabelDesk 4.3.6), else the fallback chosen when sending. */
+    public function mood(Track $track, ?string $fallback): ?string
+    {
+        $value = $track->mood?->value;
+        if (is_string($value) && in_array($value, Cosmos::MOODS, true)) {
+            return $value;
+        }
+
+        return in_array($fallback, Cosmos::MOODS, true) ? $fallback : null;
+    }
+
+    /** Whether any track needs the fallback mood (has no PDL mood of its own). */
+    public function needsFallbackMood(Release $release): bool
+    {
+        return $this->load($release)->tracks->contains(fn (Track $t) => $this->mood($t, null) === null);
+    }
+
+    protected function crbtName(Track $track): string
+    {
+        $name = trim((string) $track->crbt_name);
+
+        return Str::limit($name !== '' ? $name : $track->title, 64, '');
+    }
+
+    protected function crbtStart(Track $track): int
+    {
+        return max(0, (int) ($track->crbt_start_seconds ?? $this->settings->get('crbt_start') ?? 0));
+    }
+
+    /**
+     * CRBT cuts for an update: the first cut gets the track's CRBT name and
+     * start (a 30-second cut is added when COSMOS has none); others are kept.
+     *
+     * @param  array<int, mixed>  $cuts
+     * @return list<array<string, mixed>>
+     */
+    protected function crbtCuts(array $cuts, Track $track): array
+    {
+        $cuts = array_values(array_filter($cuts, 'is_array'));
+        $first = $cuts[0] ?? ['order' => 1, 'duration_in_sec' => 30];
+        $cuts[0] = array_merge($first, ['name' => $this->crbtName($track), 'start_time_in_sec' => $this->crbtStart($track)]);
+
+        return $cuts;
     }
 
     public function labelName(Release $release): string

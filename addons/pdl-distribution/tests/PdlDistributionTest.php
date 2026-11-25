@@ -8,6 +8,7 @@ use App\Models\Artist;
 use App\Models\Contributor;
 use App\Models\Genre;
 use App\Models\Language;
+use App\Models\Mood;
 use App\Models\Release;
 use App\Models\Setting;
 use App\Models\Track;
@@ -125,7 +126,10 @@ class PdlDistributionTest extends TestCase
         $producer = Contributor::query()->create(['name' => 'Pro Ducer']);
         $publisher = Contributor::query()->create(['name' => 'Glass Publishing']);
 
-        $this->one = $this->release->tracks()->create(['title' => 'Glass City', 'isrc' => 'IN-A1B-26-00001', 'position' => 1, 'duration_seconds' => 205, 'explicit' => true]);
+        // LabelDesk 4.3.6: per-track mood (PDL spelling in value) and CRBT cut. Track two has neither: fallbacks.
+        $patriotic = Mood::query()->firstOrCreate(['value' => 'Partiotic'], ['name' => 'Patriotic']);
+        $this->one = $this->release->tracks()->create(['title' => 'Glass City', 'isrc' => 'IN-A1B-26-00001', 'position' => 1, 'duration_seconds' => 205, 'explicit' => true,
+            'mood_id' => $patriotic->id, 'crbt_name' => 'Glass City Hook', 'crbt_start_seconds' => 45]);
         $this->one->artists()->attach($main->id, ['role' => 'primary', 'position' => 1]);
         $this->one->artists()->attach($feat->id, ['role' => 'featuring', 'position' => 2]);
         $this->one->credits()->create(['contributor_id' => $composer->id, 'role' => 'composer']);
@@ -396,10 +400,12 @@ class PdlDistributionTest extends TestCase
         $this->one->credits()->where('role', 'lyricist')->delete();
         $this->one->forceFill(['isrc' => 'BAD'])->save();
         Storage::disk('local')->delete($this->two->audio_path);
+        $this->two->forceFill(['is_draft' => true])->save();
+        $this->two->credits()->delete(); // no composer and no lyricist
         $this->release->forceFill(['status' => 'draft', 'release_date' => now()->addDays(60)->toDateString()])->save();
 
         try {
-            $this->send();
+            $this->send(['mood' => null]); // track two has no mood and no fallback is given
             $this->fail('Expected a DeliveryException');
         } catch (DeliveryException $e) {
             $text = implode("\n", $e->problems);
@@ -409,6 +415,10 @@ class PdlDistributionTest extends TestCase
             $this->assertStringContainsString('needs a lyricist', $text);
             $this->assertStringContainsString('is not on this server', $text);
             $this->assertStringContainsString('at most 45 days before its go-live date', $text);
+            $this->assertStringContainsString('"Glass City (Night Mix)" is still a draft', $text);
+            $this->assertStringContainsString('"Glass City (Night Mix)" needs a composer', $text);
+            $this->assertStringContainsString('"Glass City (Night Mix)" has no mood', $text);
+            $this->assertStringNotContainsString('"Glass City" has no mood', $text, 'track one has its own mood');
         }
         $this->assertSame(0, PdlDelivery::query()->count());
 
@@ -440,7 +450,7 @@ class PdlDistributionTest extends TestCase
         $this->assertSame(['user/system/signin' => 1, 'album/add/meta' => 1, 's3' => 3, 'album/verify/meta' => 1, 'album/pdl/submit' => 1], $this->calls, 'token is cached');
 
         Http::assertSent(fn (Request $r) => $r->url() === self::API.'/album/add/meta' && $r->hasHeader('Authorization', 'Bearer cosmos-bearer-123')
-            && $r['version'] === '2' && $r['albums'][0]['label'] === 'Test Records Pvt Ltd' && $r['albums'][0]['songs'][0]['data']['mood'] === 'Romantic');
+            && $r['version'] === '2' && $r['albums'][0]['label'] === 'Test Records Pvt Ltd' && $r['albums'][0]['songs'][0]['data']['mood'] === 'Partiotic' && $r['albums'][0]['songs'][1]['data']['mood'] === 'Romantic');
         $this->assertSame([
             'inlay.jpg' => ['PUT', md5(Storage::disk('local')->get($this->release->artwork_path)), (string) strlen(Storage::disk('local')->get($this->release->artwork_path)), false],
             'one.wav' => ['PUT', md5($this->audioOne), (string) strlen($this->audioOne), false],
@@ -701,7 +711,8 @@ class PdlDistributionTest extends TestCase
         $this->assertSame(md5(Storage::disk('local')->get($this->release->artwork_original_path)), $this->uploads['replace.jpg'][1]);
         Http::assertSent(fn (Request $r) => $r->method() === 'PUT' && $r->url() === self::API.'/album/media/update'
             && $r['one'] === 'media' && $r['album']['id'] === self::ALBUM_ID && $r['album']['songs'][0]['id'] === '6694fb0b579fb93bb54d9e8c'
-            && $r['album']['songs'][0]['title'] === 'Glass City (Fixed)' && $r['album']['songs'][0]['crbt_cuts'] === [['name' => 'Glass City']]
+            && $r['album']['songs'][0]['title'] === 'Glass City (Fixed)' && $r['album']['songs'][0]['crbt_cuts'] === [['name' => 'Glass City Hook', 'start_time_in_sec' => 45]]
+            && $r['album']['songs'][0]['mood'] === 'Partiotic'
             && $r['album']['go_live_date'] === '2026-12-24T00:00:00.000Z' && $r['album']['songs'][0]['go_live_date'] === '2026-12-24T00:00:00.000Z'
             && ! isset($r['album']['artwork']) && ! isset($r['album']['songs'][0]['media']) && ! isset($r['album']['songs'][0]['crbt_cuts'][0]['crbt_cut_media']));
         $this->assertSame(1, $this->calls['album/pdl/submit']);
@@ -724,5 +735,34 @@ class PdlDistributionTest extends TestCase
         $cached = (string) Cache::get('pdl:token:'.sha1('https://pdl.test|label@example.com'));
         $this->assertStringNotContainsString('cosmos-token-2', $cached);
         $this->assertSame('cosmos-token-2', Crypt::decryptString($cached));
+    }
+
+    public function test_track_moods_and_crbt_are_sent_and_no_mood_is_asked_when_every_track_has_one(): void
+    {
+        $this->configure(['crbt_start' => 12]);
+        $calm = Mood::query()->firstOrCreate(['value' => 'Calm'], ['name' => 'Calm']);
+
+        // Track two has no mood: the page asks for a fallback, and sending without one is refused.
+        $this->fakePdl();
+        Livewire::actingAs($this->admin)->test(ReleasePage::class, ['release' => $this->release])
+            ->assertSee('Mood for tracks without one')->set('mood', '')->call('send')->assertHasErrors('mood');
+        $this->assertSame(0, PdlDelivery::query()->count());
+
+        // Fallbacks: CRBT name = title, CRBT start = Settings default.
+        $song = app(PayloadBuilder::class)->build($this->release->fresh(), 'Happy')['body']['albums'][0]['songs'][1];
+        $this->assertSame(['Happy', 'Glass City (Night Mix)', '0:00:12'], [$song['data']['mood'], $song['data']['crbt_cut_name'], $song['data']['time_for_crbt_cut']]);
+
+        // Every track has a mood: no mood asked, none stored, each track's own sent.
+        $this->two->forceFill(['mood_id' => $calm->id, 'crbt_start_seconds' => 0])->save();
+        Livewire::actingAs($this->admin)->test(ReleasePage::class, ['release' => $this->release->fresh()])
+            ->assertDontSee('Mood for tracks without one')->set('mood', '')->call('send')->assertHasNoErrors()->assertDispatched('toast', type: 'success');
+        $this->assertNull($this->delivery()->mood);
+
+        app(DeliveryService::class)->run();
+        $this->assertSame('submitted', $this->delivery()->status);
+        Http::assertSent(fn (Request $r) => $r->url() === self::API.'/album/add/meta'
+            && array_column(array_column($r['albums'][0]['songs'], 'data'), 'mood') === ['Partiotic', 'Calm']
+            && array_column(array_column($r['albums'][0]['songs'], 'data'), 'time_for_crbt_cut') === ['0:00:45', '0:00:00']
+            && $r['albums'][0]['songs'][0]['data']['crbt_cut_name'] === 'Glass City Hook');
     }
 }

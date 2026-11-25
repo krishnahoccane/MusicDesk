@@ -29,6 +29,7 @@ class ReleasePage extends Component
 
     public bool $allow_any_go_live_date = false;
 
+    /** Fallback mood for tracks without one (LabelDesk 4.3.6 tracks have their own mood). */
     public string $mood = '';
 
     /** @var list<string> problems from the last send attempt */
@@ -56,14 +57,14 @@ class ReleasePage extends Component
         $this->ensureLicenseAllowsWrites();
     }
 
-    public function send(DeliveryService $deliveries): void
+    public function send(DeliveryService $deliveries, PayloadBuilder $builder): void
     {
         $this->authorizeDeliver();
         $this->validate([
             'platforms' => ['required', Rule::in(array_keys(Cosmos::PLATFORMS))],
             'allow_any_go_live_date' => ['boolean'],
-            'mood' => ['required', Rule::in(Cosmos::MOODS)],
-        ], [], ['platforms' => __('release on'), 'mood' => __('mood')]);
+            'mood' => [$builder->needsFallbackMood($this->release->fresh()) ? 'required' : 'nullable', Rule::in(Cosmos::MOODS)],
+        ], ['mood.required' => __('Some tracks have no mood: choose one for them.')], ['platforms' => __('release on'), 'mood' => __('mood')]);
 
         try {
             $delivery = $deliveries->queue($this->release->fresh(), auth()->user(), [
@@ -114,8 +115,10 @@ class ReleasePage extends Component
     public function render(PayloadBuilder $builder, PdlSettings $settings): View
     {
         $delivery = $this->delivery()?->load(['events' => fn ($q) => $q->with('user:id,name')->limit(50), 'requester:id,name']);
-        $check = $builder->check($this->release, $this->mood !== '' ? $this->mood : 'Happy');
-        $problems = array_values(array_filter($check['problems'], fn ($p) => $p !== __('Choose a mood (PDL requires one).')));
+        $needsMood = $builder->needsFallbackMood($this->release);
+        // Missing moods are answered by the fallback field below, so they are not listed as problems here.
+        $check = $builder->check($this->release, $needsMood ? 'Happy' : null);
+        $problems = $check['problems'];
 
         $canSend = $delivery === null
             || (! $delivery->isInProgress() && (! $delivery->isSubmitted() || in_array($delivery->status, ['issue_reported', 'failed'], true)));
@@ -124,6 +127,7 @@ class ReleasePage extends Component
             'delivery' => $delivery,
             'check' => ['problems' => $problems, 'warnings' => $check['warnings']],
             'configured' => $settings->isEnabled(),
+            'needsMood' => $needsMood,
             'canSend' => $canSend,
             'isUpdate' => $delivery?->pdl_album_id !== null,
             'uploads' => collect((array) data_get($delivery?->ingest, 'uploads', []))->map(fn ($u) => ['filename' => $u['filename'] ?? '', 'size' => (int) ($u['size'] ?? 0), 'done' => (bool) ($u['done'] ?? false)])->values(),

@@ -1,0 +1,26 @@
+CHANGELOG - PDL distribution
+============================
+
+1.1.0 (requires LabelDesk 4.3.6)
+--------------------------------
+* New: each track's own mood (LabelDesk 4.3.6) is sent to PDL with PDL's exact spelling. The mood chosen
+  when sending is now only a fallback for tracks without one, and is asked for only when needed.
+* New: each track's CRBT cut is sent: its CRBT name (else the track title, 64 characters) and start
+  second (else the default in Settings, else 0). Updates set the first CRBT cut's name and start.
+* New: before sending, draft tracks, tracks without a composer or a lyricist (a songwriter counts as
+  both) and tracks without a mood are listed as problems, including instrumental tracks.
+* New: releases whose go-live date is more than 45 days ahead cannot be sent yet (PDL refuses to
+  submit them); the page says from which date they can be sent.
+* Fixed: sign-in reads PDL's token (data.data.oauth2_token) and keeps it until PDL's own expiry.
+* Fixed: the movie release date (original_release_date_of_movie) is sent, as PDL requires it for
+  every album.
+* Fixed: per-platform release status is read from releases_res (PDL's album list).
+* Changed: updates send only the album fields of PDL's update example, with the current go-live date.
+  Updating an album already at PDL still fails on PDL's side (being clarified with PDL).
+
+1.0.0 (requires LabelDesk 4.3.5)
+--------------------------------
+* First release: send releases (metadata, artwork, WAV masters) to Phonographic Digital Limited through
+  the COSMOS ingestion API in the background, with retries; follow PDL's review and release status;
+  Settings > PDL distribution with encrypted credentials, test connection, PDL label, and genre and
+  language mapping.

@@ -48,7 +48,7 @@ class DeliveryService
      * Queue a release (first delivery, or an update of an album PDL has not
      * accepted yet / reported an issue on). Work starts after the response.
      *
-     * @param  array{platforms: string, allow_any_go_live_date: bool, mood: string}  $options
+     * @param  array{platforms: string, allow_any_go_live_date: bool, mood?: ?string}  $options  mood: fallback for tracks without a mood
      */
     public function queue(Release $release, User $user, array $options): PdlDelivery
     {
@@ -67,7 +67,8 @@ class DeliveryService
             throw new DeliveryException(__('PDL has this release for review or release. The COSMOS API does not accept changes after submission (yet); contact PDL for changes.'));
         }
 
-        $check = $this->builder->check($release, $options['mood']);
+        $fallbackMood = in_array($options['mood'] ?? null, Cosmos::MOODS, true) ? $options['mood'] : null;
+        $check = $this->builder->check($release, $fallbackMood);
         if ($check['problems'] !== []) {
             throw new DeliveryException(__('Fix these first:'), $check['problems']);
         }
@@ -80,7 +81,7 @@ class DeliveryService
             'status' => 'queued',
             'platforms' => $options['platforms'],
             'allow_any_go_live_date' => (bool) $options['allow_any_go_live_date'],
-            'mood' => $options['mood'],
+            'mood' => $fallbackMood,
             'attempts' => 0,
             'next_attempt_at' => null,
             'last_error' => null,
@@ -224,7 +225,7 @@ class DeliveryService
         }
 
         $delivery->forceFill(['stage' => 'metadata', 'status' => 'sending'])->save();
-        $built = $this->builder->build($release, (string) $delivery->mood);
+        $built = $this->builder->build($release, $delivery->mood);
         $data = $this->client->addMeta($built['body']);
 
         $token = $data['token'] ?? null;
@@ -356,7 +357,7 @@ class DeliveryService
             throw new CosmosException(__('Album :id was not found at PDL.', ['id' => $delivery->pdl_album_id]));
         }
 
-        $built = $this->builder->build($release, (string) $delivery->mood, true);
+        $built = $this->builder->build($release, $delivery->mood, true);
         $sent = json_decode((string) $delivery->payload, true) ?: [];
 
         // New artwork: PDL overwrites the stored file through a fresh presigned URL.
@@ -375,7 +376,7 @@ class DeliveryService
             }
         }
 
-        $this->client->updateAlbum($this->builder->mergeForUpdate($remote, $release, (string) $delivery->mood));
+        $this->client->updateAlbum($this->builder->mergeForUpdate($remote, $release, $delivery->mood));
 
         $sentAudio = collect((array) data_get($sent, 'albums.0.songs', []))->keyBy('isrc');
         $body = $built['body'];

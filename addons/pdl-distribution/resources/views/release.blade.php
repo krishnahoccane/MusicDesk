@@ -171,16 +171,19 @@
                                 </select>
                                 @error('platforms') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
-                            <div class="mb-3">
-                                <label class="form-label" for="send-mood">{{ __('Mood') }}</label>
-                                <select id="send-mood" class="form-select @error('mood') is-invalid @enderror" wire:model="mood">
-                                    <option value="">{{ __('Choose…') }}</option>
-                                    @foreach (\LabelDesk\Addons\PdlDistribution\Services\Cosmos::MOODS as $m)
-                                        <option value="{{ $m }}">{{ $m }}</option>
-                                    @endforeach
-                                </select>
-                                @error('mood') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                            </div>
+                            @if ($needsMood)
+                                <div class="mb-3">
+                                    <label class="form-label" for="send-mood">{{ __('Mood for tracks without one') }}</label>
+                                    <select id="send-mood" class="form-select @error('mood') is-invalid @enderror" wire:model="mood">
+                                        <option value="">{{ __('Choose…') }}</option>
+                                        @foreach (\LabelDesk\Addons\PdlDistribution\Services\Cosmos::MOODS as $m)
+                                            <option value="{{ $m }}">{{ \App\Models\Mood::PDL[$m] ?? $m }}</option>
+                                        @endforeach
+                                    </select>
+                                    @error('mood') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                                    <div class="form-text">{{ __('PDL needs a mood for every track. Better: set it on each track.') }}</div>
+                                </div>
+                            @endif
                             <div class="form-check mb-3">
                                 <input class="form-check-input" type="checkbox" id="send-any-date" wire:model="allow_any_go_live_date">
                                 <label class="form-check-label" for="send-any-date">{{ __('Allow any go-live date') }}</label>

@@ -6,7 +6,7 @@ Sends releases (metadata, artwork and audio) to **Phonographic Digital Limited (
 | | |
 |---|---|
 | Slug / add-on code | `pdl-distribution` / `pdl_distribution` |
-| Version | 1.0.0, requires LabelDesk 4.3.5 |
+| Version | 1.1.0, requires LabelDesk 4.3.6 (track mood, CRBT and drafts); see `CHANGELOG.md` |
 | Namespace | `LabelDesk\Addons\PdlDistribution\` |
 | Pages | Business → **PDL distribution** (`/distribution/pdl`), one page per release (`/distribution/pdl/releases/{id}`), Settings → **PDL distribution** (`/settings/pdl-distribution`) |
 | Permissions | `pdl.view` (see deliveries), `pdl.deliver` (send, retry, check status), `pdl.manage` (settings) |
@@ -30,7 +30,7 @@ Settings → PDL distribution (permission `pdl.manage`):
    list of 24/08/2026). Releases with an unmapped genre cannot be sent.
 4. **Languages**: languages used in the catalog; same-name languages (Hindi → hindi) match automatically,
    `zxx` is sent as instrumental. Override any of them.
-5. **Release defaults**: where to release (`platforms_to_release`), *allow any go-live date*, default mood,
+5. **Release defaults**: where to release (`platforms_to_release`), *allow any go-live date*, fallback mood (for tracks without a mood),
    album type (Album; Film is blocked, see below), album category, content type per release type
    (Single → Single, EP → Album, Album → Album, Compilation → Compilation), publisher fallback, CRBT start
    second, and the date format (DD-MM-YYYY as in the Postman collection, or YYYY-MM-DD as in the guide).
@@ -40,8 +40,11 @@ Settings → PDL distribution (permission `pdl.manage`):
 
 Business → PDL distribution lists approved / ready releases not sent yet and everything sent, with its
 PDL status. A release's page shows what is missing (problems block sending; warnings do not), the send
-form (release on, mood, allow any go-live date) and the history. **Send to PDL** only queues: the
-background task then runs, step by step, each step saved before the next:
+form (release on, allow any go-live date, and a mood for tracks without one, shown only when needed) and
+the history. Problems include draft tracks, tracks without a composer or a lyricist (a songwriter counts
+as both), tracks without a mood (when no fallback is chosen), unmapped genres/languages, missing files and
+go-live dates more than 45 days ahead. **Send to PDL** only queues: the background task then runs, step
+by step, each step saved before the next:
 
 1. Sign in (`POST /user/system/signin`), token cached encrypted (50 minutes), renewed once on 401/403.
 2. `POST /album/add/meta` with the full album (sizes and MD5 of the artwork and every master).
@@ -94,8 +97,8 @@ Activity log: `pdl.queued`, `pdl.retried`, `pdl.submitted`, `pdl.failed`, `pdl.s
 | `data.genre`, `data.sub_genre` | release genre through the genre map |
 | `data.language`, `is_instrumental` | track language (else release language) through the language map; instrumental / `zxx` → `Yes` |
 | `data.parental_advisory` | track or release explicit → `Explicit`, else `Not Explicit` |
-| `data.mood` | chosen when sending |
-| `data.crbt_cut_name`, `data.time_for_crbt_cut`, `data.track_duration` | track title (64 chars), Settings CRBT start, track duration (H:MM:SS) |
+| `data.mood` | the track's mood (LabelDesk 4.3.6 stores PDL's exact spelling); for tracks without one, the mood chosen when sending |
+| `data.crbt_cut_name`, `data.time_for_crbt_cut`, `data.track_duration` | track CRBT name (else title, 64 chars), track CRBT start (else Settings default, else 0), track duration (H:MM:SS); updates set `crbt_cuts[0].name` / `start_time_in_sec` |
 | `album_main/featured/remixer_artist` | release artists by role (primary, featuring, remixer) |
 | `track_main/featured/remixer_artist` | track artists by role (release artists when a track has none) |
 | `singers` | main and featured track artists (none for instrumentals) |
@@ -135,7 +138,8 @@ videos, YouTube Content ID options (`/album/platform/details/update`), go-live t
    or `category` (update)? The add-on sends both spellings where they differ.
 7. **Language and genre spellings.** The approved language list is lower-case (`hindi`) but examples send
    `Bengali` / `Haryanvi`; which is accepted? Is there a lookup endpoint for genres, languages and moods
-   (the Postman body has a `genreId`)? Note "Partiotic" (sic) in the mood list.
+   (the Postman body has a `genreId`)? Moods are sent with PDL's own spelling ("Partiotic"), shown as
+   "Patriotic" in LabelDesk.
 8. **Updates (blocking).** Please send a working `PUT /album/media/update` request for an album that is
    not submitted yet. On staging (album `6b06abd5579fb90b48653b97`) the album as returned by `/album/page`
    gives *MD5 mismatch for File* (the stored and uploaded MD5s are identical), and the album without the
@@ -146,7 +150,7 @@ videos, YouTube Content ID options (`/album/platform/details/update`), go-live t
    get new links for an ingestion token without a new `/album/add/meta` (which reports *Duplicate ISRC*)?
 10. **Label id vs. name.** Verify takes `label_id`; add/meta takes `label` as a name. Must the name match
     the COSMOS label/sub-label exactly? Is there an endpoint listing the account's labels?
-11. **Required fields.** Is `mood` really required for every song? Is `album_category` free text?
+11. **Required fields.** Is `album_category` free text?
 12. **Artists.** Should we create/search artists (`/artists/add`, `/artists/search`) first and send their
     COSMOS ids, or are names plus Apple/Spotify ids enough for profile linking?
 13. **Rate limits** and the maximum file size for a single (non-multipart) audio PUT.

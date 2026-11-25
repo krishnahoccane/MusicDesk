@@ -148,13 +148,14 @@
                             <div class="form-text">{{ __('Sent as allow_any_go_live_date when submitting.') }}</div>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label" for="pdl-mood">{{ __('Default mood') }}</label>
+                            <label class="form-label" for="pdl-mood">{{ __('Fallback mood') }}</label>
                             <select id="pdl-mood" class="form-select" wire:model="default_mood">
                                 <option value="">{{ __('Choose when sending') }}</option>
                                 @foreach (\LabelDesk\Addons\PdlDistribution\Services\Cosmos::MOODS as $mood)
-                                    <option value="{{ $mood }}">{{ $mood }}</option>
+                                    <option value="{{ $mood }}">{{ \App\Models\Mood::PDL[$mood] ?? $mood }}</option>
                                 @endforeach
                             </select>
+                            <div class="form-text">{{ __('Only for tracks without a mood; each track\'s own mood is sent first.') }}</div>
                         </div>
                         <div class="mb-3">
                             <label class="form-label" for="pdl-album-type">{{ __('Album type') }}</label>
@@ -190,9 +191,10 @@
                             <div class="form-text">{{ __('Used when no track has a publisher credit. Empty: the label name.') }}</div>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label" for="pdl-crbt">{{ __('CRBT cut starts at (seconds)') }}</label>
+                            <label class="form-label" for="pdl-crbt">{{ __('Default CRBT start (seconds)') }}</label>
                             <input id="pdl-crbt" type="number" min="0" max="600" class="form-control @error('crbt_start') is-invalid @enderror" wire:model="crbt_start">
                             @error('crbt_start') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                            <div class="form-text">{{ __('For tracks without their own CRBT start.') }}</div>
                         </div>
                         <div>
                             <label class="form-label" for="pdl-date-format">{{ __('Date format') }}</label>
