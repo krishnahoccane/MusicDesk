@@ -43,6 +43,7 @@ class WebsiteContent
         'contact_phone' => '',
         'contact_address' => '',
         'featured_release_id' => null,
+        'hero_use_login_image' => false,
         'meta_description' => '',
         'socials' => [],
     ];

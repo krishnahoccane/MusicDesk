@@ -17,8 +17,8 @@ class RouteSecurityTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** Public by design: installer (locked after installation), auth screens, Livewire assets, health check. */
-    protected const PUBLIC_PREFIXES = ['install', 'login', 'forgot-password', 'reset-password', 'register', 'livewire/', 'up', 'branding/', 'suspended', '/'];
+    /** Public by design: installer (locked after installation), auth screens, Livewire assets, health check, the label website (off by default). */
+    protected const PUBLIC_PREFIXES = ['install', 'login', 'forgot-password', 'reset-password', 'register', 'livewire/', 'up', 'branding/', 'suspended', 'music', 'roster', 'site/', '/'];
 
     protected function isPublic(Route $route): bool
     {

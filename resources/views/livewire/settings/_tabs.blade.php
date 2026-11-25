@@ -2,6 +2,7 @@
     ['route' => 'settings.index', 'label' => __('General'), 'icon' => 'sliders-horizontal', 'can' => 'settings.manage'],
     ['route' => 'settings.appearance', 'label' => __('Appearance'), 'icon' => 'palette', 'can' => 'settings.manage'],
     ['route' => 'settings.catalog', 'label' => __('Catalogue'), 'icon' => 'disc-3', 'can' => 'settings.manage'],
+    ['route' => 'settings.website', 'label' => __('Website'), 'icon' => 'globe', 'can' => 'settings.manage'],
     ['route' => 'settings.mail', 'label' => __('Email'), 'icon' => 'mail', 'can' => 'settings.manage'],
     ['route' => 'license.show', 'label' => __('License'), 'icon' => 'key-round', 'can' => 'license.view'],
 ])

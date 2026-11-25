@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\BrandingController;
 use App\Http\Controllers\License\LicenseLockedController;
+use App\Http\Controllers\Site\SiteController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -15,11 +16,18 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::get('/', function () {
-    return auth()->check()
-        ? redirect()->route('dashboard')
-        : redirect()->route('login');
-})->name('home');
+// "/" is the label's website when it is switched on (Settings → Website), otherwise sign-in.
+Route::get('/', [SiteController::class, 'home'])->name('home');
+
+// The public website (404 while it is switched off).
+Route::controller(SiteController::class)->name('site.')->middleware('throttle:120,1')->group(function () {
+    Route::get('music', 'music')->name('music');
+    Route::get('music/{slug}', 'release')->where('slug', '[0-9]+(-[a-z0-9\-]*)?')->name('release');
+    Route::get('roster', 'roster')->name('roster');
+    Route::get('roster/{slug}', 'artist')->where('slug', '[0-9]+(-[a-z0-9\-]*)?')->name('artist');
+    Route::get('site/artwork/{release}/{size?}', 'artwork')->whereNumber('release')->whereIn('size', ['thumb', 'full'])->name('artwork');
+    Route::get('site/photo/{artist}', 'photo')->whereNumber('artist')->name('photo');
+});
 
 // Expired license past its read-only window: suspension notice (public) and re-check.
 Route::get('suspended', [LicenseLockedController::class, 'show'])->name('license.locked');
