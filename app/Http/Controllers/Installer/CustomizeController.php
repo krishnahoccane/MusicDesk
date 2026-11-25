@@ -6,6 +6,7 @@ use App\Livewire\Settings\Appearance as AppearanceSettings;
 use App\Services\SettingsApplier;
 use App\Support\Appearance;
 use App\Support\Branding;
+use App\Services\Website\WebsiteContent;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -38,6 +39,7 @@ class CustomizeController extends InstallerController
             'currencies' => (array) config('labeldesk.installer.currencies'),
             'locales' => (array) config('labeldesk.installer.locales'),
             'dateFormats' => SettingsApplier::DATE_FORMATS,
+            'websiteThemes' => WebsiteContent::THEMES,
         ]);
     }
 
@@ -57,6 +59,9 @@ class CustomizeController extends InstallerController
             'date_format' => ['required', Rule::in(array_keys(SettingsApplier::DATE_FORMATS))],
             'remove' => ['array'],
             'remove.*' => [Rule::in(array_keys(Branding::KINDS))],
+            'website_theme' => ['nullable', Rule::in(array_keys(WebsiteContent::THEMES))],
+            'website_title' => ['nullable', 'string', 'max:120'],
+            'website_text' => ['nullable', 'string', 'max:300'],
         ] + AppearanceSettings::rules() + AppearanceSettings::uploadRules(), [], ['name' => __('site name')]);
 
         $files = (array) ($this->wizard->get('customize')['files'] ?? []);
@@ -95,6 +100,10 @@ class CustomizeController extends InstallerController
             'login_layout' => $data['login_layout'],
             'login' => $login,
             'registration' => $request->boolean('registration'),
+            'website' => $request->boolean('website'),
+            'website_theme' => $data['website_theme'] ?? 'aurora',
+            'website_title' => trim((string) ($data['website_title'] ?? '')),
+            'website_text' => trim((string) ($data['website_text'] ?? '')),
             'files' => $files,
             'date_format' => $data['date_format'],
         ]);
@@ -184,6 +193,10 @@ class CustomizeController extends InstallerController
             'login_layout' => $c['login_layout'] ?? 'spotlight',
             'login' => ($c['login'] ?? []) + Appearance::loginTextDefaults(),
             'registration' => (bool) ($c['registration'] ?? false),
+            'website' => (bool) ($c['website'] ?? false),
+            'website_theme' => $c['website_theme'] ?? 'aurora',
+            'website_title' => $c['website_title'] ?? '',
+            'website_text' => $c['website_text'] ?? '',
         ];
     }
 

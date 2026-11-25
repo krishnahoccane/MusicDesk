@@ -281,6 +281,11 @@ class InstallationService
             'appearance.brand_color_2' => ! empty($c['custom_colors']) ? $c['brand_color_2'] : null,
             'general.date_format' => $c['date_format'] ?? 'd M Y',
             'auth.registration' => ! empty($c['registration']),
+            // Label website (Settings → Website); off = "/" opens the sign-in page.
+            'website.enabled' => ! empty($c['website']),
+            'website.theme' => $c['website_theme'] ?? 'aurora',
+            'website.hero_title' => (string) ($c['website_title'] ?? ''),
+            'website.hero_text' => (string) ($c['website_text'] ?? ''),
         ];
         $defaults = Appearance::loginTextDefaults();
         foreach (($c['login'] ?? []) as $key => $value) {

@@ -1,0 +1,307 @@
+// ------------------------------------------------------------ pages: prose, services, pricing, contact form
+
+.ld-site-page-head__intro { max-width: 46em; margin-top: 1rem; font-size: 1.15rem; color: var(--ld-text-muted); }
+
+.ld-site-prose {
+    line-height: 1.75;
+    h1, h2, h3 { margin: 1.6em 0 0.6em; font-weight: 800; }
+    a { color: var(--ld-link) !important; }
+    > :first-child { margin-top: 0; }
+    > :last-child { margin-bottom: 0; }
+}
+.ld-site-prose--page { max-width: 46em; font-size: 1.08rem; }
+
+.ld-site-services {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr));
+    gap: clamp(16px, 2.4vw, 28px);
+}
+
+.ld-site-service {
+    position: relative;
+    padding: 1.75rem;
+    border-radius: calc(var(--ld-radius) * 1.3);
+    background: var(--ld-surface);
+    border: 1px solid var(--ld-border);
+    box-shadow: var(--ld-card-shadow);
+    transition: transform 0.25s ease, border-color 0.25s ease;
+    &:hover { transform: translateY(-3px); border-color: color-mix(in oklab, var(--ld-accent) 50%, var(--ld-border)); }
+    h2 { font-size: 1.25rem; font-weight: 700; margin: 0.75rem 0 0.6rem; }
+}
+.ld-site-service__no {
+    font-family: var(--ld-font-mono);
+    font-size: 0.85rem;
+    font-weight: 700;
+    background: linear-gradient(100deg, var(--ld-accent), var(--ld-accent-2));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.ld-site-pricing {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
+    gap: clamp(16px, 2.4vw, 28px);
+    align-items: stretch;
+}
+
+.ld-site-plan {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    padding: 2rem 1.75rem;
+    border-radius: calc(var(--ld-radius) * 1.4);
+    background: var(--ld-surface);
+    border: 1px solid var(--ld-border);
+    box-shadow: var(--ld-card-shadow);
+}
+.ld-site-plan--highlight {
+    border: 2px solid var(--ld-accent);
+    box-shadow: 0 30px 60px -30px color-mix(in oklab, var(--ld-accent) 60%, #000);
+}
+.ld-site-plan__badge {
+    position: absolute;
+    top: -12px;
+    left: 1.75rem;
+    padding: 0.2rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #fff;
+    background: linear-gradient(100deg, var(--ld-accent), var(--ld-accent-2));
+}
+.ld-site-plan__name { font-size: 1.1rem; font-weight: 700; margin: 0 0 0.75rem; }
+.ld-site-plan__price {
+    margin-bottom: 0.75rem;
+    span { font-size: 2.4rem; font-weight: 800; color: var(--ld-heading); letter-spacing: -0.03em; }
+    small { color: var(--ld-text-muted); margin-left: 0.25rem; }
+}
+.ld-site-plan__features {
+    list-style: none;
+    margin: 0.5rem 0 1.75rem;
+    padding: 0;
+    display: grid;
+    gap: 0.6rem;
+    li { display: flex; gap: 0.55rem; align-items: flex-start; }
+    svg { color: var(--ld-success); flex: none; margin-top: 0.2rem; }
+}
+
+.ld-site-contact--page { align-items: start; }
+.ld-site-form .form-control { padding: 0.75rem 0.9rem; }
+
+// ------------------------------------------------------------ theme picker (Settings → Website)
+
+.ld-site-themes {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    gap: 1rem;
+}
+.ld-site-theme-option {
+    cursor: pointer;
+    padding: 0.6rem;
+    border-radius: var(--ld-radius);
+    border: 2px solid transparent;
+    &:hover { background: var(--ld-surface-hover); }
+    &.is-selected { border-color: var(--ld-accent); background: color-mix(in oklab, var(--ld-accent) 6%, transparent); }
+    &:focus-within { outline: 2px solid var(--ld-accent); outline-offset: 2px; }
+}
+.ld-site-theme-option__preview {
+    position: relative;
+    display: block;
+    height: 96px;
+    padding: 10px;
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--p-bg);
+    color: var(--p-fg);
+    border: 1px solid color-mix(in oklab, var(--p-fg) 14%, transparent);
+}
+.ld-site-theme-option__bar { display: block; height: 6px; width: 40%; border-radius: 3px; background: currentColor; opacity: 0.5; margin-bottom: 10px; }
+.ld-site-theme-option__title { display: block; height: 12px; width: 75%; border-radius: 3px; background: currentColor; margin-bottom: 6px; }
+.ld-site-theme-option__line { display: block; height: 6px; width: 55%; border-radius: 3px; background: currentColor; opacity: 0.35; }
+.ld-site-theme-option__tiles {
+    position: absolute;
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    i { display: block; height: 18px; border-radius: 4px; background: linear-gradient(135deg, var(--ld-accent), var(--ld-accent-2)); }
+}
+.ld-site-theme-option__preview--aurora { background: radial-gradient(circle at 20% 0%, color-mix(in oklab, var(--ld-accent) 60%, transparent), transparent 60%), var(--p-bg); }
+.ld-site-theme-option__preview--noir i, .ld-site-theme-option__preview--bold i { border-radius: 0; }
+.ld-site-theme-option__preview--bold { border: 3px solid #000; }
+.ld-site-theme-option__preview--vinyl i, .ld-site-theme-option__preview--pastel i { border-radius: 50%; height: 18px; width: 18px; }
+.ld-site-theme-option__preview--neon i { background: transparent; border: 1px solid var(--ld-accent); box-shadow: 0 0 8px var(--ld-accent); }
+.ld-site-theme-option__preview--editorial .ld-site-theme-option__title { border-radius: 0; height: 14px; }
+.ld-site-theme-option__preview--studio i { background: rgba(255, 255, 255, 0.18); }
+.ld-site-theme-option__preview--cinema .ld-site-theme-option__tiles {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    grid-template-columns: 1fr;
+    i { height: 34px; border-radius: 0; }
+}
+
+// ==========================================================================
+// The 10 website themes (data-site-theme on <html>). They change tokens, type,
+// shapes and backgrounds; the brand accent colours stay the label's own.
+// 1. Aurora is the default look in _site.scss.
+// ==========================================================================
+
+// 2. Minimal
+[data-site-theme="minimal"] {
+    --ld-bg: #ffffff;
+    --ld-surface: #ffffff;
+    --ld-surface-2: #f4f4f5;
+    --ld-heading: #0a0a0a;
+    --ld-text: #27272a;
+    --ld-radius: 0.5rem;
+    .ld-site-hero__glow { display: none; }
+    .ld-site-hero__title { background: none; color: var(--ld-heading); font-weight: 700; letter-spacing: -0.04em; }
+    .ld-site-section--tinted { background: #fafafa; }
+    .ld-site-feature { transform: none; }
+    .ld-site-feature__art, .ld-site-card__art, .ld-site-release__art { box-shadow: none; border: 1px solid #e4e4e7; }
+    .btn-primary { background: #0a0a0a; border-color: #0a0a0a; }
+    .ld-site-service, .ld-site-plan, .ld-site-contact { box-shadow: none; }
+}
+
+// 3. Noir
+[data-site-theme="noir"] {
+    --ld-bg: #000000;
+    --ld-surface: #0b0b0b;
+    --ld-surface-2: #141414;
+    --ld-border: #1f1f1f;
+    --ld-heading: #ffffff;
+    --ld-text: #d4d4d4;
+    --ld-radius: 0;
+    --ld-radius-sm: 0;
+    .ld-site-hero__glow { opacity: 0.18; }
+    .ld-site-hero__title { background: none; color: #fff; text-transform: uppercase; letter-spacing: -0.03em; }
+    .ld-site-feature { transform: none; }
+    .ld-site-feature__art, .ld-site-card__art { filter: grayscale(0.35) contrast(1.1); transition: filter 0.4s ease; }
+    .ld-site-feature:hover .ld-site-feature__art, .ld-site-card:hover .ld-site-card__art { filter: none; }
+    .ld-site-artist__photo { border-radius: 0; filter: grayscale(1); }
+    .btn { border-radius: 0 !important; }
+}
+
+// 4. Editorial
+[data-site-theme="editorial"] {
+    --ld-radius: 0.25rem;
+    .ld-site h1, .ld-site h2, .ld-site-hero__title, .ld-site-release__title, .ld-site-feature__title {
+        font-family: var(--ld-font-serif);
+        font-weight: 400;
+        letter-spacing: -0.01em;
+    }
+    .ld-site-hero__title { background: none; color: var(--ld-heading); font-style: italic; }
+    .ld-site-hero__glow { display: none; }
+    .ld-site-section__head { border-bottom: 2px solid var(--ld-heading); padding-bottom: 0.75rem; }
+    .ld-site-feature { transform: none; }
+    .ld-site__eyebrow { color: var(--ld-text-muted); }
+}
+[data-site-theme="editorial"][data-bs-theme="light"] { --ld-bg: #f7f3ec; --ld-surface: #fffdf8; --ld-heading: #1c1917; }
+
+// 5. Neon
+[data-site-theme="neon"] {
+    --ld-bg: #05030f;
+    --ld-surface: #0c0820;
+    --ld-surface-2: #120c2c;
+    --ld-border: color-mix(in oklab, var(--ld-accent) 30%, #05030f);
+    --ld-heading: #f4f2ff;
+    .ld-site-hero__glow { opacity: 0.7; }
+    .ld-site-hero__title { text-shadow: 0 0 40px color-mix(in oklab, var(--ld-accent) 60%, transparent); }
+    .ld-site-card__art, .ld-site-feature__art, .ld-site-service, .ld-site-plan {
+        border: 1px solid color-mix(in oklab, var(--ld-accent) 60%, transparent);
+        box-shadow: 0 0 24px -6px color-mix(in oklab, var(--ld-accent) 70%, transparent);
+    }
+    .ld-site-artist__photo { box-shadow: 0 0 0 2px var(--ld-accent), 0 0 30px -4px var(--ld-accent); }
+    .btn-primary { box-shadow: 0 0 20px -4px var(--ld-accent); }
+}
+
+// 6. Vinyl
+[data-site-theme="vinyl"] {
+    --ld-bg: #f3ead9;
+    --ld-surface: #fbf5ea;
+    --ld-surface-2: #e9dcc4;
+    --ld-border: #dccbad;
+    --ld-heading: #2b2118;
+    --ld-text: #4a3b2c;
+    .ld-site-hero__glow { opacity: 0.12; }
+    .ld-site-hero__title { background: none; color: var(--ld-heading); font-family: var(--ld-font-serif); font-weight: 400; }
+    .ld-site-card__art, .ld-site-feature__art {
+        border-radius: 50%;
+        box-shadow: 0 0 0 8px #1b1b1b, 0 0 0 9px #333, 0 30px 50px -20px rgba(0, 0, 0, 0.5);
+    }
+    .ld-site-card { align-items: center; text-align: center; }
+    .ld-site-card__art { margin: 8px 8px 1.1rem; }
+    .ld-site-card:hover .ld-site-card__art img { transform: rotate(25deg) scale(1.05); }
+    .ld-site-feature { transform: none; }
+}
+
+// 7. Studio
+[data-site-theme="studio"] {
+    .ld-site {
+        background: radial-gradient(1200px 600px at 10% -10%, color-mix(in oklab, var(--ld-accent) 30%, transparent), transparent),
+                    radial-gradient(900px 500px at 100% 20%, color-mix(in oklab, var(--ld-accent-2) 22%, transparent), transparent),
+                    var(--ld-bg);
+    }
+    .ld-site__header { background: color-mix(in oklab, var(--ld-surface) 40%, transparent); }
+    .ld-site-service, .ld-site-plan, .ld-site-contact, .ld-site__footer {
+        background: color-mix(in oklab, var(--ld-surface) 55%, transparent);
+        backdrop-filter: blur(18px) saturate(140%);
+    }
+    .ld-site-section--tinted { background: transparent; }
+    .ld-site-hero__glow { display: none; }
+}
+
+// 8. Bold
+[data-site-theme="bold"] {
+    --ld-radius: 0;
+    --ld-radius-sm: 0;
+    .ld-site-hero__title { background: none; color: var(--ld-heading); font-size: clamp(3rem, 1.8rem + 6vw, 7rem); text-transform: uppercase; line-height: 0.9; }
+    .ld-site-hero__glow { display: none; }
+    .ld-site-feature { transform: rotate(2deg); }
+    .ld-site-card__art, .ld-site-feature__art, .ld-site-service, .ld-site-plan, .ld-site-contact, .ld-site-artist__photo {
+        border: 3px solid var(--ld-heading);
+        box-shadow: 8px 8px 0 var(--ld-heading);
+        border-radius: 0;
+    }
+    .ld-site-section__head h2 { text-transform: uppercase; }
+    .btn { border-radius: 0 !important; border-width: 3px; font-weight: 800; text-transform: uppercase; }
+}
+
+// 9. Pastel
+[data-site-theme="pastel"] {
+    --ld-bg: color-mix(in oklab, var(--ld-accent) 6%, #fff8fb);
+    --ld-surface: #ffffff;
+    --ld-surface-2: color-mix(in oklab, var(--ld-accent-2) 10%, #fff);
+    --ld-radius: 1.5rem;
+    .ld-site-hero__glow { opacity: 0.35; filter: blur(120px); }
+    .ld-site-hero__title { font-weight: 700; }
+    .ld-site-card__art, .ld-site-feature__art { border-radius: 2rem; }
+    .ld-site-section--tinted { background: color-mix(in oklab, var(--ld-accent-2) 8%, #fff); }
+    .btn { border-radius: 999px !important; }
+}
+
+// 10. Cinema
+[data-site-theme="cinema"] {
+    --ld-bg: #0a0a0a;
+    --ld-surface: #121212;
+    --ld-heading: #ffffff;
+    .ld-site-hero { padding: 0; min-height: min(88vh, 860px); display: flex; align-items: flex-end; }
+    .ld-site-hero__grid { grid-template-columns: 1fr; padding-bottom: clamp(40px, 8vw, 96px); }
+    .ld-site-hero__glow { display: none; }
+    .ld-site-feature {
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        transform: none;
+        pointer-events: none;
+        &::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(10, 10, 10, 0.2), #0a0a0a 92%); }
+    }
+    .ld-site-feature__art { height: 100%; aspect-ratio: auto; border-radius: 0; box-shadow: none; filter: blur(2px) brightness(0.7); }
+    .ld-site-feature__caption { display: none; }
+    .ld-site-hero__title { background: none; color: #fff; font-size: clamp(3rem, 2rem + 5vw, 6.5rem); }
+    .ld-site-card__art { border-radius: 4px; }
+}

@@ -233,6 +233,40 @@
                         </div>
                         <div class="form-text">{{ __('Shows "Create an account" on the sign-in page. New accounts wait for an administrator\'s approval. You can change this later in Settings → General.') }}</div>
                     </div>
+                    <div class="col-12" x-data="{ site: {{ old('website', $v['website']) ? 'true' : 'false' }} }">
+                        <div class="form-check form-switch">
+                            <input type="hidden" name="website" value="0">
+                            <input class="form-check-input" type="checkbox" role="switch" id="website" name="website" value="1" x-model="site" @checked(old('website', $v['website']))>
+                            <label class="form-check-label" for="website">{{ __('Label website') }}</label>
+                        </div>
+                        <div class="form-text">{{ __('Shows a public website for your label (music, artists and your own pages) at the address of this installation. Off: the address opens the sign-in page, for labels with their own website. You can change everything later in Settings → Website.') }}</div>
+                        <div x-show="site" x-cloak class="mt-3">
+                            <label class="form-label">{{ __('Website theme') }}</label>
+                            <div class="row g-2 mb-3">
+                                @foreach ($websiteThemes as $key => [$name, $description, $mode, $bg, $fg])
+                                    <div class="col-6 col-md-4 col-xl-3">
+                                        <input type="radio" class="btn-check" name="website_theme" id="wt-{{ $key }}" value="{{ $key }}" @checked(old('website_theme', $v['website_theme']) === $key)>
+                                        <label class="btn btn-light w-100 text-start h-100" for="wt-{{ $key }}">
+                                            <span class="d-block rounded mb-2" style="height: 28px; background: {{ $bg }}; border: 1px solid {{ $fg }}33"></span>
+                                            <span class="fw-semibold d-block">{{ __($name) }}</span>
+                                            <span class="small text-muted d-block" style="white-space: normal">{{ __($description) }}</span>
+                                        </label>
+                                    </div>
+                                @endforeach
+                            </div>
+                            @error('website_theme') <div class="text-danger small mb-2">{{ $message }}</div> @enderror
+                            <div class="row g-2">
+                                <div class="col-md-5">
+                                    <label class="form-label" for="website_title">{{ __('Headline') }}</label>
+                                    <input id="website_title" name="website_title" maxlength="120" value="{{ old('website_title', $v['website_title']) }}" placeholder="{{ __('Your label name') }}" class="form-control @error('website_title') is-invalid @enderror">
+                                </div>
+                                <div class="col-md-7">
+                                    <label class="form-label" for="website_text">{{ __('Introduction') }}</label>
+                                    <input id="website_text" name="website_text" maxlength="300" value="{{ old('website_text', $v['website_text']) }}" class="form-control @error('website_text') is-invalid @enderror">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
