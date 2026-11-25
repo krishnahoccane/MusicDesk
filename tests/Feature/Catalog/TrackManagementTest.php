@@ -122,12 +122,14 @@ class TrackManagementTest extends TestCase
         $this->addTrack(['credits' => [
             ['contributor_id' => $this->writer->id, 'role' => 'composer', 'share' => '60'],
             ['contributor_id' => $other->id, 'role' => 'composer', 'share' => '50.5'],
+            ['contributor_id' => $other->id, 'role' => 'lyricist', 'share' => '100'],
         ]])->assertHasErrors('form');
 
         $this->addTrack(['credits' => [
             ['contributor_id' => $this->writer->id, 'role' => 'composer', 'share' => '60'],
             ['contributor_id' => $other->id, 'role' => 'composer', 'share' => '40'],
             ['contributor_id' => $other->id, 'role' => 'producer', 'share' => '99'], // non-publishing role: share ignored
+            ['contributor_id' => $other->id, 'role' => 'lyricist', 'share' => '100'],
         ]])->assertHasNoErrors();
 
         $this->assertNull(Track::query()->first()->credits()->where('role', 'producer')->value('share'));

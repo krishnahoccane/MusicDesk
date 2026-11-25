@@ -55,6 +55,7 @@
                                 <td>
                                     <a href="{{ route('tracks.show', $track) }}" class="fw-semibold">{{ $track->displayTitle() }}</a>
                                     @if ($track->explicit) <x-badge class="ms-1">E</x-badge> @endif
+                                        @if ($track->is_draft) <x-badge variant="warning" class="ms-1">{{ __('Draft') }}</x-badge> @endif
                                     <div class="small text-muted">{{ $track->artistLine() ?: '—' }}</div>
                                 </td>
                                 <td class="d-none d-md-table-cell">

@@ -4,14 +4,17 @@ namespace App\Livewire\Tracks;
 
 use App\Enums\ArtistRole;
 use App\Enums\ContributorRole;
+use App\Enums\ReleaseType;
 use App\Livewire\Concerns\EnforcesLicense;
 use App\Livewire\Concerns\ManagesArtistCredits;
 use App\Models\Contributor;
 use App\Models\Language;
+use App\Models\Mood;
 use App\Models\Release;
 use App\Models\Track;
 use App\Services\Catalog\ContributorService;
 use App\Services\Catalog\TrackService;
+use App\Services\Media\AudioInspector;
 use App\Support\Identifiers;
 use Closure;
 use Illuminate\Contracts\View\View;
@@ -44,11 +47,20 @@ class Form extends Component
 
     public int|string $disc_number = 1;
 
-    public string $duration = '';
-
     public bool $explicit = false;
 
     public string $language_id = '';
+
+    public string $mood_id = '';
+
+    /** Caller ring-back tone (CRBT): name (max 64) and start of the 30-second cut, as m:ss. */
+    public string $crbt_name = '';
+
+    public string $crbt_start = '';
+
+    /** What the uploaded (not yet saved) file contains, for the preview. */
+    #[Locked]
+    public ?array $audioInfo = null;
 
     /** @var list<array{contributor_id: int|string, role: string, share: string}> */
     public array $creditRows = [];
@@ -71,9 +83,11 @@ class Form extends Component
                 'version' => (string) $track->version,
                 'isrc' => (string) $track->formattedIsrc(),
                 'disc_number' => $track->disc_number,
-                'duration' => $track->duration_seconds !== null ? $track->formattedDuration() : '',
                 'explicit' => $track->explicit,
                 'language_id' => (string) $track->language_id,
+                'mood_id' => (string) $track->mood_id,
+                'crbt_name' => (string) $track->crbt_name,
+                'crbt_start' => $track->formattedCrbtStart(),
             ]);
             $this->artistRows = $track->artists->map(fn ($a) => ['artist_id' => $a->id, 'role' => $a->pivot->role])->all();
             $this->creditRows = $track->credits->map(fn ($c) => [
@@ -87,10 +101,44 @@ class Form extends Component
             $this->release = $release;
             $this->track = null;
             $this->language_id = (string) $release->language_id;
+            if ($this->isSingle()) {
+                $this->title = $release->title; // a single's track carries the release title
+            }
             // New tracks start with the release's artists.
             $this->artistRows = $release->artists->map(fn ($a) => ['artist_id' => $a->id, 'role' => $a->pivot->role])->all()
                 ?: [['artist_id' => '', 'role' => ArtistRole::Primary->value]];
-            $this->creditRows = [['contributor_id' => '', 'role' => ContributorRole::Songwriter->value, 'share' => '']];
+            // Distributors (PDL among them) need a composer and a lyricist for every track.
+            $this->creditRows = [
+                ['contributor_id' => '', 'role' => ContributorRole::Composer->value, 'share' => ''],
+                ['contributor_id' => '', 'role' => ContributorRole::Lyricist->value, 'share' => ''],
+            ];
+        }
+    }
+
+    public function isSingle(): bool
+    {
+        return $this->release->type === ReleaseType::Single;
+    }
+
+    /** Length known from the saved track or the uploaded file (seconds). */
+    protected function knownDuration(): ?int
+    {
+        return $this->audioInfo['duration'] ?? ($this->track?->hasAudio() ? $this->track->duration_seconds : null);
+    }
+
+    /** Check the uploaded file right away, so its length and format show before saving. */
+    public function updatedAudio(AudioInspector $inspector): void
+    {
+        $this->audioInfo = null;
+        $this->validateOnly('audio');
+        if (! $this->audio) {
+            return;
+        }
+
+        try {
+            $this->audioInfo = $inspector->inspect($this->audio->getRealPath());
+        } catch (\Throwable $e) {
+            $this->addError('audio', $e->getMessage());
         }
     }
 
@@ -146,9 +194,20 @@ class Form extends Component
                 }
             }],
             'disc_number' => ['required', 'integer', 'between:1,20'],
-            'duration' => ['nullable', 'regex:/^\d{1,3}:[0-5]\d$/'],
             'explicit' => ['boolean'],
             'language_id' => ['nullable', Rule::exists('languages', 'id')],
+            'mood_id' => ['nullable', Rule::exists('moods', 'id')],
+            'crbt_name' => ['nullable', 'string', 'max:64'],
+            'crbt_start' => ['nullable', 'regex:/^\d{1,3}:[0-5]\d$/', function (string $a, mixed $v, Closure $fail) {
+                $duration = $this->knownDuration();
+                if ($v === '' || $v === null || $duration === null) {
+                    return;
+                }
+                [$m, $s] = explode(':', (string) $v);
+                if ((int) $m * 60 + (int) $s + min(30, $duration) > $duration) {
+                    $fail(__('The 30-second ring-back tone must end before the track does (:length).', ['length' => sprintf('%d:%02d', intdiv($duration, 60), $duration % 60)]));
+                }
+            }],
             'creditRows' => ['array', 'max:50'],
             'creditRows.*.contributor_id' => ['required', 'integer', Rule::exists('contributors', 'id')],
             'creditRows.*.role' => ['required', Rule::enum(ContributorRole::class)],
@@ -162,25 +221,55 @@ class Form extends Component
     {
         return [
             ...$this->artistRowMessages(),
-            'duration.regex' => __('Enter the length as minutes:seconds, e.g. 3:45.'),
+            'crbt_start.regex' => __('Enter the start as minutes:seconds, e.g. 0:45.'),
             'creditRows.*.contributor_id.required' => __('Choose a person or remove the row.'),
             'creditRows.*.share.regex' => __('Enter a percentage such as 50 or 33.33.'),
             'audio.extensions' => __('Upload a WAV or FLAC master file.'),
         ];
     }
 
+    /** Save what is filled in and stay here: incomplete artists and credits are allowed (empty rows left out). */
+    public function saveDraft(TrackService $tracks)
+    {
+        return $this->persist($tracks, draft: true);
+    }
+
     public function save(TrackService $tracks)
+    {
+        return $this->persist($tracks, draft: false);
+    }
+
+    protected function persist(TrackService $tracks, bool $draft)
     {
         $this->ensureLicenseAllowsWrites();
         $this->ensureFeature('tracks');
         abort_unless($this->canEdit(), 403);
 
-        $this->validate();
+        if ($this->isSingle()) {
+            $this->title = $this->release->title;
+        }
 
-        $seconds = null;
-        if ($this->duration !== '') {
-            [$m, $s] = explode(':', $this->duration);
-            $seconds = (int) $m * 60 + (int) $s;
+        if ($draft) {
+            $this->artistRows = $this->filledArtistRows();
+            $this->creditRows = array_values(array_filter($this->creditRows, fn ($r) => ($r['contributor_id'] ?? '') !== '' && $r['contributor_id'] !== null));
+            $rules = $this->rules();
+            $rules['artistRows'] = ['array', 'max:20'];
+            $this->validate($rules);
+        } else {
+            $this->validate();
+            $roles = array_column($this->creditRows, 'role');
+            $songwriter = in_array(ContributorRole::Songwriter->value, $roles, true);
+            if (! $songwriter && (! in_array(ContributorRole::Composer->value, $roles, true) || ! in_array(ContributorRole::Lyricist->value, $roles, true))) {
+                $this->addError('creditRows', __('Add a composer and a lyricist (a songwriter counts as both), or use Save as draft.'));
+
+                return null;
+            }
+        }
+
+        $crbtStart = null;
+        if ($this->crbt_start !== '') {
+            [$m, $s] = explode(':', $this->crbt_start);
+            $crbtStart = (int) $m * 60 + (int) $s;
         }
 
         $credits = array_map(fn ($r) => [
@@ -196,8 +285,11 @@ class Form extends Component
                 'isrc' => $this->isrc,
                 'explicit' => $this->explicit,
                 'language_id' => $this->language_id,
+                'mood_id' => $this->mood_id,
+                'crbt_name' => $this->crbt_name,
+                'crbt_start_seconds' => $crbtStart,
+                'is_draft' => $draft,
                 'disc_number' => (int) $this->disc_number,
-                'duration_seconds' => $seconds,
             ], $this->artistRowsForSave(), $credits);
         } catch (RuntimeException $e) {
             $this->addError('form', $e->getMessage());
@@ -219,6 +311,20 @@ class Form extends Component
             }
         }
 
+        if ($draft) {
+            if (! $this->track) {
+                session()->flash('success', __('Draft saved. Continue whenever you are ready.'));
+
+                return $this->redirectRoute('tracks.edit', $track);
+            }
+            $this->track = $track->fresh();
+            $this->reset('audio');
+            $this->audioInfo = null;
+            $this->dispatch('toast', type: 'success', message: __('Draft saved.'));
+
+            return null;
+        }
+
         session()->flash('success', $this->track ? __('Track saved.') : __('":title" has been added.', ['title' => $track->displayTitle()]));
 
         return $this->redirectRoute('releases.show', ['release' => $this->release, 'tab' => 'tracks']);
@@ -238,6 +344,9 @@ class Form extends Component
             'disabled' => ! $canEdit,
             'canPlay' => $editing && $this->track->hasAudio() && auth()->user()->can('downloadMaster', $this->track),
             'languages' => Language::query()->orderBy('name')->pluck('name', 'id'),
+            'moods' => Mood::query()->where(fn ($q) => $q->where('is_active', true)->orWhere('id', (int) $this->mood_id))->orderBy('sort')->orderBy('name')->pluck('name', 'id'),
+            'single' => $this->isSingle(),
+            'knownDuration' => $this->knownDuration(),
             'artistOptions' => $this->artistOptions(),
             'artistRoles' => ArtistRole::options(),
             'contributors' => Contributor::query()->orderBy('name')->pluck('name', 'id'),

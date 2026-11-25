@@ -24,11 +24,14 @@
                             </div>
                             <div class="col-md-4">
                                 <label for="type" class="form-label">{{ __('Type') }}</label>
-                                <select id="type" wire:model="type" class="form-select">
+                                <select id="type" wire:model.live="type" class="form-select">
                                     @foreach ($types as $value => $label)
                                         <option value="{{ $value }}">{{ $label }}</option>
                                     @endforeach
                                 </select>
+                                @if ($type === 'single')
+                                    <div class="form-text">{{ __('A single’s track takes the release title.') }}</div>
+                                @endif
                             </div>
                             <div class="col-md-8">
                                 <label for="version" class="form-label">{{ __('Version') }} <span class="text-muted fw-normal">({{ __('optional') }})</span></label>
@@ -44,6 +47,7 @@
                     <div class="card-header">
                         <x-icon name="mic-vocal" size="18" class="text-muted" />
                         <h2 class="card-title">{{ __('Artists') }}</h2>
+                        @include('livewire.catalog.partials.new-artist-button')
                     </div>
                     <div class="card-body">
                         @include('livewire.catalog.partials.artist-credits')
@@ -162,7 +166,7 @@
                         <input type="file" id="artwork" wire:model="artwork" accept="image/jpeg,image/png"
                                @class(['form-control', 'is-invalid' => $errors->has('artwork')]) aria-label="{{ __('Choose artwork') }}">
                         <div class="form-text">{{ __('Square JPG or PNG, at least :px × :px px, up to :mb MB.', ['px' => $minPx, 'mb' => $maxMb]) }}</div>
-                        <div wire:loading wire:target="artwork" class="small text-muted">{{ __('Uploading…') }}</div>
+                        <x-upload-progress for="artwork" />
                         @error('artwork') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
                         @if ($editing && $release->artwork_path && ! $artwork)
                             <div class="form-check mt-3">
@@ -177,7 +181,11 @@
 
         <div class="d-flex justify-content-end gap-2 mt-4">
             <a href="{{ $editing ? route('releases.show', $release) : route('releases.index') }}" class="btn btn-light">{{ __('Cancel') }}</a>
-            <button type="submit" class="btn btn-primary" wire:loading.attr="disabled" wire:target="save,artwork">
+            <button type="button" class="btn btn-light" wire:click="saveDraft" wire:loading.attr="disabled" wire:target="saveDraft,save,artwork">
+                <span wire:loading wire:target="saveDraft" class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                <x-icon name="save" size="16" /> {{ __('Save as draft') }}
+            </button>
+            <button type="submit" class="btn btn-primary" wire:loading.attr="disabled" wire:target="save,saveDraft,artwork">
                 <span wire:loading wire:target="save" class="spinner-border spinner-border-sm" aria-hidden="true"></span>
                 {{ $editing ? __('Save changes') : __('Create release') }}
             </button>

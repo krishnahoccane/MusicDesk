@@ -2,8 +2,8 @@
 
 namespace App\Services\Catalog;
 
-use App\Enums\ReleaseType;
 use App\Enums\ArtistRole;
+use App\Enums\ReleaseType;
 use App\Exceptions\CatalogException;
 use App\Models\Release;
 use App\Models\User;
@@ -64,7 +64,7 @@ class ReleaseService
             $release->save();
 
             // A single's track carries the release title.
-            if ($release->type === ReleaseType::Single && in_array('title', $dirty, true)) {
+            if ($release->type === ReleaseType::Single && array_intersect(['title', 'type'], $dirty) !== []) {
                 $release->tracks()->withoutGlobalScopes()->get()->each(fn ($t) => $t->forceFill(['title' => $release->title])->save());
             }
 

@@ -117,9 +117,9 @@
                     @unless ($writable)
                         <x-alert variant="warning" class="mb-2">{{ __('The plugins folder is not writable: :path', ['path' => $path]) }}</x-alert>
                     @endunless
-                    <input type="file" accept=".zip,application/zip" class="form-control @error('package') is-invalid @enderror" wire:model="package" aria-label="{{ __('Add-on file') }}">
+                    <input type="file" id="addon-package" accept=".zip,application/zip" class="form-control @error('package') is-invalid @enderror" wire:model="package" aria-label="{{ __('Add-on file') }}">
                     @error('package') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                    <div wire:loading wire:target="package" class="small text-muted mt-1">{{ __('Uploading…') }}</div>
+                    <x-upload-progress for="addon-package" />
                     <button type="submit" class="btn btn-primary mt-3" wire:loading.attr="disabled" wire:target="install,package">
                         <span wire:loading wire:target="install" class="spinner-border spinner-border-sm"></span>
                         <x-icon name="upload" size="16" /> {{ __('Install') }}

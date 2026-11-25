@@ -11,7 +11,7 @@
                         <label for="imp-file" class="form-label">{{ __('Statement file') }}</label>
                         <input id="imp-file" type="file" wire:model="file" accept=".csv,.txt,.tsv,.xlsx" @class(['form-control', 'is-invalid' => $errors->has('file')])>
                         <div class="form-text">{{ __('CSV (comma, semicolon or tab separated) or XLSX, up to :mb MB. The first row must contain column names.', ['mb' => $maxMb]) }}</div>
-                        <div wire:loading wire:target="file" class="small text-muted">{{ __('Uploading…') }}</div>
+                        <x-upload-progress for="imp-file" />
                         @error('file') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
                     </div>
                     <div class="col-md-6">

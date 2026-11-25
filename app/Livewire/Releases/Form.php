@@ -155,13 +155,34 @@ class Form extends Component
         $this->remove_artwork = false;
     }
 
+    /**
+     * Save what is filled in and stay on the form: the release stays a draft and the
+     * artists may still be incomplete (empty rows are left out).
+     */
+    public function saveDraft(ReleaseService $releases)
+    {
+        return $this->persist($releases, draft: true);
+    }
+
     public function save(ReleaseService $releases)
+    {
+        return $this->persist($releases, draft: false);
+    }
+
+    protected function persist(ReleaseService $releases, bool $draft)
     {
         $this->ensureLicenseAllowsWrites();
         $this->ensureFeature('releases');
         $this->release ? $this->authorize('update', $this->release) : $this->authorize('create', Release::class);
 
-        $data = $this->validate();
+        if ($draft) {
+            $this->artistRows = $this->filledArtistRows();
+            $rules = $this->rules();
+            $rules['artistRows'] = ['array', 'max:20'];
+            $data = $this->validate($rules);
+        } else {
+            $data = $this->validate();
+        }
         $data['upc'] = Identifiers::normalizeUpc($this->upc);
         // The label name sent to stores follows the chosen sub-label.
         $data['label_id'] = $this->label_id !== '' ? (int) $this->label_id : null;
@@ -200,6 +221,19 @@ class Form extends Component
             session()->flash('warning', __('Saved, but the artwork was not accepted: :reason', ['reason' => $e->getMessage()]));
 
             return $this->redirectRoute('releases.show', $release);
+        }
+
+        if ($draft) {
+            if (! $this->release) {
+                session()->flash('success', __('Draft saved. Continue whenever you are ready.'));
+
+                return $this->redirectRoute('releases.edit', $release);
+            }
+            $this->release = $release->fresh();
+            $this->reset('artwork', 'remove_artwork');
+            $this->dispatch('toast', type: 'success', message: __('Draft saved.'));
+
+            return null;
         }
 
         session()->flash('success', $this->release ? __('Changes saved.') : __(':title has been created. Add its tracks next.', ['title' => $release->displayTitle()]));

@@ -134,6 +134,7 @@
                     @endif
                     <input id="{{ $kind }}" type="file" wire:model="{{ $kind }}" class="form-control @error($kind) is-invalid @enderror" accept="{{ $kind === 'favicon' ? '.png,.ico,.svg' : '.png,.jpg,.jpeg,.webp,.svg' }}">
                     @error($kind) <div class="invalid-feedback">{{ $message }}</div> @enderror
+                    <x-upload-progress :for="$kind" />
                     <div class="form-text">{{ $hint }}</div>
                 </div>
             @endforeach
@@ -198,6 +199,7 @@
                 @endif
                 <input id="login_image" type="file" wire:model="login_image" class="form-control @error('login_image') is-invalid @enderror" accept=".jpg,.jpeg,.png,.webp">
                 @error('login_image') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                <x-upload-progress for="login_image" />
             </div>
         </div>
         <div class="form-text mt-2">{{ __('Save first, then use Preview to see your texts and images.') }}</div>

@@ -20,6 +20,10 @@
         <x-alert variant="danger" class="mb-4">{{ $message }}</x-alert>
     @enderror
 
+    @if ($editing && $track->is_draft)
+        <x-alert variant="info" class="mb-4">{{ __('This track is a draft. Save it with “Save track” once it is complete; the release cannot be submitted while a track is a draft.') }}</x-alert>
+    @endif
+
     <form wire:submit="save" novalidate>
         <div class="row g-3">
             <div class="col-xl-8">
@@ -32,9 +36,12 @@
                         <div class="row g-3">
                             <div class="col-md-8">
                                 <label for="title" class="form-label">{{ __('Title') }}</label>
-                                <input id="title" type="text" wire:model="title" maxlength="200" @disabled($disabled)
+                                <input id="title" type="text" wire:model="title" maxlength="200" @disabled($disabled) @readonly($single)
                                        @class(['form-control', 'is-invalid' => $errors->has('title')])>
                                 @error('title') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                                @if ($single)
+                                    <div class="form-text">{{ __('A single’s track has the release title. Change it on the release.') }}</div>
+                                @endif
                             </div>
                             <div class="col-md-4">
                                 <label for="version" class="form-label">{{ __('Version') }}</label>
@@ -52,13 +59,6 @@
                                 <input id="disc_number" type="number" min="1" max="20" wire:model="disc_number" @disabled($disabled)
                                        @class(['form-control', 'is-invalid' => $errors->has('disc_number')])>
                             </div>
-                            <div class="col-6 col-md-2">
-                                <label for="duration" class="form-label">{{ __('Length') }}</label>
-                                <input id="duration" type="text" wire:model="duration" placeholder="3:45" maxlength="7"
-                                       @disabled($disabled || ($editing && $track->hasAudio()))
-                                       @class(['form-control', 'is-invalid' => $errors->has('duration')])>
-                                @error('duration') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                            </div>
                             <div class="col-md-4">
                                 <label for="language_id" class="form-label">{{ __('Lyrics language') }}</label>
                                 <select id="language_id" wire:model="language_id" class="form-select" @disabled($disabled)>
@@ -67,6 +67,17 @@
                                         <option value="{{ $id }}">{{ $name }}</option>
                                     @endforeach
                                 </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="mood_id" class="form-label">{{ __('Mood') }}</label>
+                                <select id="mood_id" wire:model="mood_id" @disabled($disabled)
+                                        @class(['form-select', 'is-invalid' => $errors->has('mood_id')])>
+                                    <option value="">{{ __('Choose a mood…') }}</option>
+                                    @foreach ($moods as $id => $name)
+                                        <option value="{{ $id }}">{{ $name }}</option>
+                                    @endforeach
+                                </select>
+                                @error('mood_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
                             <div class="col-12">
                                 <div class="form-check">
@@ -82,6 +93,7 @@
                     <div class="card-header">
                         <x-icon name="mic-vocal" size="18" class="text-muted" />
                         <h2 class="card-title">{{ __('Artists') }}</h2>
+                        @include('livewire.catalog.partials.new-artist-button')
                     </div>
                     <div class="card-body">
                         @include('livewire.catalog.partials.artist-credits')
@@ -91,10 +103,11 @@
                 <div class="card">
                     <div class="card-header">
                         <x-icon name="users-round" size="18" class="text-muted" />
-                        <h2 class="card-title">{{ __('Songwriters and credits') }}</h2>
+                        <h2 class="card-title">{{ __('Composer, lyricist and credits') }}</h2>
                     </div>
                     <div class="card-body">
-                        <p class="small text-muted">{{ __('At least one composer, lyricist or songwriter is needed before submitting. Shares apply to publishing roles and may not exceed 100% per role.') }}</p>
+                        <p class="small text-muted">{{ __('Every track needs a composer and a lyricist (a songwriter counts as both). Shares apply to publishing roles and may not exceed 100% per role.') }}</p>
+                        @error('creditRows') <x-alert variant="danger" class="mb-3">{{ $message }}</x-alert> @enderror
                         @foreach ($creditRows as $i => $row)
                             <div class="row g-2 align-items-start mb-2" wire:key="credit-{{ $i }}">
                                 <div class="col-sm">
@@ -150,7 +163,7 @@
             </div>
 
             <div class="col-xl-4">
-                <div class="card">
+                <div class="card mb-3">
                     <div class="card-header">
                         <x-icon name="file-audio" size="18" class="text-muted" />
                         <h2 class="card-title">{{ __('Master audio') }}</h2>
@@ -164,7 +177,7 @@
                                 <dt>{{ __('Size') }}</dt><dd>{{ App\Support\Format::bytes($track->audio_size) }}</dd>
                             </dl>
                             @if ($canPlay)
-                                <audio controls preload="none" class="w-100 mb-3" src="{{ route('tracks.audio', $track) }}"></audio>
+                                <audio id="crbt-player" controls preload="none" class="w-100 mb-3" src="{{ route('tracks.audio', $track) }}"></audio>
                             @endif
                         @elseif (! $canEdit)
                             <p class="small text-muted mb-0">{{ __('No audio uploaded.') }}</p>
@@ -180,9 +193,47 @@
                                     {{ __('(Limited by the server’s PHP upload settings.)') }}
                                 @endif
                             </div>
-                            <div wire:loading wire:target="audio" class="small text-muted">{{ __('Uploading… large files can take a while.') }}</div>
+                            <x-upload-progress for="audio" />
                             @error('audio') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
+                            @if ($audioInfo)
+                                <div class="border rounded-3 p-2 mt-3 small" wire:key="audio-preview">
+                                    <div class="fw-semibold mb-1"><x-icon name="circle-check" size="14" class="text-success" /> {{ __('Ready to save') }}</div>
+                                    <dl class="ld-dl mb-0">
+                                        <dt>{{ __('Length') }}</dt><dd>{{ sprintf('%d:%02d', intdiv($audioInfo['duration'], 60), $audioInfo['duration'] % 60) }}</dd>
+                                        <dt>{{ __('Format') }}</dt><dd>{{ strtoupper($audioInfo['format']) }}, {{ number_format($audioInfo['sample_rate'] / 1000, 1) }} kHz, {{ $audioInfo['bit_depth'] }}-bit, {{ $audioInfo['channels'] === 1 ? __('mono') : __('stereo') }}</dd>
+                                    </dl>
+                                </div>
+                            @endif
                         @endif
+                    </div>
+                </div>
+
+                <div class="card" x-data="{ setFromPlayer() { const a = document.getElementById('crbt-player'); if (! a) return; const t = Math.floor(a.currentTime); $wire.set('crbt_start', Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0')); } }">
+                    <div class="card-header">
+                        <x-icon name="phone-call" size="18" class="text-muted" />
+                        <h2 class="card-title">{{ __('Caller tune (CRBT)') }}</h2>
+                    </div>
+                    <div class="card-body">
+                        <p class="small text-muted">{{ __('The 30-second cut used as a caller ring-back tone. Leave empty to start at the beginning.') }}</p>
+                        <div class="mb-3">
+                            <label for="crbt_name" class="form-label">{{ __('Ring-back tone name') }}</label>
+                            <input id="crbt_name" type="text" wire:model="crbt_name" maxlength="64" placeholder="{{ $title ?: __('Same as the track title') }}" @disabled($disabled)
+                                   @class(['form-control', 'is-invalid' => $errors->has('crbt_name')])>
+                            @error('crbt_name') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                            <div class="form-text">{{ __('Up to 64 characters.') }}</div>
+                        </div>
+                        <label for="crbt_start" class="form-label">{{ __('Start time') }}</label>
+                        <div class="input-group">
+                            <input id="crbt_start" type="text" wire:model="crbt_start" placeholder="0:30" maxlength="6" inputmode="numeric" @disabled($disabled)
+                                   @class(['form-control', 'is-invalid' => $errors->has('crbt_start')])>
+                            @if ($canPlay && ! $disabled)
+                                <button type="button" class="btn btn-light" x-on:click="setFromPlayer()" title="{{ __('Use the player’s current position') }}"><x-icon name="play" size="14" /> {{ __('Use player position') }}</button>
+                            @endif
+                        </div>
+                        @error('crbt_start') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
+                        <div class="form-text">
+                            {{ __('minutes:seconds') }}@if ($knownDuration) · {{ __('track length :length', ['length' => sprintf('%d:%02d', intdiv($knownDuration, 60), $knownDuration % 60)]) }}@endif
+                        </div>
                     </div>
                 </div>
             </div>
@@ -191,7 +242,11 @@
         <div class="d-flex justify-content-end gap-2 mt-4">
             <a href="{{ route('releases.show', ['release' => $release, 'tab' => 'tracks']) }}" class="btn btn-light">{{ $canEdit ? __('Cancel') : __('Back') }}</a>
             @if ($canEdit)
-                <button type="submit" class="btn btn-primary" wire:loading.attr="disabled" wire:target="save,audio">
+                <button type="button" class="btn btn-light" wire:click="saveDraft" wire:loading.attr="disabled" wire:target="saveDraft,save,audio">
+                    <span wire:loading wire:target="saveDraft" class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                    <x-icon name="save" size="16" /> {{ __('Save as draft') }}
+                </button>
+                <button type="submit" class="btn btn-primary" wire:loading.attr="disabled" wire:target="save,saveDraft,audio">
                     <span wire:loading wire:target="save" class="spinner-border spinner-border-sm" aria-hidden="true"></span>
                     {{ $editing ? __('Save track') : __('Add track') }}
                 </button>

@@ -111,7 +111,7 @@
                         </div>
                         <input type="file" id="photo" wire:model="photo" accept="image/jpeg,image/png,image/webp"
                                @class(['form-control', 'is-invalid' => $errors->has('photo')]) aria-label="{{ __('Choose a photo') }}">
-                        <div wire:loading wire:target="photo" class="small text-muted mt-2">{{ __('Uploading…') }}</div>
+                        <x-upload-progress for="photo" />
                         @error('photo') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
                         @if ($editing && $artist->photo_path && ! $photo)
                             <div class="form-check mt-3">

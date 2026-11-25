@@ -12,7 +12,7 @@
                         <input id="doc-file" type="file" wire:model="file" accept="{{ $accept }}"
                                @class(['form-control', 'is-invalid' => $errors->has('file')])>
                         <div class="form-text">{{ __('PDF, Word, Excel, OpenDocument, CSV, text or images, up to :mb MB. Stored privately.', ['mb' => $maxMb]) }}</div>
-                        <div wire:loading wire:target="file" class="small text-muted">{{ __('Uploading…') }}</div>
+                        <x-upload-progress for="doc-file" />
                         @error('file') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
                     </div>
                     <div class="col-md-6">

@@ -37,6 +37,7 @@
                                     <div class="fw-semibold">
                                         {{ $track->displayTitle() }}
                                         @if ($track->explicit) <x-badge class="ms-1">E</x-badge> @endif
+                                        @if ($track->is_draft) <x-badge variant="warning" class="ms-1">{{ __('Draft') }}</x-badge> @endif
                                     </div>
                                     <div class="small text-muted">
                                         {{ $track->artistLine() ?: __('No artist') }}

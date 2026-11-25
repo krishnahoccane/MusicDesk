@@ -3,7 +3,10 @@
 namespace App\Livewire\Concerns;
 
 use App\Enums\ArtistRole;
+use App\Enums\ArtistStatus;
+use App\Enums\ArtistType;
 use App\Models\Artist;
+use App\Services\ArtistService;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\Rule;
 
@@ -25,6 +28,52 @@ trait ManagesArtistCredits
     {
         unset($this->artistRows[$index]);
         $this->artistRows = array_values($this->artistRows);
+    }
+
+    /** Quick "New artist" form in the Artists card (the release or track being edited stays open). */
+    public bool $showNewArtist = false;
+
+    public string $newArtistName = '';
+
+    public string $newArtistType = 'solo';
+
+    public function createArtist(ArtistService $artists): void
+    {
+        $this->ensureLicenseAllowsWrites();
+        $this->authorize('create', Artist::class);
+
+        $this->validate([
+            'newArtistName' => ['required', 'string', 'max:150'],
+            'newArtistType' => ['required', Rule::enum(ArtistType::class)],
+        ], [], ['newArtistName' => __('artist name'), 'newArtistType' => __('type')]);
+
+        $artist = $artists->create(auth()->user(), [
+            'name' => trim($this->newArtistName),
+            'type' => $this->newArtistType,
+            'status' => ArtistStatus::Active->value,
+        ]);
+
+        // Fill the first empty row, or add one.
+        $placed = false;
+        foreach ($this->artistRows as $i => $row) {
+            if ($row['artist_id'] === '' || $row['artist_id'] === null) {
+                $this->artistRows[$i]['artist_id'] = $artist->id;
+                $placed = true;
+                break;
+            }
+        }
+        if (! $placed) {
+            $this->artistRows[] = ['artist_id' => $artist->id, 'role' => $this->artistRows === [] ? ArtistRole::Primary->value : ArtistRole::Featuring->value];
+        }
+
+        $this->reset('newArtistName', 'newArtistType', 'showNewArtist');
+        $this->dispatch('toast', type: 'success', message: __(':name was added to your roster.', ['name' => $artist->name]));
+    }
+
+    /** Draft saves keep only the rows that name an artist. */
+    protected function filledArtistRows(): array
+    {
+        return array_values(array_filter($this->artistRows, fn ($r) => ($r['artist_id'] ?? '') !== '' && $r['artist_id'] !== null));
     }
 
     public function moveArtistRow(int $index, int $direction): void

@@ -1,6 +1,35 @@
 {{-- Needs: $artistRows (component), $artistOptions, $artistRoles, optional $disabled --}}
 @php($disabled = $disabled ?? false)
 <div>
+    @if ($showNewArtist && ! $disabled)
+        @can('create', App\Models\Artist::class)
+            <div class="ld-inline-form border rounded-3 p-3 mb-3" wire:key="new-artist-form">
+                <div class="row g-2 align-items-end">
+                    <div class="col-sm">
+                        <label for="new-artist-name" class="form-label small">{{ __('Artist name') }}</label>
+                        <input id="new-artist-name" type="text" wire:model="newArtistName" maxlength="150" autocomplete="off"
+                               wire:keydown.enter.prevent="createArtist" x-init="$el.focus()"
+                               @class(['form-control', 'is-invalid' => $errors->has('newArtistName')])>
+                        @error('newArtistName') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                    </div>
+                    <div class="col-sm-4">
+                        <label for="new-artist-type" class="form-label small">{{ __('Type') }}</label>
+                        <select id="new-artist-type" wire:model="newArtistType" class="form-select">
+                            @foreach (App\Enums\ArtistType::cases() as $artistType)
+                                <option value="{{ $artistType->value }}">{{ $artistType->label() }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-auto d-flex gap-1">
+                        <button type="button" class="btn btn-primary" wire:click="createArtist" wire:loading.attr="disabled" wire:target="createArtist">{{ __('Add') }}</button>
+                        <button type="button" class="btn btn-light" wire:click="$set('showNewArtist', false)">{{ __('Cancel') }}</button>
+                    </div>
+                </div>
+                <div class="form-text">{{ __('Added to your roster as an active artist. Complete the profile later under Artists.') }}</div>
+            </div>
+        @endcan
+    @endif
+
     @error('artistRows') <div class="text-danger small mb-2">{{ $message }}</div> @enderror
     @forelse ($artistRows as $i => $row)
         <div class="row g-2 align-items-start mb-2" wire:key="artist-row-{{ $i }}">
@@ -36,8 +65,5 @@
     @endforelse
     @unless ($disabled)
         <button type="button" class="btn btn-sm btn-light" wire:click="addArtistRow"><x-icon name="plus" size="14" /> {{ __('Add artist') }}</button>
-        @if ($artistOptions->isEmpty())
-            <span class="small text-muted ms-2">{{ __('Add artists to your roster first.') }} @can('create', App\Models\Artist::class)<a href="{{ route('artists.create') }}">{{ __('Add artist') }}</a>@endcan</span>
-        @endif
     @endunless
 </div>
