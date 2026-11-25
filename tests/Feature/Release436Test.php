@@ -204,8 +204,9 @@ class Release436Test extends TestCase
         $this->assertFalse($form->get('showNewArtist'));
 
         // Accounts that cannot create artists do not get the button or the action.
+        $track = $this->makeTrack();
         $viewer = $this->makeUser(SystemRole::Viewer);
-        Livewire::actingAs($viewer)->test(TrackForm::class, ['track' => $this->makeTrack()])->assertDontSee('New artist');
+        Livewire::actingAs($viewer)->test(TrackForm::class, ['track' => $track])->assertDontSee('New artist');
     }
 
     protected function makeTrack(): Track

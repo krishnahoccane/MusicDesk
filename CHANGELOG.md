@@ -3,6 +3,34 @@
 All notable changes to LabelDesk are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses Semantic Versioning.
 
+## [4.3.6] — 2026-11-25
+
+### Added
+- **Save as draft** on the release and track forms: saves what is filled in and keeps you on the form,
+  even when artists or credits are still incomplete (empty rows are left out). Draft tracks are marked
+  "Draft" in the track lists, and a release cannot be submitted while one of its tracks is a draft.
+- **Upload progress in percent** for master audio, artwork and every other file upload (artist photos,
+  documents, royalty statements, add-ons, logos).
+- **Mood** on tracks, from PDL's mood list (Romantic, Happy, Sad, Dance, Bhangra, Patriotic, …). The
+  value PDL expects is stored with each mood, so deliveries to PDL never need translating.
+- **Caller tune (CRBT)** section on the track form: ring-back tone name (up to 64 characters) and the
+  start of the 30-second cut, with "Use player position" for tracks that have audio. The cut must end
+  before the track does.
+- **New artist** button in the Artists card of the release and track forms: adds an artist to the roster
+  and to the form without leaving the release or track you are editing.
+
+### Changed
+- **Singles:** a single's track takes the release title, and follows it when the release is renamed.
+- **Composer and lyricist:** new tracks start with a composer row and a lyricist row, and a track needs
+  both to be saved (a songwriter counts as both; Save as draft skips the check). The release checklist
+  asks for "a composer and a lyricist" on every track.
+- **Track length** is no longer typed in: it is read from the uploaded audio and shown in the upload
+  preview (with the format) before the track is saved.
+
+### Database
+- New `moods` table; tracks get `mood_id`, `crbt_name`, `crbt_start_seconds` and `is_draft`. The update
+  runs by itself the first time a page is opened after the files are uploaded.
+
 ## [4.3.5] — 2026-11-25
 
 ### Fixed

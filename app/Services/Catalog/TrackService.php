@@ -74,7 +74,7 @@ class TrackService
             }
 
             $track->save();
-            $this->syncArtists($track, $artists);
+            $this->syncArtists($track, $artists, (bool) ($data['is_draft'] ?? false));
             $this->syncCredits($track, $credits);
 
             return $track;
@@ -96,7 +96,7 @@ class TrackService
     /**
      * @param  list<array{artist_id: int, role: string}>  $artists
      */
-    public function syncArtists(Track $track, array $artists): void
+    public function syncArtists(Track $track, array $artists, bool $draft = false): void
     {
         $rows = [];
         $position = 1;
@@ -109,7 +109,7 @@ class TrackService
 
         ArtistAccess::ensureOwned(array_keys($rows));
 
-        if (! collect($rows)->contains(fn ($r) => $r['role'] === ArtistRole::Primary->value)) {
+        if (! $draft && ! collect($rows)->contains(fn ($r) => $r['role'] === ArtistRole::Primary->value)) {
             throw new CatalogException(__('Add at least one primary artist to the track.'));
         }
 

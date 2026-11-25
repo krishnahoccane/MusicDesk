@@ -32,15 +32,15 @@ class ReleaseService
      * @param  array<string, mixed>  $data
      * @param  list<array{artist_id: int, role: string}>  $artists
      */
-    public function create(User $actor, array $data, array $artists): Release
+    public function create(User $actor, array $data, array $artists, bool $draft = false): Release
     {
-        $release = DB::transaction(function () use ($actor, $data, $artists) {
+        $release = DB::transaction(function () use ($actor, $data, $artists, $draft) {
             $release = new Release;
             $release->fill($this->clean($data));
             $release->created_by = $actor->id;
             $release->save();
 
-            $this->syncArtists($release, $artists);
+            $this->syncArtists($release, $artists, $draft);
 
             return $release;
         });
@@ -54,11 +54,11 @@ class ReleaseService
      * @param  array<string, mixed>  $data
      * @param  list<array{artist_id: int, role: string}>  $artists
      */
-    public function update(User $actor, Release $release, array $data, array $artists): Release
+    public function update(User $actor, Release $release, array $data, array $artists, bool $draft = false): Release
     {
         $this->ensureEditable($release);
 
-        $changes = DB::transaction(function () use ($release, $data, $artists) {
+        $changes = DB::transaction(function () use ($release, $data, $artists, $draft) {
             $release->fill($this->clean($data));
             $dirty = array_keys($release->getDirty());
             $release->save();
@@ -69,7 +69,7 @@ class ReleaseService
             }
 
             $before = $release->artists()->pluck('artists.id')->all();
-            $this->syncArtists($release, $artists);
+            $this->syncArtists($release, $artists, $draft);
             $after = $release->artists()->pluck('artists.id')->all();
 
             return array_filter([
@@ -88,7 +88,8 @@ class ReleaseService
     /**
      * @param  list<array{artist_id: int, role: string}>  $artists
      */
-    public function syncArtists(Release $release, array $artists): void
+    /** Drafts may be saved before a primary artist is chosen; submitting still needs one (checklist). */
+    public function syncArtists(Release $release, array $artists, bool $draft = false): void
     {
         $rows = [];
         $position = 1;
@@ -101,7 +102,7 @@ class ReleaseService
 
         ArtistAccess::ensureOwned(array_keys($rows));
 
-        if (! collect($rows)->contains(fn ($r) => $r['role'] === ArtistRole::Primary->value)) {
+        if (! $draft && ! collect($rows)->contains(fn ($r) => $r['role'] === ArtistRole::Primary->value)) {
             throw new CatalogException(__('Add at least one primary artist.'));
         }
 

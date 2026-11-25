@@ -203,8 +203,8 @@ class Form extends Component
 
         try {
             $release = $this->release
-                ? $releases->update($actor, $this->release, $data, $this->artistRowsForSave())
-                : $releases->create($actor, $data, $this->artistRowsForSave());
+                ? $releases->update($actor, $this->release, $data, $this->artistRowsForSave(), $draft)
+                : $releases->create($actor, $data, $this->artistRowsForSave(), $draft);
         } catch (RuntimeException $e) {
             $this->addError('form', $e->getMessage());
 
