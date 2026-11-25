@@ -11,3 +11,4 @@ and publish it on MusicDesk.tech.
 | incoming-webhooks | incoming_webhooks | new |
 | sso | sso | new |
 | media-storage | media_storage | moved out of core (4.3.4) |
+| pdl-distribution | pdl_distribution | new (requires 4.3.5) |

@@ -1,0 +1,286 @@
+{
+    "version": "2",
+    "albums": [
+        {
+            "is_update": false,
+            "name": "Glass City",
+            "album_category": "Album",
+            "album_type": "Album",
+            "album_subtype": "Album",
+            "label": "Test Records Pvt Ltd",
+            "c_line": "2026 Test Records",
+            "p_line": "2026 Test Records",
+            "upc_id": "1941570109481",
+            "catalog_number": "TST001",
+            "songs": [
+                {
+                    "isrc": "INA1B2600001",
+                    "track_no": 1,
+                    "data": {
+                        "crbt_cut_name": "Glass City",
+                        "song_name": "Glass City",
+                        "album_name": "Glass City",
+                        "language": "Hindi",
+                        "album_type": "Album",
+                        "content_type": "Album",
+                        "genre": "Pop",
+                        "sub_genre": "Indian Pop",
+                        "mood": "Romantic",
+                        "description": "",
+                        "isrc": "INA1B2600001",
+                        "label": "Test Records Pvt Ltd",
+                        "publisher": "Glass Publishing",
+                        "track_duration": "0:03:25",
+                        "time_for_crbt_cut": "0:00:00",
+                        "original_release_date_of_music": "01-12-2026",
+                        "go_live_date": "24-12-2026",
+                        "c_line": "2026 Test Records",
+                        "p_line": "2026 Test Records",
+                        "parental_advisory (EXPLICIT ETC)": "Explicit",
+                        "parental_advisory": "Explicit",
+                        "is_instrumental": "No",
+                        "upc_id": "1941570109481"
+                    },
+                    "is_instrumental": "No",
+                    "explicit": true,
+                    "upc_id": "1941570109481",
+                    "track_main_artist": [
+                        {
+                            "id": "",
+                            "name": "Nova Lights",
+                            "apple_id": "57731230",
+                            "meta_id": "",
+                            "facebook_artist_page_url": "https://www.facebook.com/novalights",
+                            "insta_artist_page_url": "https://www.instagram.com/novalights",
+                            "spotify_id": "1dVygo6tRFXC8CSWURQJq2",
+                            "locale": "",
+                            "is_iprs_member": false,
+                            "ipi_number": ""
+                        }
+                    ],
+                    "track_featured_artist": [
+                        {
+                            "id": "",
+                            "name": "Kiran Rao",
+                            "apple_id": "",
+                            "meta_id": "",
+                            "facebook_artist_page_url": "",
+                            "insta_artist_page_url": "",
+                            "spotify_id": "",
+                            "locale": "",
+                            "is_iprs_member": false,
+                            "ipi_number": ""
+                        }
+                    ],
+                    "track_remixer_artist": [],
+                    "singers": [
+                        {
+                            "id": "",
+                            "name": "Nova Lights",
+                            "apple_id": "57731230",
+                            "meta_id": "",
+                            "facebook_artist_page_url": "https://www.facebook.com/novalights",
+                            "insta_artist_page_url": "https://www.instagram.com/novalights",
+                            "spotify_id": "1dVygo6tRFXC8CSWURQJq2",
+                            "locale": "",
+                            "is_iprs_member": false,
+                            "ipi_number": ""
+                        },
+                        {
+                            "id": "",
+                            "name": "Kiran Rao",
+                            "apple_id": "",
+                            "meta_id": "",
+                            "facebook_artist_page_url": "",
+                            "insta_artist_page_url": "",
+                            "spotify_id": "",
+                            "locale": "",
+                            "is_iprs_member": false,
+                            "ipi_number": ""
+                        }
+                    ],
+                    "composers": [
+                        {
+                            "id": "",
+                            "name": "Ravi Shankar Iyer",
+                            "apple_id": "",
+                            "meta_id": "",
+                            "facebook_artist_page_url": "",
+                            "insta_artist_page_url": "",
+                            "spotify_id": "",
+                            "locale": "",
+                            "is_iprs_member": true,
+                            "ipi_number": "00123456789"
+                        }
+                    ],
+                    "lyricists": [
+                        {
+                            "id": "",
+                            "name": "Meera Joshi",
+                            "apple_id": "",
+                            "meta_id": "",
+                            "facebook_artist_page_url": "",
+                            "insta_artist_page_url": "",
+                            "spotify_id": "",
+                            "locale": "",
+                            "is_iprs_member": false,
+                            "ipi_number": ""
+                        }
+                    ],
+                    "producers": [
+                        {
+                            "id": "",
+                            "name": "Pro Ducer",
+                            "apple_id": "",
+                            "meta_id": "",
+                            "facebook_artist_page_url": "",
+                            "insta_artist_page_url": "",
+                            "spotify_id": "",
+                            "locale": "",
+                            "is_iprs_member": false,
+                            "ipi_number": ""
+                        }
+                    ],
+                    "media": {
+                        "id": "",
+                        "size": 45,
+                        "md5": "572ec3ab63c263c884dde85679750731",
+                        "filename": "INA1B2600001.wav"
+                    }
+                },
+                {
+                    "isrc": "INA1B2600002",
+                    "track_no": 2,
+                    "data": {
+                        "crbt_cut_name": "Glass City (Night Mix)",
+                        "song_name": "Glass City (Night Mix)",
+                        "album_name": "Glass City",
+                        "language": "Instrumental",
+                        "album_type": "Album",
+                        "content_type": "Album",
+                        "genre": "Pop",
+                        "sub_genre": "Indian Pop",
+                        "mood": "Romantic",
+                        "description": "",
+                        "isrc": "INA1B2600002",
+                        "label": "Test Records Pvt Ltd",
+                        "publisher": "Glass Publishing",
+                        "track_duration": "1:02:05",
+                        "time_for_crbt_cut": "0:00:00",
+                        "original_release_date_of_music": "01-12-2026",
+                        "go_live_date": "24-12-2026",
+                        "c_line": "2026 Test Records",
+                        "p_line": "2026 Test Records",
+                        "parental_advisory (EXPLICIT ETC)": "Not Explicit",
+                        "parental_advisory": "Not Explicit",
+                        "is_instrumental": "Yes",
+                        "upc_id": "1941570109481"
+                    },
+                    "is_instrumental": "Yes",
+                    "explicit": false,
+                    "upc_id": "1941570109481",
+                    "track_main_artist": [
+                        {
+                            "id": "",
+                            "name": "Nova Lights",
+                            "apple_id": "57731230",
+                            "meta_id": "",
+                            "facebook_artist_page_url": "https://www.facebook.com/novalights",
+                            "insta_artist_page_url": "https://www.instagram.com/novalights",
+                            "spotify_id": "1dVygo6tRFXC8CSWURQJq2",
+                            "locale": "",
+                            "is_iprs_member": false,
+                            "ipi_number": ""
+                        }
+                    ],
+                    "track_featured_artist": [],
+                    "track_remixer_artist": [
+                        {
+                            "id": "",
+                            "name": "DJ Sitar",
+                            "apple_id": "",
+                            "meta_id": "",
+                            "facebook_artist_page_url": "",
+                            "insta_artist_page_url": "",
+                            "spotify_id": "",
+                            "locale": "",
+                            "is_iprs_member": false,
+                            "ipi_number": ""
+                        }
+                    ],
+                    "singers": [],
+                    "composers": [
+                        {
+                            "id": "",
+                            "name": "Sam Writer",
+                            "apple_id": "",
+                            "meta_id": "",
+                            "facebook_artist_page_url": "",
+                            "insta_artist_page_url": "",
+                            "spotify_id": "",
+                            "locale": "",
+                            "is_iprs_member": false,
+                            "ipi_number": ""
+                        }
+                    ],
+                    "lyricists": [
+                        {
+                            "id": "",
+                            "name": "Sam Writer",
+                            "apple_id": "",
+                            "meta_id": "",
+                            "facebook_artist_page_url": "",
+                            "insta_artist_page_url": "",
+                            "spotify_id": "",
+                            "locale": "",
+                            "is_iprs_member": false,
+                            "ipi_number": ""
+                        }
+                    ],
+                    "producers": [],
+                    "media": {
+                        "id": "",
+                        "size": 46,
+                        "md5": "1497ce162706da2500a6b4f2f2ead718",
+                        "filename": "INA1B2600002.wav"
+                    }
+                }
+            ],
+            "inlay": {
+                "id": "",
+                "size": 0,
+                "md5": "artwork-md5",
+                "filename": "1941570109481.jpg"
+            },
+            "album_main_artist": [
+                {
+                    "id": "",
+                    "name": "Nova Lights",
+                    "apple_id": "57731230",
+                    "meta_id": "",
+                    "facebook_artist_page_url": "https://www.facebook.com/novalights",
+                    "insta_artist_page_url": "https://www.instagram.com/novalights",
+                    "spotify_id": "1dVygo6tRFXC8CSWURQJq2",
+                    "locale": "",
+                    "is_iprs_member": false,
+                    "ipi_number": ""
+                }
+            ],
+            "album_featured_artist": [
+                {
+                    "id": "",
+                    "name": "Kiran Rao",
+                    "apple_id": "",
+                    "meta_id": "",
+                    "facebook_artist_page_url": "",
+                    "insta_artist_page_url": "",
+                    "spotify_id": "",
+                    "locale": "",
+                    "is_iprs_member": false,
+                    "ipi_number": ""
+                }
+            ],
+            "album_remixer_artist": []
+        }
+    ]
+}
