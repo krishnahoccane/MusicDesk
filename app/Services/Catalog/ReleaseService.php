@@ -2,6 +2,7 @@
 
 namespace App\Services\Catalog;
 
+use App\Enums\ReleaseType;
 use App\Enums\ArtistRole;
 use App\Exceptions\CatalogException;
 use App\Models\Release;
@@ -61,6 +62,11 @@ class ReleaseService
             $release->fill($this->clean($data));
             $dirty = array_keys($release->getDirty());
             $release->save();
+
+            // A single's track carries the release title.
+            if ($release->type === ReleaseType::Single && in_array('title', $dirty, true)) {
+                $release->tracks()->withoutGlobalScopes()->get()->each(fn ($t) => $t->forceFill(['title' => $release->title])->save());
+            }
 
             $before = $release->artists()->pluck('artists.id')->all();
             $this->syncArtists($release, $artists);

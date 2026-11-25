@@ -4,7 +4,9 @@ namespace Database\Seeders;
 
 use App\Models\Genre;
 use App\Models\Language;
+use App\Models\Mood;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * Essential reference data: the genre and language lists used by releases
@@ -51,6 +53,14 @@ class CatalogReferenceSeeder extends Seeder
         if (! Language::query()->exists()) {
             foreach (self::LANGUAGES as $code => $name) {
                 Language::query()->firstOrCreate(['code' => $code], ['name' => $name]);
+            }
+        }
+
+        // Track moods: PDL's list with PDL's exact values, so deliveries never need translating.
+        if (Schema::hasTable('moods') && ! Mood::query()->exists()) {
+            $sort = 0;
+            foreach (Mood::PDL as $value => $name) {
+                Mood::query()->firstOrCreate(['value' => $value], ['name' => $name, 'sort' => ++$sort]);
             }
         }
     }

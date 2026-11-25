@@ -161,9 +161,8 @@ class ReleaseWorkflow
         $tracks = $release->tracks()
             ->withCount([
                 'artists as primary_artists_count' => fn ($q) => $q->where('track_artists.role', ArtistRole::Primary->value),
-                'credits as writer_credits_count' => fn ($q) => $q->whereIn('role', [
-                    ContributorRole::Composer->value, ContributorRole::Lyricist->value, ContributorRole::Songwriter->value,
-                ]),
+                'credits as composer_credits_count' => fn ($q) => $q->whereIn('role', [ContributorRole::Composer->value, ContributorRole::Songwriter->value]),
+                'credits as lyricist_credits_count' => fn ($q) => $q->whereIn('role', [ContributorRole::Lyricist->value, ContributorRole::Songwriter->value]),
             ])
             ->get();
 
@@ -176,7 +175,8 @@ class ReleaseWorkflow
             ['label' => __('At least one track'), 'ok' => $tracks->isNotEmpty()],
             ['label' => __('Every track has a primary artist'), 'ok' => $tracks->isNotEmpty() && $tracks->every(fn ($t) => $t->primary_artists_count > 0)],
             ['label' => __('Every track has a master audio file'), 'ok' => $tracks->isNotEmpty() && $tracks->every(fn ($t) => $t->audio_path !== null)],
-            ['label' => __('Every track has a songwriter credit'), 'ok' => $tracks->isNotEmpty() && $tracks->every(fn ($t) => $t->writer_credits_count > 0)],
+            ['label' => __('Every track has a composer and a lyricist'), 'ok' => $tracks->isNotEmpty() && $tracks->every(fn ($t) => $t->composer_credits_count > 0 && $t->lyricist_credits_count > 0)],
+            ['label' => __('No track is still a draft'), 'ok' => $tracks->isNotEmpty() && $tracks->every(fn ($t) => ! $t->is_draft)],
         ];
     }
 }

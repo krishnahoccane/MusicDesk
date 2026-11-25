@@ -56,6 +56,10 @@ class TrackService
                 'isrc' => $isrc,
                 'explicit' => (bool) ($data['explicit'] ?? false),
                 'language_id' => $data['language_id'] ?: null,
+                'mood_id' => ($data['mood_id'] ?? null) ?: null,
+                'crbt_name' => filled($data['crbt_name'] ?? null) ? mb_substr(trim($data['crbt_name']), 0, 64) : null,
+                'crbt_start_seconds' => isset($data['crbt_start_seconds']) && $data['crbt_start_seconds'] !== '' ? (int) $data['crbt_start_seconds'] : null,
+                'is_draft' => (bool) ($data['is_draft'] ?? false),
                 'disc_number' => max(1, (int) ($data['disc_number'] ?? 1)),
             ]);
 

@@ -19,7 +19,7 @@ class Track extends Model
     use ScopedToArtistAccount;
 
     /** @var list<string> */
-    protected $fillable = ['title', 'version', 'isrc', 'duration_seconds', 'explicit', 'language_id', 'disc_number', 'position'];
+    protected $fillable = ['title', 'version', 'isrc', 'duration_seconds', 'explicit', 'language_id', 'mood_id', 'crbt_name', 'crbt_start_seconds', 'is_draft', 'disc_number', 'position'];
 
     /** Storage location is never exposed. */
     protected $hidden = ['audio_path'];
@@ -28,6 +28,8 @@ class Track extends Model
     {
         return [
             'explicit' => 'boolean',
+            'is_draft' => 'boolean',
+            'crbt_start_seconds' => 'integer',
             'duration_seconds' => 'integer',
             'audio_size' => 'integer',
         ];
@@ -54,6 +56,17 @@ class Track extends Model
     public function language(): BelongsTo
     {
         return $this->belongsTo(Language::class);
+    }
+
+    public function mood(): BelongsTo
+    {
+        return $this->belongsTo(Mood::class);
+    }
+
+    /** Ring-back tone start as m:ss ('' when not set). */
+    public function formattedCrbtStart(): string
+    {
+        return $this->crbt_start_seconds === null ? '' : sprintf('%d:%02d', intdiv($this->crbt_start_seconds, 60), $this->crbt_start_seconds % 60);
     }
 
     public function displayTitle(): string
