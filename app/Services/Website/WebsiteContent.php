@@ -6,6 +6,7 @@ use App\Enums\ArtistStatus;
 use App\Enums\ReleaseStatus;
 use App\Models\Artist;
 use App\Models\Release;
+use App\Models\SitePage;
 use App\Services\SettingsService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -27,8 +28,26 @@ class WebsiteContent
         'tiktok' => 'TikTok', 'facebook' => 'Facebook', 'x' => 'X', 'soundcloud' => 'SoundCloud',
     ];
 
+    /**
+     * Website themes: key => [name, description, forced colour mode or null, preview background, preview text].
+     * Each changes type, shapes, backgrounds and the hero; brand colours and logo come from Appearance.
+     */
+    public const THEMES = [
+        'aurora' => ['Aurora', 'Soft glowing gradients in your brand colours.', null, '#0d0b1e', '#ffffff'],
+        'minimal' => ['Minimal', 'Clean white space, crisp black type.', 'light', '#ffffff', '#111111'],
+        'noir' => ['Noir', 'Deep black, high contrast, sharp edges.', 'dark', '#000000', '#f5f5f5'],
+        'editorial' => ['Editorial', 'Serif headlines and a magazine layout.', null, '#f7f3ec', '#1c1917'],
+        'neon' => ['Neon', 'Dark stage with glowing outlines.', 'dark', '#05030f', '#e9e6ff'],
+        'vinyl' => ['Vinyl', 'Warm paper tones and round record covers.', 'light', '#f3ead9', '#2b2118'],
+        'studio' => ['Studio', 'Frosted glass panels over colour.', null, '#1d2433', '#f1f5f9'],
+        'bold' => ['Bold', 'Thick borders, square corners, huge type.', null, '#fffb00', '#000000'],
+        'pastel' => ['Pastel', 'Gentle tints and rounded shapes.', 'light', '#fdf2f8', '#3b2a4a'],
+        'cinema' => ['Cinema', 'Full-width dramatic hero, dark and cinematic.', 'dark', '#0a0a0a', '#ffffff'],
+    ];
+
     public const DEFAULTS = [
         'enabled' => false,
+        'theme' => 'aurora',
         'hero_title' => '',
         'hero_text' => '',
         'about_title' => '',
@@ -65,6 +84,36 @@ class WebsiteContent
         $out['socials'] = array_intersect_key(is_array($out['socials']) ? $out['socials'] : [], self::SOCIALS);
 
         return $out;
+    }
+
+    public function theme(): string
+    {
+        $theme = (string) $this->settings->get('website.theme', 'aurora');
+
+        return array_key_exists($theme, self::THEMES) ? $theme : 'aurora';
+    }
+
+    /** Published pages shown in the menu, in order. */
+    public function menuPages(): Collection
+    {
+        try {
+            return SitePage::query()->published()->where('show_in_menu', true)->orderBy('sort')->orderBy('id')->get();
+        } catch (\Throwable) {
+            return collect(); // table not there yet (before the database update)
+        }
+    }
+
+    /** The built-in pages exist (unpublished and empty until the label fills them in). */
+    public function ensureBuiltInPages(): void
+    {
+        $sort = 0;
+        foreach (SitePage::BUILT_IN as $type => [$slug, $title]) {
+            $sort += 10;
+            SitePage::query()->firstOrCreate(['type' => $type], [
+                'slug' => $slug, 'title' => __($title), 'content' => $type === 'contact' ? ['form' => true] : [],
+                'is_published' => false, 'show_in_menu' => true, 'sort' => $sort,
+            ]);
+        }
     }
 
     public function heroTitle(): string

@@ -21,6 +21,8 @@ class Website extends Component
 
     public bool $enabled = false;
 
+    public string $theme = 'aurora';
+
     public string $hero_title = '';
 
     public string $hero_text = '';
@@ -85,6 +87,7 @@ class Website extends Component
 
         $data = $this->validate([
             'enabled' => ['boolean'],
+            'theme' => ['required', Rule::in(array_keys(WebsiteContent::THEMES))],
             'hero_title' => ['nullable', 'string', 'max:120'],
             'hero_text' => ['nullable', 'string', 'max:300'],
             'hero_use_login_image' => ['boolean'],
@@ -131,6 +134,7 @@ class Website extends Component
             'publicReleases' => $site->releases()->count(),
             'publicArtists' => $site->artists()->count(),
             'networks' => WebsiteContent::SOCIALS,
+            'themes' => WebsiteContent::THEMES,
             'loginImage' => Branding::url('login_image'),
             'homeUrl' => url('/'),
         ])->title(__('Website settings'))->layoutData(['breadcrumbs' => [['label' => __('Settings'), 'url' => route('settings.index')], ['label' => __('Website')]]]);

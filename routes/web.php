@@ -27,6 +27,12 @@ Route::controller(SiteController::class)->name('site.')->middleware('throttle:12
     Route::get('roster/{slug}', 'artist')->where('slug', '[0-9]+(-[a-z0-9\-]*)?')->name('artist');
     Route::get('site/artwork/{release}/{size?}', 'artwork')->whereNumber('release')->whereIn('size', ['thumb', 'full'])->name('artwork');
     Route::get('site/photo/{artist}', 'photo')->whereNumber('artist')->name('photo');
+    Route::get('about', 'about')->name('about');
+    Route::get('services', 'services')->name('services');
+    Route::get('pricing', 'pricing')->name('pricing');
+    Route::get('contact', 'contact')->name('contact');
+    Route::post('contact', 'send')->middleware('throttle:3,1')->name('contact.send');
+    Route::get('pages/{slug}', 'page')->where('slug', '[a-z0-9][a-z0-9\\-]{0,79}')->name('page');
 });
 
 // Expired license past its read-only window: suspension notice (public) and re-check.

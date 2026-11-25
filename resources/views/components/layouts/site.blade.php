@@ -4,15 +4,21 @@
     $ldDescription = $description ?: ($settings['meta_description'] ?? '') ?: ($settings['hero_text'] ?? '');
     $ldSocials = $settings['socials'] ?? [];
     $ldSocialIcons = ['instagram' => 'instagram', 'youtube' => 'youtube', 'facebook' => 'facebook', 'x' => 'twitter'];
+    $ldSite = app(App\Services\Website\WebsiteContent::class);
+    $ldTheme = $ldSite->theme();
+    $ldForcedMode = App\Services\Website\WebsiteContent::THEMES[$ldTheme][2];
+    $ldMenuPages = $ldSite->menuPages();
+    $ldToggle = $appearance['toggle'] && $ldForcedMode === null;
 @endphp
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}"
       class="ld-no-transition"
-      data-theme-preference="{{ $themePreference }}"
-      @unless ($appearance['toggle']) data-theme-locked="1" @endunless
+      data-theme-preference="{{ $ldForcedMode ?? $themePreference }}"
+      @unless ($ldToggle) data-theme-locked="1" @endunless
       data-ld-theme="{{ $appearance['theme'] }}"
       data-ld-font="{{ $appearance['font'] }}"
-      data-bs-theme="light">
+      data-site-theme="{{ $ldTheme }}"
+      data-bs-theme="{{ $ldForcedMode ?? 'light' }}">
 <head>
     @include('partials.head', ['title' => $title, 'robots' => 'index, follow', 'description' => $ldDescription ?: null])
     <meta property="og:site_name" content="{{ $ldName }}">
@@ -20,7 +26,7 @@
     @if ($ldDescription) <meta property="og:description" content="{{ $ldDescription }}"> @endif
     @if ($image) <meta property="og:image" content="{{ $image }}"> @endif
 </head>
-<body class="ld-site">
+<body class="ld-site ld-site--{{ $ldTheme }}">
     <a href="#main" class="visually-hidden-focusable ld-site__skip">{{ __('Skip to content') }}</a>
 
     <header class="ld-site__header" x-data="{ open: false }">
@@ -39,13 +45,16 @@
                 @if ($settings['show_artists'] ?? true)
                     <a href="{{ route('site.roster') }}" @class(['active' => request()->routeIs('site.roster', 'site.artist')])>{{ __('Artists') }}</a>
                 @endif
-                @if ($settings['show_about'] ?? true)
+                @foreach ($ldMenuPages as $menuPage)
+                    <a href="{{ $menuPage->url() }}" @class(['active' => url()->current() === $menuPage->url()])>{{ $menuPage->menuLabel() }}</a>
+                @endforeach
+                @if (($settings['show_about'] ?? true) && ! $ldMenuPages->contains('type', 'about'))
                     <a href="{{ route('home') }}#about">{{ __('About') }}</a>
                 @endif
-                @if ($settings['show_contact'] ?? true)
+                @if (($settings['show_contact'] ?? true) && ! $ldMenuPages->contains('type', 'contact'))
                     <a href="{{ route('home') }}#contact">{{ __('Contact') }}</a>
                 @endif
-                @if ($appearance['toggle'])
+                @if ($ldToggle)
                     {{-- The app's theme script reads data-theme-option on click; set it to the other mode first. --}}
                     <button type="button" class="ld-site__icon-btn" data-theme-option="dark"
                             x-on:click="$el.dataset.themeOption = document.documentElement.dataset.bsTheme === 'dark' ? 'light' : 'dark'"

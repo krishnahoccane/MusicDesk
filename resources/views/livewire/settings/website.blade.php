@@ -2,6 +2,7 @@
     <x-page-header :title="__('Settings')" :subtitle="__('Configure how :product works for your label.', ['product' => config('labeldesk.product.name')])" />
 
     @include('livewire.settings._tabs')
+    @include('livewire.settings._website-nav')
 
     <form wire:submit="save" novalidate>
         <div class="card mb-3">
@@ -26,6 +27,31 @@
             </div>
             <div class="card-footer small text-muted">
                 {{ __('Colours, fonts, logo and light/dark mode follow Settings → Appearance. The website shows :releases released releases and :artists artists. Only approved or ready releases appear; contact details, notes, contracts and earnings are never shown.', ['releases' => $publicReleases, 'artists' => $publicArtists]) }}
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header">
+                <x-icon name="palette" size="18" />
+                <h2 class="card-title">{{ __('Theme') }}</h2>
+                <span class="ms-auto small text-muted">{{ __('Your brand colours and logo are used in every theme.') }}</span>
+            </div>
+            <div class="card-body">
+                <div class="ld-site-themes" role="radiogroup" aria-label="{{ __('Website theme') }}">
+                    @foreach ($themes as $key => [$name, $description, $mode, $bg, $fg])
+                        <label @class(['ld-site-theme-option', 'is-selected' => $theme === $key]) wire:key="theme-{{ $key }}">
+                            <input type="radio" class="visually-hidden" name="theme" value="{{ $key }}" wire:model.live="theme">
+                            <span class="ld-site-theme-option__preview ld-site-theme-option__preview--{{ $key }}" style="--p-bg: {{ $bg }}; --p-fg: {{ $fg }}" aria-hidden="true">
+                                <span class="ld-site-theme-option__bar"></span>
+                                <span class="ld-site-theme-option__title"></span>
+                                <span class="ld-site-theme-option__line"></span>
+                                <span class="ld-site-theme-option__tiles"><i></i><i></i><i></i></span>
+                            </span>
+                            <span class="fw-semibold d-block mt-2" style="color: var(--ld-heading)">{{ __($name) }}</span>
+                            <span class="small text-muted d-block">{{ __($description) }}@if ($mode) · {{ $mode === 'dark' ? __('always dark') : __('always light') }}@endif</span>
+                        </label>
+                    @endforeach
+                </div>
             </div>
         </div>
 
