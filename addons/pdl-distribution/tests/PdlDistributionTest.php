@@ -166,7 +166,9 @@ class PdlDistributionTest extends TestCase
     {
         $this->calls = [];
         $album += ['id' => self::ALBUM_ID, 'name' => 'Glass City', 'submitted' => true, 'verified' => false, 'reportissue_flag' => false, 'releases' => [], 'upc' => '1941570109481',
-            'songs' => [['id' => '6694fb0b579fb93bb54d9e8c', 'isrc' => 'INA1B2600001', 'title' => 'Old title', 'track_order' => 1, 'crbt_cuts' => [['name' => 'Glass City']]],
+            'artwork' => ['url' => 'https://s3.test/stored.jpg?X-Amz-Signature=x', 'size' => 1, 'md_5' => 'abc'],
+            'songs' => [['id' => '6694fb0b579fb93bb54d9e8c', 'isrc' => 'INA1B2600001', 'title' => 'Old title', 'track_order' => 1, 'crbt_cuts' => [['name' => 'Glass City', 'crbt_cut_media' => ['url' => '']]],
+                'media' => ['url' => 'https://s3.test/stored.wav?X-Amz-Signature=y', 'size' => 1, 'md_5' => 'def']],
                 ['id' => '6694fb0b579fb93bb54d9e8d', 'isrc' => 'INA1B2600002', 'title' => 'Glass City (Night Mix)', 'track_order' => 2]]];
         $defaults = [
             'user/system/signin' => Http::response($this->signInAnswer('cosmos-bearer-123')),
@@ -394,7 +396,7 @@ class PdlDistributionTest extends TestCase
         $this->one->credits()->where('role', 'lyricist')->delete();
         $this->one->forceFill(['isrc' => 'BAD'])->save();
         Storage::disk('local')->delete($this->two->audio_path);
-        $this->release->forceFill(['status' => 'draft'])->save();
+        $this->release->forceFill(['status' => 'draft', 'release_date' => now()->addDays(60)->toDateString()])->save();
 
         try {
             $this->send();
@@ -406,6 +408,7 @@ class PdlDistributionTest extends TestCase
             $this->assertStringContainsString('needs a valid ISRC', $text);
             $this->assertStringContainsString('needs a lyricist', $text);
             $this->assertStringContainsString('is not on this server', $text);
+            $this->assertStringContainsString('at most 45 days before its go-live date', $text);
         }
         $this->assertSame(0, PdlDelivery::query()->count());
 
@@ -661,7 +664,8 @@ class PdlDistributionTest extends TestCase
         $this->travel(61)->minutes();
         $this->assertSame(0, $service->run()['synced']);
         $this->travel(1440)->minutes();
-        $this->fakePdl(album: ['verified' => true, 'releases' => [['platform_id' => 'x', 'release_status' => 9, 'release_error' => 'Converter error']]]);
+        // As on staging: the listing names the per-platform status releases_res.
+        $this->fakePdl(album: ['verified' => true, 'releases' => null, 'releases_res' => [['platform_id' => 'x', 'release_status' => 9, 'release_error' => 'Converter error']]]);
         $service->run();
         $this->assertSame(['release_error', 'Converter error'], [$this->delivery()->status, $this->delivery()->issue]);
     }
@@ -697,7 +701,9 @@ class PdlDistributionTest extends TestCase
         $this->assertSame(md5(Storage::disk('local')->get($this->release->artwork_original_path)), $this->uploads['replace.jpg'][1]);
         Http::assertSent(fn (Request $r) => $r->method() === 'PUT' && $r->url() === self::API.'/album/media/update'
             && $r['one'] === 'media' && $r['album']['id'] === self::ALBUM_ID && $r['album']['songs'][0]['id'] === '6694fb0b579fb93bb54d9e8c'
-            && $r['album']['songs'][0]['title'] === 'Glass City (Fixed)' && $r['album']['songs'][0]['crbt_cuts'] === [['name' => 'Glass City']]);
+            && $r['album']['songs'][0]['title'] === 'Glass City (Fixed)' && $r['album']['songs'][0]['crbt_cuts'] === [['name' => 'Glass City']]
+            && $r['album']['go_live_date'] === '2026-12-24T00:00:00.000Z' && $r['album']['songs'][0]['go_live_date'] === '2026-12-24T00:00:00.000Z'
+            && ! isset($r['album']['artwork']) && ! isset($r['album']['songs'][0]['media']) && ! isset($r['album']['songs'][0]['crbt_cuts'][0]['crbt_cut_media']));
         $this->assertSame(1, $this->calls['album/pdl/submit']);
     }
 

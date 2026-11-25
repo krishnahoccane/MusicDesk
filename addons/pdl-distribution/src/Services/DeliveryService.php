@@ -437,7 +437,8 @@ class DeliveryService
         $submitted = $flag('submitted');
         $verified = $flag('verified');
         $issueFlag = $flag('reportissue_flag');
-        $releases = collect((array) ($album['releases'] ?? []))->filter(fn ($r) => is_array($r))->map(fn (array $r) => [
+        // The album listing calls it releases_res (staging); the guide says releases.
+        $releases = collect((array) ($album['releases'] ?? $album['releases_res'] ?? []))->filter(fn ($r) => is_array($r))->map(fn (array $r) => [
             'platform_id' => (string) ($r['platform_id'] ?? ''),
             'release_status' => (int) ($r['release_status'] ?? 0),
             'live_link' => (string) ($r['live_link'] ?? ''),

@@ -70,6 +70,9 @@ final class Cosmos
         192000 => [24, 32], 176400 => [24, 32], 96000 => [24, 32], 88200 => [24, 32], 48000 => [16, 24, 32], 44100 => [16, 24, 32],
     ];
 
+    /** COSMOS refuses pdl/submit when the go-live date is further ahead (staging: "GO LIVE DATE is more than 45 days ahead"; allow_any_go_live_date does not lift it). */
+    public const MAX_GO_LIVE_DAYS_AHEAD = 45;
+
     public const ARTWORK_MIN_PX = 1500;
 
     public const ARTWORK_MAX_PX = 6000;

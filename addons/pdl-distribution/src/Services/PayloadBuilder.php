@@ -63,6 +63,12 @@ class PayloadBuilder
         }
         if (! $release->release_date) {
             $problems[] = __('Set a release date (go-live date at PDL).');
+        } elseif ($release->release_date->startOfDay()->greaterThan(now()->startOfDay()->addDays(Cosmos::MAX_GO_LIVE_DAYS_AHEAD))) {
+            $problems[] = __('PDL accepts a release at most :days days before its go-live date (:date). Send it on or after :from.', [
+                'days' => Cosmos::MAX_GO_LIVE_DAYS_AHEAD,
+                'date' => $release->release_date->toDateString(),
+                'from' => $release->release_date->copy()->subDays(Cosmos::MAX_GO_LIVE_DAYS_AHEAD)->toDateString(),
+            ]);
         }
         if ($this->labelName($release) === '') {
             $problems[] = __('Set the PDL label name in Settings → PDL distribution, or a label on the release.');
@@ -236,28 +242,65 @@ class PayloadBuilder
      * @param  array<string, mixed>  $remote
      * @return array<string, mixed>
      */
+    /** Album fields sent to PUT /album/media/update (as in PDL's Postman example; file objects are left out). */
+    public const UPDATE_ALBUM_KEYS = [
+        'id', 'version', 'name', 'catalog_number', 'upc', 'nue_meta_upc', 'category', 'date_of_release', 'go_live_date', 'go_live_time',
+        'date_of_expiry', 'album_type', 'album_subtype', 'c_line', 'p_line', 'publisher', 'album_main_artist', 'album_featured_artist',
+        'album_remixer', 'album_priority',
+    ];
+
+    public const UPDATE_SONG_KEYS = [
+        'id', 'track_order', 'title', 'isrc', 'go_live_date', 'dolby_isrc', 'language', 'genre', 'sub_genre', 'additional_info', 'mood',
+        'starcast', 'lyricists', 'composers', 'singers', 'directors', 'producers', 'sound_recording_rights', 'musical_literary_works',
+        'iprs_ownership', 'iprs_member', 'iprs_member_1', 'explicit', 'crbt_cuts', 'track_main_artist', 'track_featured_artist',
+        'track_remixer', 'is_instrumental',
+    ];
+
+    /**
+     * The complete album for PUT /album/media/update: the album as COSMOS
+     * returned it, limited to the fields of PDL's update example (the stored
+     * artwork / media objects are not sent back: COSMOS re-checks them and
+     * answers "MD5 mismatch"), with the current LabelDesk metadata applied.
+     * Songs are matched by ISRC; COSMOS ids are kept.
+     *
+     * @param  array<string, mixed>  $remote
+     * @return array<string, mixed>
+     */
     public function mergeForUpdate(array $remote, Release $release, string $mood): array
     {
         $built = $this->build($release, $mood, true)['body']['albums'][0];
-        $album = $remote;
+        $iso = fn (?CarbonInterface $d) => $d ? $d->copy()->startOfDay()->format('Y-m-d\T00:00:00.000\Z') : null;
+        $goLive = $iso($release->release_date);
+
+        $album = array_intersect_key($remote, array_flip(self::UPDATE_ALBUM_KEYS));
         $album['version'] = '2';
         foreach (['name', 'album_type', 'album_subtype', 'c_line', 'p_line', 'catalog_number', 'album_main_artist', 'album_featured_artist'] as $key) {
             $album[$key] = $built[$key];
         }
         $album['album_remixer'] = $built['album_remixer_artist'];
         $album['category'] = $built['album_category'];
+        $album['go_live_date'] = $goLive;
+        $album['date_of_release'] = $iso($release->original_release_date ?? $release->release_date);
 
         $byIsrc = collect($built['songs'])->keyBy('isrc');
-        $album['songs'] = array_values(array_map(function ($song) use ($byIsrc) {
-            $mine = $byIsrc[$song['isrc'] ?? ''] ?? null;
-            if (! is_array($song) || $mine === null) {
+        $album['songs'] = array_values(array_map(function ($song) use ($byIsrc, $goLive) {
+            if (! is_array($song)) {
                 return $song;
+            }
+            $kept = array_intersect_key($song, array_flip(self::UPDATE_SONG_KEYS));
+            if (isset($kept['crbt_cuts']) && is_array($kept['crbt_cuts'])) {
+                $kept['crbt_cuts'] = array_map(fn ($cut) => is_array($cut) ? array_diff_key($cut, ['crbt_cut_media' => 1, 'generated_path' => 1]) : $cut, $kept['crbt_cuts']);
+            }
+            $mine = $byIsrc[$song['isrc'] ?? ''] ?? null;
+            if ($mine === null) {
+                return $kept;
             }
             $d = $mine['data'];
 
-            return array_merge($song, [
+            return array_merge($kept, [
                 'title' => $d['song_name'], 'language' => $d['language'], 'genre' => $d['genre'], 'sub_genre' => $d['sub_genre'],
                 'mood' => $d['mood'], 'explicit' => $mine['explicit'], 'is_instrumental' => $mine['is_instrumental'] === 'Yes',
+                'go_live_date' => $goLive,
                 'track_main_artist' => $mine['track_main_artist'], 'track_featured_artist' => $mine['track_featured_artist'],
                 'track_remixer' => $mine['track_remixer_artist'], 'singers' => $mine['singers'], 'composers' => $mine['composers'],
                 'lyricists' => $mine['lyricists'], 'producers' => $mine['producers'],

@@ -68,9 +68,16 @@ Issues reported by PDL (`/reportissue/getbyid`) are shown on the release page.
 
 **Updates.** While PDL holds the album but has not accepted it (not submitted yet, or an issue was
 reported), **Send update to PDL** re-reads the album (`/album/page`), applies the current LabelDesk
-metadata to it (songs matched by ISRC, COSMOS ids kept), uploads new artwork through
-`/album/media/signedurl?type=Artwork` when it changed, sends `PUT /album/media/update` and submits again.
-After submission the API accepts no changes (the guide: "not yet available"); the page says so.
+metadata to it (songs matched by ISRC, COSMOS ids kept, only the fields of PDL's Postman update example),
+uploads new artwork through `/album/media/signedurl?type=Artwork` when it changed, sends
+`PUT /album/media/update` and submits again. After submission the API accepts no changes (the guide: "not
+yet available"); the page says so.
+
+> **Not working on staging yet (25 Nov 2026).** `PUT /album/media/update` answered *MD5 mismatch for File:
+> …/Midnight Static.jpg* when the stored `artwork` / `media` objects were sent back (with signed or
+> unsigned URLs, although the MD5 values matched the uploaded files exactly), and *Put
+> "http://10.0.2.115:3101/album/media/update": EOF* without them. An update therefore stops as
+> "Needs attention" with PDL's message; nothing is lost. See open question 8.
 
 Activity log: `pdl.queued`, `pdl.retried`, `pdl.submitted`, `pdl.failed`, `pdl.status_changed`,
 `settings.updated`.
@@ -83,7 +90,7 @@ Activity log: `pdl.queued`, `pdl.retried`, `pdl.submitted`, `pdl.failed`, `pdl.s
 | `album_type`, `album_subtype` / `data.content_type` | Settings; content type per release type |
 | `label`, `publisher` | Settings label name or release label; first *publisher* credit, else Settings, else label |
 | `upc_id`, `catalog_number`, `c_line`, `p_line` | release UPC (empty: PDL creates one), catalogue number, C-line, P-line |
-| `data.go_live_date`, `data.original_release_date_of_music` | release date, original release date (else release date) |
+| `data.go_live_date`, `data.original_release_date_of_music`, `data.original_release_date_of_movie` | release date (at most 45 days ahead), original release date (else release date); COSMOS requires the movie date even for non-film albums |
 | `data.genre`, `data.sub_genre` | release genre through the genre map |
 | `data.language`, `is_instrumental` | track language (else release language) through the language map; instrumental / `zxx` → `Yes` |
 | `data.parental_advisory` | track or release explicit → `Explicit`, else `Not Explicit` |
@@ -113,13 +120,15 @@ videos, YouTube Content ID options (`/album/platform/details/update`), go-live t
 2. ~~**Sign-in answer.**~~ Answered by staging: the token is `data.data.oauth2_token.access_token`
    (`token_type` Bearer) with `expiry` (ISO 8601, about 10 days). The add-on caches it encrypted until
    5 minutes before that expiry (50 minutes when no expiry is given) and renews it once on 401/403.
-3. **Date format.** The guide says `YYYY-MM-DD`; the Postman request sends `DD-MM-YYYY` (and
-   `date_of_expiry` as `2/1/23`). Which does `/album/add/meta` expect? (A setting, default DD-MM-YYYY.)
-4. **Verify answer.** "The COSMOS album id is returned": in which field? (The add-on accepts `album_id`,
-   `id`, `album.id`, … and otherwise looks the album up by ISRC.)
+3. ~~**Date format.**~~ Staging accepted `DD-MM-YYYY` in `/album/add/meta` (`15-01-2027` was stored as
+   `2027-01-15T00:00:00Z`). It also requires `original_release_date_of_movie` for non-film albums
+   (*Invalid DATE OF MOVIE RELEASE* otherwise): now sent.
+4. **Verify answer.** Staging's verify worked and the album id was found; please confirm the field the id
+   is returned in. (The add-on accepts `album_id`, `id`, `album.id`, … and otherwise looks it up by ISRC.)
 5. **Album listing shape.** Staging's `/album/list` answers `data.albums`, `data.total_count`,
-   `data.filtered_count` (as the add-on expects). Still open: are `submitted`, `verified`,
-   `reportissue_flag` and `releases[]` always included in each album?
+   `data.filtered_count` (as the add-on expects). Each album has `submitted`, `verified`,
+   `reportissue_flag`, and the per-platform status is named **`releases_res`** (the guide says `releases`;
+   the add-on reads both). PDL created UPC `1941570119930` for an album sent without one.
 6. **Field names.** The Postman request uses `"parental_advisory (EXPLICIT ETC)"` inside `data`; the guide
    says `parental_advisory`. Remixers are `track_remixer_artist` / `album_remixer_artist` in add/meta but
    `track_remixer` / `album_remixer` in the update and listing. Album category: `album_category` (guide)
@@ -127,9 +136,12 @@ videos, YouTube Content ID options (`/album/platform/details/update`), go-live t
 7. **Language and genre spellings.** The approved language list is lower-case (`hindi`) but examples send
    `Bengali` / `Haryanvi`; which is accepted? Is there a lookup endpoint for genres, languages and moods
    (the Postman body has a `genreId`)? Note "Partiotic" (sic) in the mood list.
-8. **Updates.** Which `type` values does `/album/media/signedurl` accept for audio (only `Artwork` is
-   documented), and how does `/album/media/update` link a replaced file? What does `is_update: true` in
-   `/album/add/meta` do? When will updates after submission be possible?
+8. **Updates (blocking).** Please send a working `PUT /album/media/update` request for an album that is
+   not submitted yet. On staging (album `6b06abd5579fb90b48653b97`) the album as returned by `/album/page`
+   gives *MD5 mismatch for File* (the stored and uploaded MD5s are identical), and the album without the
+   `artwork` / `media` objects gives *Put "http://10.0.2.115:3101/album/media/update": EOF*. Also: which
+   `type` values does `/album/media/signedurl` accept for audio (only `Artwork` is documented), what does
+   `is_update: true` in `/album/add/meta` do, and when will updates after submission be possible?
 9. **Expired upload links.** Presigned URLs expire after 24 h. If uploads cannot finish in time, how do we
    get new links for an ingestion token without a new `/album/add/meta` (which reports *Duplicate ISRC*)?
 10. **Label id vs. name.** Verify takes `label_id`; add/meta takes `label` as a name. Must the name match
@@ -138,6 +150,13 @@ videos, YouTube Content ID options (`/album/platform/details/update`), go-live t
 12. **Artists.** Should we create/search artists (`/artists/add`, `/artists/search`) first and send their
     COSMOS ids, or are names plus Apple/Spotify ids enough for profile linking?
 13. **Rate limits** and the maximum file size for a single (non-multipart) audio PUT.
+14. **Go-live window.** Submit refuses go-live dates more than 45 days ahead (*GO LIVE DATE is more than 45
+    days ahead*), also with `allow_any_go_live_date: true`. The add-on now blocks such releases until 45
+    days before go-live. Is 45 days fixed, and what does `allow_any_go_live_date` allow?
+15. **Warnings that do not match the stored data.** For a track with a songwriter credit and a main
+    artist, `/album/add/meta` warned *Composer is empty* and *Singer is empty*, yet the album stored
+    the composer, lyricist and singer. Which fields do these checks read? It also warned *ISRC Not Valid*
+    for `GBAYE2600001` (an example ISRC): what is validated?
 
 ## Open questions for the label / MusicDesk
 
