@@ -2,6 +2,7 @@
 
 namespace LabelDesk\Addons\PdlDistribution\Services;
 
+use Carbon\CarbonImmutable;
 use GuzzleHttp\Psr7\Utils;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
@@ -21,6 +22,9 @@ use Throwable;
  */
 class CosmosClient
 {
+    /** Expiry PDL gave with the last token (oauth2_token.expiry), if any. */
+    protected ?CarbonImmutable $tokenExpiry = null;
+
     public function __construct(protected PdlSettings $settings) {}
 
     // ------------------------------------------------------------ authentication
@@ -48,7 +52,12 @@ class CosmosClient
         }
 
         $token = $this->requestToken($this->settings->baseUrl(), $email, $password);
-        Cache::put($key, Crypt::encryptString($token), now()->addMinutes(max(1, (int) $this->settings->get('token_minutes'))));
+        // Until PDL's own expiry (less 5 minutes), else the configured lifetime.
+        $until = $this->tokenExpiry?->subMinutes(5);
+        if ($until === null || $until->lessThan(now()->addMinute())) {
+            $until = now()->addMinutes(max(1, (int) $this->settings->get('token_minutes')));
+        }
+        Cache::put($key, Crypt::encryptString($token), $until);
 
         return $token;
     }
@@ -84,6 +93,7 @@ class CosmosClient
         }
 
         $token = $this->findToken(is_array($json) ? $json : []) ?? $this->bearerFromHeader($response);
+        $this->tokenExpiry = $this->findExpiry(is_array($json) ? $json : []);
         if ($token === null) {
             throw new CosmosException(__('PDL accepted the sign-in but its answer had no access token (HTTP :status).', ['status' => $response->status()]), false, null, $response->status());
         }
@@ -94,10 +104,24 @@ class CosmosClient
     /** @param  array<string, mixed>  $json */
     protected function findToken(array $json): ?string
     {
-        foreach (['data.token', 'data.access_token', 'data.accessToken', 'data.user.token', 'data.jwt', 'token', 'access_token', 'accessToken'] as $path) {
+        // COSMOS: data.data.oauth2_token.access_token (token_type "Bearer", expiry ISO 8601).
+        foreach (['data.data.oauth2_token.access_token', 'data.oauth2_token.access_token', 'oauth2_token.access_token', 'data.token', 'data.access_token', 'data.accessToken', 'data.user.token', 'data.jwt', 'token', 'access_token', 'accessToken'] as $path) {
             $value = data_get($json, $path);
             if (is_string($value) && strlen($value) >= 8) {
                 return preg_replace('/^Bearer\s+/i', '', $value);
+            }
+        }
+
+        return null;
+    }
+
+    /** @param  array<string, mixed>  $json */
+    protected function findExpiry(array $json): ?CarbonImmutable
+    {
+        foreach (['data.data.oauth2_token.expiry', 'data.oauth2_token.expiry', 'oauth2_token.expiry'] as $path) {
+            $value = data_get($json, $path);
+            if (is_string($value) && $value !== '') {
+                return rescue(fn () => CarbonImmutable::parse($value), null, false);
             }
         }
 

@@ -27,6 +27,7 @@ use Illuminate\Support\Facades\Storage;
 use LabelDesk\Addons\PdlDistribution\Livewire\ReleasePage;
 use LabelDesk\Addons\PdlDistribution\Livewire\Settings;
 use LabelDesk\Addons\PdlDistribution\Models\PdlDelivery;
+use LabelDesk\Addons\PdlDistribution\Services\CosmosClient;
 use LabelDesk\Addons\PdlDistribution\Services\DeliveryException;
 use LabelDesk\Addons\PdlDistribution\Services\DeliveryService;
 use LabelDesk\Addons\PdlDistribution\Services\PayloadBuilder;
@@ -168,7 +169,7 @@ class PdlDistributionTest extends TestCase
             'songs' => [['id' => '6694fb0b579fb93bb54d9e8c', 'isrc' => 'INA1B2600001', 'title' => 'Old title', 'track_order' => 1, 'crbt_cuts' => [['name' => 'Glass City']]],
                 ['id' => '6694fb0b579fb93bb54d9e8d', 'isrc' => 'INA1B2600002', 'title' => 'Glass City (Night Mix)', 'track_order' => 2]]];
         $defaults = [
-            'user/system/signin' => Http::response(['success' => true, 'data' => ['token' => 'cosmos-bearer-123', 'user' => ['email' => 'label@example.com']]]),
+            'user/system/signin' => Http::response($this->signInAnswer('cosmos-bearer-123')),
             'album/add/meta' => Http::response(['success' => true, 'data' => ['err' => null, 'token' => 'ingest-token-1', 'signed_albums' => [[
                 'name' => 'Glass City',
                 'inlay' => ['filename' => '1941570109481.jpg', 'signed_url' => 'https://s3.test/inlay.jpg?X-Amz-Signature=secret1'],
@@ -208,6 +209,16 @@ class PdlDistributionTest extends TestCase
 
             return $response instanceof \Closure ? $response($request, $this->calls[$key]) : $response;
         });
+    }
+
+    /** The answer of COSMOS staging's /user/system/signin (values made up). */
+    protected function signInAnswer(string $token, string $expiry = '+10 days'): array
+    {
+        return ['success' => true, 'data' => ['data' => [
+            'id' => '68f2247c579fb94fbf3a0000', 'email' => 'label@example.com', 'first_name' => 'Test', 'last_name' => 'Label',
+            'roles' => ['Label'], 'status' => 'Active', 'blocked' => false,
+            'oauth2_token' => ['access_token' => $token, 'token_type' => 'Bearer', 'expiry' => now()->modify($expiry)->utc()->format('Y-m-d\TH:i:s\Z')],
+        ]]];
     }
 
     protected function send(array $options = []): PdlDelivery
@@ -326,7 +337,7 @@ class PdlDistributionTest extends TestCase
     public function test_test_connection_signs_in_for_real_and_reports_pdl_errors(): void
     {
         $this->fakePdl(['user/system/signin' => fn (Request $r, int $n) => $n === 1
-            ? Http::response(['success' => true, 'data' => ['token' => 'cosmos-bearer-123']])
+            ? Http::response($this->signInAnswer('cosmos-bearer-123'))
             : Http::response(['success' => false, 'data' => ['code' => -1, 'msg' => 'Invalid email or password']], 200)]);
 
         Livewire::actingAs($this->admin)->test(Settings::class)
@@ -688,5 +699,24 @@ class PdlDistributionTest extends TestCase
             && $r['one'] === 'media' && $r['album']['id'] === self::ALBUM_ID && $r['album']['songs'][0]['id'] === '6694fb0b579fb93bb54d9e8c'
             && $r['album']['songs'][0]['title'] === 'Glass City (Fixed)' && $r['album']['songs'][0]['crbt_cuts'] === [['name' => 'Glass City']]);
         $this->assertSame(1, $this->calls['album/pdl/submit']);
+    }
+
+    public function test_the_cosmos_token_is_read_from_oauth2_token_and_cached_until_its_expiry(): void
+    {
+        $this->configure();
+        $this->fakePdl(['user/system/signin' => fn (Request $r, int $n) => Http::response($this->signInAnswer('cosmos-token-'.$n, $n === 1 ? '+2 days' : '+3 minutes'))]);
+        $client = app(CosmosClient::class);
+
+        $this->assertSame('cosmos-token-1', $client->token());
+        $this->travel(2)->hours();
+        $this->assertSame('cosmos-token-1', $client->token(), 'cached past the 50-minute default: PDL said it lasts 2 days');
+        $this->travel(2)->days();
+        $this->assertSame('cosmos-token-2', $client->token(), 'expired: signed in again');
+        $this->assertSame(2, $this->calls['user/system/signin']);
+
+        // Cached encrypted.
+        $cached = (string) Cache::get('pdl:token:'.sha1('https://pdl.test|label@example.com'));
+        $this->assertStringNotContainsString('cosmos-token-2', $cached);
+        $this->assertSame('cosmos-token-2', Crypt::decryptString($cached));
     }
 }
