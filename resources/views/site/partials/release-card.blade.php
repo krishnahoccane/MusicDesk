@@ -1,4 +1,4 @@
-{{-- Needs: $release; optional $upcoming --}}
+{{-- Needs: $release, $isUpcoming (named so a page's own $upcoming list never leaks in) --}}
 @php($ldSlug = App\Services\Website\WebsiteContent::releaseSlug($release))
 <a href="{{ route('site.release', $ldSlug) }}" class="ld-site-card">
     <span class="ld-site-card__art">
@@ -7,7 +7,7 @@
         @else
             <span class="ld-site-card__placeholder" aria-hidden="true"><x-icon name="disc-3" size="40" /></span>
         @endif
-        @if ($upcoming ?? false)
+        @if ($isUpcoming ?? false)
             <span class="ld-site-card__flag">{{ __('Out :date', ['date' => $release->release_date->format('j M')]) }}</span>
         @endif
     </span>

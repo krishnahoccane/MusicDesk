@@ -38,7 +38,7 @@
                 <div class="ld-site-section__head"><h2>{{ __('Releases') }}</h2></div>
                 <div class="ld-site-grid ld-site-grid--releases">
                     @foreach ($releases as $release)
-                        @include('site.partials.release-card', ['release' => $release, 'upcoming' => $release->release_date->toDateString() > $ldNow])
+                        @include('site.partials.release-card', ['release' => $release, 'isUpcoming' => $release->release_date->toDateString() > $ldNow])
                     @endforeach
                 </div>
             </div>

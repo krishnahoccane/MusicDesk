@@ -33,6 +33,10 @@ All notable changes to LabelDesk are documented here. The format follows
 - **Contact form** on the Contact us page: messages are kept under Settings → Website → Pages and messages
   and e-mailed to the label's public address (with a bot trap and a limit of 3 messages a minute).
 - **Installer step 6:** switch the website on, pick its theme and write the headline and introduction.
+- **Home page sections** (Settings → Website → Home page), each hidden until filled in: your own buttons
+  and line above the headline, a moving strip of the stores you deliver to, a band of numbers, your
+  services (from the Services page), "How it works" steps, testimonials, an FAQ and a closing call-to-action
+  banner — the building blocks common to music distribution and label websites.
 
 ### Changed
 - **Singles:** a single's track takes the release title, and follows it when the release is renamed.

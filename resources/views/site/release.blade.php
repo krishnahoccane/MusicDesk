@@ -64,7 +64,7 @@
                 <div class="ld-site-section__head"><h2>{{ __('More from :artists', ['artists' => $release->artistLine()]) }}</h2></div>
                 <div class="ld-site-grid ld-site-grid--releases">
                     @foreach ($more as $other)
-                        @include('site.partials.release-card', ['release' => $other])
+                        @include('site.partials.release-card', ['release' => $other, 'isUpcoming' => false])
                     @endforeach
                 </div>
             </div>

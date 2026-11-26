@@ -102,7 +102,7 @@
                     </div>
                     <div class="ld-site-grid ld-site-grid--releases mb-5">
                         @foreach ($upcoming as $release)
-                            @include('site.partials.release-card', ['release' => $release, 'upcoming' => true])
+                            @include('site.partials.release-card', ['release' => $release, 'isUpcoming' => true])
                         @endforeach
                     </div>
                 @endif
@@ -113,7 +113,7 @@
                     </div>
                     <div class="ld-site-grid ld-site-grid--releases">
                         @foreach ($latest as $release)
-                            @include('site.partials.release-card', ['release' => $release])
+                            @include('site.partials.release-card', ['release' => $release, 'isUpcoming' => false])
                         @endforeach
                     </div>
                 @endif

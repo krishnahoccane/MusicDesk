@@ -12,7 +12,7 @@
                 <div class="ld-site-section__head"><h2>{{ __('Coming soon') }}</h2></div>
                 <div class="ld-site-grid ld-site-grid--releases">
                     @foreach ($upcoming as $release)
-                        @include('site.partials.release-card', ['release' => $release, 'upcoming' => true])
+                        @include('site.partials.release-card', ['release' => $release, 'isUpcoming' => true])
                     @endforeach
                 </div>
             </div>
@@ -29,7 +29,7 @@
             @else
                 <div class="ld-site-grid ld-site-grid--releases">
                     @foreach ($releases as $release)
-                        @include('site.partials.release-card', ['release' => $release])
+                        @include('site.partials.release-card', ['release' => $release, 'isUpcoming' => false])
                     @endforeach
                 </div>
                 <div class="mt-5">{{ $releases->links() }}</div>

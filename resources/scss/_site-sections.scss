@@ -157,7 +157,17 @@
     box-shadow: 0 40px 80px -40px color-mix(in oklab, var(--ld-accent) 70%, #000);
     h2 { color: #fff; font-size: clamp(1.7rem, 1.3rem + 1.6vw, 2.6rem); font-weight: 800; margin: 0 0 0.4rem; }
     p { color: rgba(255, 255, 255, 0.85); max-width: 40em; }
-    .btn { border-radius: 999px; display: inline-flex; align-items: center; gap: 0.5rem; }
+    .btn {
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: #fff;
+        border-color: #fff;
+        color: #111 !important;
+        font-weight: 700;
+        &:hover { background: rgba(255, 255, 255, 0.88); }
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {

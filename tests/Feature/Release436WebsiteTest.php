@@ -6,6 +6,7 @@ use App\Enums\SystemRole;
 use App\Livewire\Releases\Tracks;
 use App\Livewire\Settings\Website;
 use App\Livewire\Settings\WebsitePages;
+use App\Livewire\Settings\WebsiteHome;
 use App\Models\Artist;
 use App\Models\Release;
 use App\Models\SiteMessage;
@@ -74,6 +75,8 @@ class Release436WebsiteTest extends TestCase
             ->assertDontSee('Hidden Draft')->assertDontSee('In Review')->assertSee('Nova Lights')
             ->assertSee('data-site-theme="aurora"', false)->assertSee('index, follow', false);
         $home->assertDontSee('nova-private@example.com')->assertDontSee('Secret deal notes');
+        // Only upcoming releases carry the "Out …" badge (the page's own $upcoming list must not leak into the cards).
+        $home->assertSee('Out '.$soon->release_date->format('j M'))->assertDontSee('Out '.$live->release_date->format('j M'));
 
         $this->get('/music/'.WebsiteContent::releaseSlug($live))->assertOk()->assertSee('Out Now')->assertSee('Nova Lights');
         $this->get('/music/'.$live->id)->assertRedirect('/music/'.WebsiteContent::releaseSlug($live));
@@ -153,6 +156,37 @@ class Release436WebsiteTest extends TestCase
 
         Livewire::actingAs($this->admin)->test(WebsitePages::class)->assertSee('Here is my new single')->call('markRead', $message->id);
         $this->assertNotNull($message->fresh()->read_at);
+    }
+
+    public function test_home_page_sections_show_only_when_filled_in(): void
+    {
+        $this->enable();
+        $this->get('/')->assertOk()->assertDontSee('ld-site-stores', false)->assertDontSee('How it works')->assertDontSee('ld-site-cta', false);
+
+        Livewire::actingAs($this->admin)->test(WebsiteHome::class)
+            ->set('home.cta1_label', 'Start releasing')->set('home.cta1_url', 'javascript:alert(1)')
+            ->call('save')->assertHasErrors('home.cta1_url')
+            ->set('home.cta1_url', '/contact')->set('home.eyebrow', 'Independent since 2019')
+            ->set('home.stores', "Spotify, Apple Music\nJioSaavn")
+            ->call('addRow', 'stats')->set('home.stats.0.value', '150+')->set('home.stats.0.label', 'stores')
+            ->call('addRow', 'steps')->set('home.steps.0.title', 'Upload your track')
+            ->call('addRow', 'testimonials')->set('home.testimonials.0.quote', 'They handled everything.')->set('home.testimonials.0.name', 'Aria Vale')
+            ->call('addRow', 'faq')->set('home.faq.0.q', 'Do I keep my rights?')->set('home.faq.0.a', 'Yes, **always**.')
+            ->set('home.cta_title', 'Ready to release?')->set('home.cta_label', 'Talk to us')->set('home.cta_url', '/contact')
+            ->call('addRow', 'steps')->call('save')->assertHasErrors('home.steps.1.title')
+            ->call('removeRow', 'steps', 1)->call('save')->assertHasNoErrors();
+
+        $this->get('/')->assertOk()
+            ->assertSee('Independent since 2019')->assertSee('Start releasing')->assertDontSee('Explore the music')
+            ->assertSee('JioSaavn')->assertSee('150+')->assertSee('Upload your track')
+            ->assertSee('They handled everything.')->assertSee('Aria Vale')
+            ->assertSee('Do I keep my rights?')->assertSee('<strong>always</strong>', false)
+            ->assertSee('Ready to release?')->assertSee('Talk to us');
+
+        // Services from the published Services page.
+        app(WebsiteContent::class)->ensureBuiltInPages();
+        SitePage::query()->where('type', 'services')->update(['is_published' => true, 'content' => ['intro' => '', 'outro' => '', 'items' => [['title' => 'Playlist pitching', 'text' => 'We pitch to editors.']]]]);
+        $this->get('/')->assertSee('Playlist pitching')->assertSee(route('site.services'), false);
     }
 
     public function test_track_numbers_follow_the_list_order(): void
