@@ -26,7 +26,9 @@
                 @endif
             </div>
             <div class="card-footer small text-muted">
-                {{ __('Colours, fonts, logo and light/dark mode follow Settings → Appearance. The website shows :releases released releases and :artists artists. Only approved or ready releases appear; contact details, notes, contracts and earnings are never shown.', ['releases' => $publicReleases, 'artists' => $publicArtists]) }}
+                {{ __('Colours, fonts, logo and light/dark mode follow Settings → Appearance.') }}
+                {{ trans_choice('The website shows :count release|The website shows :count releases', $publicReleases) }} {{ trans_choice('and :count artist.|and :count artists.', $publicArtists) }}
+                {{ __('Only approved or ready releases appear; contact details, notes, contracts and earnings are never shown.') }}
             </div>
         </div>
 

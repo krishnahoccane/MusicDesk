@@ -10,7 +10,7 @@
 
     @if ($creating || $editingId)
         {{-- ------------------------------------------------ editor --}}
-        <form class="card mb-3" wire:submit="save" novalidate wire:key="page-editor-{{ $editingId ?? 'new' }}">
+        <form class="card mb-3" wire:submit="save" novalidate wire:key="page-editor-{{ $editingId ?? 'new' }}" x-init="$el.scrollIntoView({ behavior: 'smooth', block: 'start' })" style="scroll-margin-top: 80px">
             <div class="card-header">
                 <x-icon name="file-pen" size="18" />
                 <h2 class="card-title">{{ $creating ? __('New page') : __('Edit :title', ['title' => $title]) }}</h2>

@@ -18,6 +18,21 @@ All notable changes to LabelDesk are documented here. The format follows
   before the track does.
 - **New artist** button in the Artists card of the release and track forms: adds an artist to the roster
   and to the form without leaving the release or track you are editing.
+- **Label website** (Settings → Website), off by default: a public website at the address of the
+  installation with a home page (headline, featured release, latest and upcoming releases, artists,
+  about, contact), a music catalogue, release pages with tracklists, an artist roster and artist pages.
+  It uses the colours, fonts, logo and light/dark mode from Settings → Appearance. Only approved or
+  ready releases (released, or upcoming if you choose) and active artists with such a release are
+  shown; e-mail addresses, phone numbers, notes, contracts, earnings and audio files never are.
+  When the website is off, the address opens the sign-in page as before — for labels with their own site.
+- **10 website themes:** Aurora, Minimal, Noir, Editorial, Neon, Vinyl, Studio, Bold, Pastel and Cinema,
+  each with its own type, shapes and backgrounds (some always light or always dark).
+- **Website pages:** About us, Services, Pricing and Contact us, plus your own pages at `/pages/…`, written
+  in Markdown with structured lists for services and pricing plans. Publish, unpublish, order and choose
+  which pages appear in the menu. New pages start empty and unpublished.
+- **Contact form** on the Contact us page: messages are kept under Settings → Website → Pages and messages
+  and e-mailed to the label's public address (with a bot trap and a limit of 3 messages a minute).
+- **Installer step 6:** switch the website on, pick its theme and write the headline and introduction.
 
 ### Changed
 - **Singles:** a single's track takes the release title, and follows it when the release is renamed.
@@ -26,10 +41,14 @@ All notable changes to LabelDesk are documented here. The format follows
   asks for "a composer and a lyricist" on every track.
 - **Track length** is no longer typed in: it is read from the uploaded audio and shown in the upload
   preview (with the format) before the track is saved.
+- **Track numbers** are the order of the release's track list (1, 2, 3 …); the Disc field is gone from the
+  track form. Moving a track up or down works across the whole release. Disc numbers of earlier
+  multi-disc releases are kept, so their order does not change.
 
 ### Database
-- New `moods` table; tracks get `mood_id`, `crbt_name`, `crbt_start_seconds` and `is_draft`. The update
-  runs by itself the first time a page is opened after the files are uploaded.
+- New `moods` table; tracks get `mood_id`, `crbt_name`, `crbt_start_seconds` and `is_draft`. New
+  `site_pages` and `site_messages` tables for the website. The update runs by itself the first time a
+  page is opened after the files are uploaded.
 
 ## [4.3.5] — 2026-11-25
 

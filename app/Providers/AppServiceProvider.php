@@ -64,6 +64,9 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('installer', fn (Request $request) => Limit::perMinute(30)->by('installer|'.$request->ip()));
         RateLimiter::for('license-activation', fn (Request $request) => Limit::perMinute(10)->by('license|'.$request->ip()));
         RateLimiter::for('password-reset', fn (Request $request) => Limit::perMinute(6)->by('password-reset|'.$request->ip()));
+        // Label website: browsing and the contact form have their own counters.
+        RateLimiter::for('site', fn (Request $request) => Limit::perMinute(120)->by('site|'.$request->ip()));
+        RateLimiter::for('site-contact', fn (Request $request) => Limit::perMinute(3)->by('site-contact|'.$request->ip()));
 
         // Database settings (Settings → General / Email) override .env defaults.
         if ($this->app->make(InstallationState::class)->isInstalled()) {
@@ -104,7 +107,7 @@ class AppServiceProvider extends ServiceProvider
             $view->with('navigation', $this->app->make(NavigationBuilder::class)->for($user));
         });
 
-        View::composer(['components.layouts.app', 'components.layouts.auth', 'components.layouts.installer'], function ($view) {
+        View::composer(['components.layouts.app', 'components.layouts.auth', 'components.layouts.installer', 'components.layouts.site'], function ($view) {
             $appearance = Appearance::for(auth()->user());
             $view->with('appearance', $appearance);
             $view->with('themePreference', $appearance['preference']);

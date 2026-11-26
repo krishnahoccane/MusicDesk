@@ -20,7 +20,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [SiteController::class, 'home'])->name('home');
 
 // The public website (404 while it is switched off).
-Route::controller(SiteController::class)->name('site.')->middleware('throttle:120,1')->group(function () {
+Route::controller(SiteController::class)->name('site.')->middleware('throttle:site')->group(function () {
     Route::get('music', 'music')->name('music');
     Route::get('music/{slug}', 'release')->where('slug', '[0-9]+(-[a-z0-9\-]*)?')->name('release');
     Route::get('roster', 'roster')->name('roster');
@@ -31,7 +31,7 @@ Route::controller(SiteController::class)->name('site.')->middleware('throttle:12
     Route::get('services', 'services')->name('services');
     Route::get('pricing', 'pricing')->name('pricing');
     Route::get('contact', 'contact')->name('contact');
-    Route::post('contact', 'send')->middleware('throttle:3,1')->name('contact.send');
+    Route::post('contact', 'send')->withoutMiddleware('throttle:site')->middleware('throttle:site-contact')->name('contact.send');
     Route::get('pages/{slug}', 'page')->where('slug', '[a-z0-9][a-z0-9\\-]{0,79}')->name('page');
 });
 

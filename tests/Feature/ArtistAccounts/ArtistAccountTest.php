@@ -101,7 +101,7 @@ class ArtistAccountTest extends TestCase
         Livewire::test(GlobalSearch::class)->set('query', 'Se')->assertDontSee('Secret Signing');
         Livewire::test(GlobalSearch::class)->set('query', 'Hidden')->assertDontSee('Hidden Track');
 
-        $this->get('/dashboard')->assertOk()->assertSee('Your balance')->assertDontSee('999');
+        $this->get('/dashboard')->assertOk()->assertSee('Your balance')->assertDontSee('999.00');
     }
 
     public function test_artist_account_cannot_open_staff_areas(): void

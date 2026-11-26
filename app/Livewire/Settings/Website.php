@@ -130,7 +130,7 @@ class Website extends Component
     public function render(WebsiteContent $site): View
     {
         return view('livewire.settings.website', [
-            'releases' => $site->releases(true)->orderByDesc('release_date')->get(['id', 'title', 'version', 'release_date']),
+            'releases' => $site->releases(true)->setEagerLoads([])->orderByDesc('release_date')->get(['id', 'title', 'version', 'release_date']),
             'publicReleases' => $site->releases()->count(),
             'publicArtists' => $site->artists()->count(),
             'networks' => WebsiteContent::SOCIALS,

@@ -265,7 +265,7 @@ ts=1
         ])->assertRedirect('/install/administrator');
 
         $this->post('/install/administrator', $this->adminInput())->assertRedirect('/install/customize');
-        $this->post('/install/customize', $this->customizeInput())->assertRedirect('/install/run');
+        $this->post('/install/customize', $this->customizeInput(['website' => '1', 'website_theme' => 'noir', 'website_title' => 'Acme Sound']))->assertRedirect('/install/run');
 
         $this->get('/install/run')->assertOk()->assertSee('Acme Records')->assertSee('smtp.example.com')
             ->assertSee('Skipped — using the database')->assertDontSee('S3cret')->assertDontSee('Sm7pSecret');
@@ -302,6 +302,9 @@ ts=1
         $this->assertSame('dark', $settings->get('appearance.modes'));
         $this->assertSame('studio', $settings->get('appearance.login_layout'));
         $this->assertSame('Acme', $settings->get('appearance.login_accent'));
+        $this->assertTrue((bool) $settings->get('website.enabled'));
+        $this->assertSame('noir', $settings->get('website.theme'));
+        $this->assertSame('Acme Sound', $settings->get('website.hero_title'));
         $logo = (string) $settings->get('appearance.logo');
         $this->assertMatchesRegularExpression('/^logo-[a-z0-9]{16}\.png$/', $logo);
         Storage::disk('public')->assertExists('branding/'.$logo);
