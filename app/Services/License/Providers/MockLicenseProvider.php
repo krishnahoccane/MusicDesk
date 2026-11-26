@@ -31,6 +31,9 @@ class MockLicenseProvider implements LicenseProviderInterface
         'ACTV' => ['plan' => 'business', 'status' => 'active', 'features' => ['artists', 'releases', 'tracks', 'distribution', 'royalties', 'documents', 'reports', 'advanced_reports', 'financial_reports', 'custom_roles', 'backups'], 'user_limit' => 25],
         'STRT' => ['plan' => 'starter', 'status' => 'active', 'features' => ['artists', 'releases', 'tracks', 'distribution', 'reports', 'backups'], 'user_limit' => 3],
         'PEND' => ['plan' => 'starter', 'status' => 'pending', 'features' => ['artists', 'releases', 'tracks', 'distribution', 'reports', 'backups'], 'user_limit' => 3],
+        // Free trial of the starter plan (14 days, small limits, no add-ons).
+        'TRIL' => ['plan' => 'starter', 'status' => 'active', 'features' => ['artists', 'releases', 'tracks', 'distribution', 'reports', 'backups'], 'user_limit' => 3,
+            'trial' => true, 'trial_days' => 14, 'limits' => ['domains' => 1, 'users' => 2, 'artists' => 3, 'releases' => 2, 'tracks' => 4, 'addons' => false]],
     ];
 
     /** @var array<string, bool> deactivated activation ids */
@@ -71,6 +74,9 @@ class MockLicenseProvider implements LicenseProviderInterface
         };
 
         $plan = self::PLANS[$code] ?? throw LicenseException::fromApi('invalid_key', null);
+        if (! empty($plan['trial_days'])) {
+            $plan['expires'] = now()->addDays((int) $plan['trial_days'])->timestamp;
+        }
         $activationId = 'act-'.substr(hash('sha256', $context->domain.'|'.$licenseKey), 0, 24);
         unset(static::$deactivated[$activationId]);
 
@@ -87,7 +93,8 @@ class MockLicenseProvider implements LicenseProviderInterface
             throw LicenseException::fromApi('activation_deactivated', null);
         }
 
-        $plan = ['plan' => $current->plan, 'status' => $current->status, 'features' => $current->features, 'user_limit' => $current->userLimit, 'expires' => $current->expiresAt?->timestamp];
+        $plan = ['plan' => $current->plan, 'status' => $current->status, 'features' => $current->features, 'user_limit' => $current->userLimit, 'expires' => $current->expiresAt?->timestamp,
+            'trial' => $current->trial, 'limits' => $current->limits];
 
         return $this->issue($context, (string) $current->activationId, $plan, 30);
     }
@@ -134,6 +141,8 @@ class MockLicenseProvider implements LicenseProviderInterface
             'expires' => $plan['expires'] ?? null,
             'features' => $plan['features'],
             'user_limit' => $plan['user_limit'],
+            'trial' => (bool) ($plan['trial'] ?? false),
+            'limits' => ($plan['trial'] ?? false) ? ($plan['limits'] ?? []) : null,
         ], $days, $issuedAt);
 
         [$payload, $signature] = LicenseSignatureVerifier::split($token);

@@ -14,7 +14,8 @@ use Throwable;
  *
  * Tokens are compact JWTs signed with Ed25519 (header alg "EdDSA"):
  *   base64url(header) . base64url(claims) . base64url(signature)
- * Claims: iss, iat, exp, lic, act, dom, env, plan, status, support_until, max_version.
+ * Claims: iss, iat, exp, lic, act, dom, env, plan, status, support_until, max_version,
+ * trial and limits (free trials, MusicDesk.tech 2.0.1).
  *
  * Only the PUBLIC key is present in LabelDesk, so editing local data can never
  * produce a valid token.
@@ -130,7 +131,30 @@ class LicenseSignatureVerifier
             messages: $messages,
             checkInRequested: (bool) ($envelope['check_in_requested'] ?? false),
             environment: isset($claims['env']) ? (string) $claims['env'] : null,
+            trial: ($claims['trial'] ?? false) === true,
+            limits: ($claims['trial'] ?? false) === true ? self::limits($claims['limits'] ?? null) : null,
         );
+    }
+
+    /**
+     * Trial limits from the signed token. Missing or malformed numbers count as "no limit"
+     * (the server enforces domains itself); add-ons only when the claim says so.
+     *
+     * @return array{domains: ?int, users: ?int, artists: ?int, releases: ?int, tracks: ?int, addons: bool}
+     */
+    public static function limits(mixed $limits): array
+    {
+        $limits = is_array($limits) ? $limits : [];
+        $count = fn (string $key) => isset($limits[$key]) && is_int($limits[$key]) && $limits[$key] >= 0 ? $limits[$key] : null;
+
+        return [
+            'domains' => $count('domains'),
+            'users' => $count('users'),
+            'artists' => $count('artists'),
+            'releases' => $count('releases'),
+            'tracks' => $count('tracks'),
+            'addons' => ($limits['addons'] ?? false) === true,
+        ];
     }
 
     /**

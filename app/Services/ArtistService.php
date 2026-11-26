@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Services\License\TrialLimits;
 use App\Exceptions\CatalogException;
 use App\Models\Artist;
 use App\Models\ArtistContact;
@@ -33,6 +34,8 @@ class ArtistService
      */
     public function create(User $actor, array $data): Artist
     {
+        app(TrialLimits::class)->ensure('artists');
+
         $artist = new Artist;
         $artist->fill($this->clean($data));
         $artist->created_by = $actor->id;

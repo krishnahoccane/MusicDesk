@@ -47,6 +47,10 @@ final class LicenseResult
         public readonly array $messages = [],
         public readonly bool $checkInRequested = false,
         public readonly ?string $environment = null,
+        /** Free trial (MusicDesk.tech 2.0.1): limits apply while true; null limits = paid license. */
+        public readonly bool $trial = false,
+        /** @var array{domains: ?int, users: ?int, artists: ?int, releases: ?int, tracks: ?int, addons: bool}|null */
+        public readonly ?array $limits = null,
     ) {}
 
     /** The full compact JWT. */

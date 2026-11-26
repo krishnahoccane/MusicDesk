@@ -212,6 +212,9 @@ class PluginManager
         if (! $this->app->make(LicenseValidationService::class)->snapshot()->allowsWrites()) {
             throw new PluginException(__('Add-ons cannot be activated while the license is read-only.'));
         }
+        if (! $this->app->make(\App\Services\License\TrialLimits::class)->addonsAllowed()) {
+            throw new PluginException(__('Add-ons are not included in the free trial. Buy a license to use them.'));
+        }
 
         if ($key !== null && trim($key) !== '') {
             try {

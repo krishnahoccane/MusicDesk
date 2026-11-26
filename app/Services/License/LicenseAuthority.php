@@ -31,6 +31,9 @@ final class LicenseAuthority
     /** Where administrators download add-ons. */
     public const ADDONS_URL = 'https://musicdesk.tech/account/addons';
 
+    /** Buy (or convert a free trial into) a plan: CHECKOUT_URL.'/'.$plan */
+    public const CHECKOUT_URL = 'https://musicdesk.tech/checkout';
+
     public const PRODUCTION_DRIVER = 'musicdesk';
 
     public const ENDPOINTS = [

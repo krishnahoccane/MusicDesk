@@ -2,6 +2,7 @@
 
 namespace App\Services\Catalog;
 
+use App\Services\License\TrialLimits;
 use App\Enums\ArtistRole;
 use App\Enums\ReleaseType;
 use App\Exceptions\CatalogException;
@@ -34,6 +35,8 @@ class ReleaseService
      */
     public function create(User $actor, array $data, array $artists, bool $draft = false): Release
     {
+        app(TrialLimits::class)->ensure('releases');
+
         $release = DB::transaction(function () use ($actor, $data, $artists, $draft) {
             $release = new Release;
             $release->fill($this->clean($data));

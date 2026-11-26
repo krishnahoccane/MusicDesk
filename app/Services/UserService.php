@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Services\Activity\ActivityLogger;
 use App\Services\Auth\RegistrationService;
 use App\Services\License\LicenseFeatureService;
+use App\Services\License\TrialLimits;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Password;
@@ -35,7 +36,10 @@ class UserService
 
     public function seatLimit(): ?int
     {
-        return $this->features->userLimit();
+        $plan = $this->features->userLimit();
+        $trial = app(TrialLimits::class)->limit('users');
+
+        return $trial === null ? $plan : ($plan === null ? $trial : min($plan, $trial));
     }
 
     public function activeCount(): int
@@ -52,6 +56,10 @@ class UserService
 
     protected function ensureSeatAvailable(): void
     {
+        $trial = app(TrialLimits::class);
+        if (! $trial->allows('users')) {
+            throw new UserManagementException($trial->message('users'));
+        }
         if (! $this->seatsAvailable()) {
             throw UserManagementException::seatLimit((int) $this->seatLimit());
         }

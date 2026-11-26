@@ -2,6 +2,7 @@
 
 namespace App\Services\Catalog;
 
+use App\Services\License\TrialLimits;
 use App\Enums\ArtistRole;
 use App\Enums\ContributorRole;
 use App\Enums\ReleaseType;
@@ -40,6 +41,9 @@ class TrackService
     {
         $this->releases->ensureEditable($release);
         $creating = $track === null;
+        if ($creating) {
+            app(TrialLimits::class)->ensure('tracks');
+        }
         abort_if(! $creating && $track->release_id !== $release->id, 404);
 
         $isrc = Identifiers::normalizeIsrc($data['isrc'] ?? null);

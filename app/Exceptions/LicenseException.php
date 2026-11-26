@@ -63,7 +63,8 @@ class LicenseException extends RuntimeException
     public static function fromApi(string $code, ?string $message): self
     {
         $messages = [
-            'invalid_key' => __('This license key is not recognised. Check it in your MusicDesk account (a key that was replaced by a new one no longer works).'),
+            'invalid_key' => __('This license key is not recognised. Check it in your MusicDesk account (a key that was replaced by a new one no longer works), or contact MusicDesk.tech support.'),
+            'trial_used' => __('This domain has already run a free trial. Buy a license to use LabelDesk on it.'),
             'invalid_domain' => __('The license server does not accept this domain. Check the application URL in Settings.'),
             'domain_limit_reached' => __('All production domains on this license are in use. Deactivate one in your MusicDesk account or buy an extra domain.'),
             'domain_in_use' => __('This domain is already active on another license.'),
@@ -71,7 +72,7 @@ class LicenseException extends RuntimeException
             'license_suspended' => __('This license has been suspended. Contact MusicDesk support.'),
             'license_expired' => __('This license has expired. Renew it from your MusicDesk account.'),
             'license_revoked' => __('This license has been revoked.'),
-            'activation_not_found' => __('This installation is no longer activated. Activate it again with your license key.'),
+            'activation_not_found' => __('This installation is no longer activated (the license may have been removed). Activate it again with your license key, or contact MusicDesk.tech support.'),
             'activation_deactivated' => __('This domain was deactivated in your MusicDesk account. Activate it again with your license key.'),
             'invalid_token' => __('The license token was rejected. Activate again with your license key.'),
             'token_expired' => __('The license token has expired. Activate again with your license key.'),
