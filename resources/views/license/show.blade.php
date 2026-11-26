@@ -40,10 +40,15 @@
                     @if ($activation)
                         @php($fmt = fn ($d) => $d ? \Illuminate\Support\Carbon::parse($d)->setTimezone(config('labeldesk.display_timezone'))->format(config('labeldesk.datetime_format')) : '—')
                         @php($support = $activation->support_until)
+                        @php($ldTrial = app(App\Services\License\TrialLimits::class))
                         <dl class="ld-dl">
                             <dt>{{ __('Product') }}</dt><dd>{{ config('labeldesk.product.name') }} {{ config('labeldesk.product.version') }}</dd>
                             <dt>{{ __('License key') }}</dt><dd class="font-monospace">{{ $activation->maskedKey() }}</dd>
-                            <dt>{{ __('Plan') }}</dt><dd class="text-capitalize">{{ $activation->plan ?? '—' }}</dd>
+                            <dt>{{ __('Plan') }}</dt><dd class="text-capitalize">{{ $activation->plan ?? '—' }} @if ($ldTrial->isTrial()) <x-badge variant="accent">{{ __('free trial') }}</x-badge> @endif</dd>
+                            @if ($ldTrial->isTrial() && $ldTrial->endsAt())
+                                <dt>{{ __('Free trial until') }}</dt>
+                                <dd>{{ $fmt($ldTrial->endsAt()) }} · <a href="{{ $ldTrial->buyUrl() }}" target="_blank" rel="noopener">{{ __('Buy :plan', ['plan' => $ldTrial->planName()]) }}</a></dd>
+                            @endif
                             <dt>{{ __('License status') }}</dt><dd class="text-capitalize">{{ $activation->license_status ?? '—' }}</dd>
                             <dt>{{ __('Installation domain') }}</dt><dd>{{ $activation->domain }} @if ($activation->environment) <x-badge :variant="$activation->environment === 'staging' ? 'info' : 'secondary'">{{ $activation->environment === 'staging' ? __('Staging') : __('Production') }}</x-badge> @endif</dd>
                             <dt>{{ __('Activation type') }}</dt><dd>{{ $activation->offline ? __('Offline activation file') : __('Online') }}</dd>
@@ -58,6 +63,25 @@
                             <dt>{{ __('Token valid until') }}</dt><dd>{{ $fmt($snapshot->result?->validUntil) }}</dd>
                             <dt>{{ __('Last verification') }}</dt><dd>{{ $fmt($activation->last_verified_at) }}</dd>
                         </dl>
+                        @if ($ldTrial->isTrial())
+                            <div class="border rounded-3 p-3 my-2">
+                                <div class="fw-semibold mb-2" style="color: var(--ld-heading)">{{ __('Free trial limits') }}</div>
+                                <dl class="ld-dl mb-2">
+                                    @foreach ($ldTrial->usage() as $resource => $use)
+                                        <dt>{{ ['users' => __('Active users'), 'artists' => __('Artists'), 'releases' => __('Releases'), 'tracks' => __('Tracks')][$resource] }}</dt>
+                                        <dd>
+                                            @if ($use['limit'] === null)
+                                                {{ $use['used'] }} <span class="text-muted">/ {{ __('no limit') }}</span>
+                                            @else
+                                                <span @class(['text-danger fw-semibold' => $use['used'] >= $use['limit']])>{{ $use['used'] }} / {{ $use['limit'] }}</span>
+                                            @endif
+                                        </dd>
+                                    @endforeach
+                                    <dt>{{ __('Add-ons') }}</dt><dd>{{ $ldTrial->addonsAllowed() ? __('included') : __('not included in the trial') }}</dd>
+                                </dl>
+                                <div class="small text-muted">{{ __('Buying the plan turns this trial into your license: same key and domains, limits removed, everything kept.') }}</div>
+                            </div>
+                        @endif
                         @foreach ((array) $activation->messages as $notice)
                             <x-alert variant="info" class="mb-2">{{ $notice }}</x-alert>
                         @endforeach

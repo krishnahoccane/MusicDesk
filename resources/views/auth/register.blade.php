@@ -17,6 +17,7 @@
             </div>
         @else
             <input type="hidden" name="type" value="{{ $types[0] }}">
+            @error('type') <div class="alert alert-warning small">{{ $message }}</div> @enderror
         @endif
 
         <div class="mb-3" x-show="type === 'artist'" @if ($type !== 'artist') x-cloak @endif>

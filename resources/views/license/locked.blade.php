@@ -21,8 +21,12 @@
                     </span>
                     <div class="eyebrow mb-2" style="color: #ff7a7a">{{ __('Account suspended') }}</div>
                     <h1 class="ld-login__title mb-2">{{ __('This application is suspended') }}</h1>
+                    @php($ldTrial = (bool) ($snapshot->result?->trial ?? false))
+                    @php($ldTrialInfo = $ldTrial ? app(App\Services\License\TrialLimits::class) : null)
                     <p class="text-muted mb-4">
-                        @if ($snapshot->expiredAt)
+                        @if ($ldTrial)
+                            {{ __('The free trial of :product on this site has ended and the 10-day read-only period is over. Buy a license to continue: your data and settings are kept and come back as they were.', ['product' => config('labeldesk.product.name')]) }}
+                        @elseif ($snapshot->expiredAt)
                             {{ __('The LabelDesk license for this site has expired and the 10-day read-only period has ended. Nobody can sign in until the license is renewed. No data has been deleted.') }}
                         @else
                             {{ $snapshot->reason }} {{ __('No data has been deleted.') }}
@@ -31,7 +35,7 @@
 
                     <dl class="row small text-start mb-4 mx-0 p-3 rounded-3" style="background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.06)">
                         @if ($snapshot->expiredAt)
-                            <dt class="col-6 fw-normal text-muted">{{ __('License expired') }}</dt>
+                            <dt class="col-6 fw-normal text-muted">{{ $ldTrial ? __('Free trial ended') : __('License expired') }}</dt>
                             <dd class="col-6 mb-1 text-end font-mono">{{ $snapshot->expiredAt->setTimezone($tz)->format('M d, Y') }}</dd>
                         @endif
                         @if ($snapshot->lockAt)
@@ -46,13 +50,21 @@
                         <div class="ld-notice mb-3 text-start" style="border-color: rgba(255,87,87,.3); background: rgba(255,87,87,.06)">{{ session('error') }}</div>
                     @endif
 
-                    <p class="small text-muted mb-3">{{ __('Site owner: renew the license in your MusicDesk.tech account. Access returns automatically within an hour, or straight away with "Check again".') }}</p>
+                    <p class="small text-muted mb-3">
+                        {{ $ldTrial
+                            ? __('Site owner: buy the plan in your MusicDesk.tech account. The trial turns into your license with the same key, and access returns within an hour, or straight away with "Check again".')
+                            : __('Site owner: renew the license in your MusicDesk.tech account. Access returns automatically within an hour, or straight away with "Check again".') }}
+                    </p>
 
                     <div class="d-flex flex-wrap gap-2 justify-content-center">
-                        <a href="{{ config('licensing.customer_portal_url') }}" target="_blank" rel="noopener" class="btn btn-primary"><x-icon name="external-link" size="16" /> {{ __('Renew at MusicDesk.tech') }}</a>
+                        @if ($ldTrial)
+                            <a href="{{ $ldTrialInfo->buyUrl() }}" target="_blank" rel="noopener" class="btn btn-primary"><x-icon name="external-link" size="16" /> {{ __('Buy :plan', ['plan' => $ldTrialInfo->planName()]) }}</a>
+                        @else
+                            <a href="{{ config('licensing.customer_portal_url') }}" target="_blank" rel="noopener" class="btn btn-primary"><x-icon name="external-link" size="16" /> {{ __('Renew at MusicDesk.tech') }}</a>
+                        @endif
                         <form method="POST" action="{{ route('license.locked.check') }}">
                             @csrf
-                            <button type="submit" class="btn btn-light"><x-icon name="refresh-cw" size="16" /> {{ __('I have renewed — check again') }}</button>
+                            <button type="submit" class="btn btn-light"><x-icon name="refresh-cw" size="16" /> {{ $ldTrial ? __('I have bought it — check again') : __('I have renewed — check again') }}</button>
                         </form>
                     </div>
 

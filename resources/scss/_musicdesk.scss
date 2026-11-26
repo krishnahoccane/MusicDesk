@@ -555,6 +555,8 @@ code,
 }
 
 .ld-ribbon--danger { background: linear-gradient(90deg, #b4232f, #e0245e); }
+.ld-ribbon--warning { background: linear-gradient(90deg, #b45309, #ea580c); }
+.ld-ribbon--trial { background: linear-gradient(90deg, var(--ld-accent), var(--ld-accent-2)); }
 
 .ld-ribbon__link { color: #fff; font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
 .ld-ribbon__link:hover { color: #fff; opacity: 0.85; }

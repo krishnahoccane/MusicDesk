@@ -43,6 +43,11 @@ class RegistrationService
      */
     public function register(array $data, ?string $ip = null): User
     {
+        // A free trial at its artist limit takes no new artist sign-ups (visitors see a neutral note).
+        if ($data['type'] === 'artist' && ! app(\App\Services\License\TrialLimits::class)->allows('artists')) {
+            throw new \App\Exceptions\TrialLimitException(__('Sign-ups for artists are paused at the moment. Please try again later.'), '');
+        }
+
         $user = DB::transaction(function () use ($data) {
             $user = new User(['name' => $data['name'], 'email' => mb_strtolower($data['email'])]);
             $user->password = Hash::make($data['password']);

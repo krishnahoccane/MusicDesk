@@ -37,6 +37,19 @@ All notable changes to LabelDesk are documented here. The format follows
   and line above the headline, a moving strip of the stores you deliver to, a band of numbers, your
   services (from the Services page), "How it works" steps, testimonials, an FAQ and a closing call-to-action
   banner — the building blocks common to music distribution and label websites.
+- **Free trials from MusicDesk.tech** (MusicDesk.tech 2.0.1). A trial license key works like any other;
+  LabelDesk reads `trial` and `limits` from the signed license token:
+  - Users, artists, releases and tracks stop at the trial's limits — in every form, the "New artist" button,
+    artist sign-up, bulk upload and the REST API — with "Your free trial allows up to … Buy LabelDesk {Plan}"
+    and a link to `musicdesk.tech/checkout/{plan}`. Existing records stay usable.
+  - Add-ons cannot be activated unless the trial includes them (the Add-ons page says so).
+  - A banner on every page: "Free trial: N days left · Buy LabelDesk {Plan}", in a stronger colour for the
+    last 3 days. Settings → License shows the trial end date and use against each limit (e.g. "Artists 12 / 25").
+  - When the trial ends LabelDesk is read-only for 10 days, then locks — like an expired license — and the
+    locked page offers "Buy" instead of "Renew". Buying converts the trial (same key and domains): the next
+    check-in lifts every limit, and a locked site opens again. No data is ever deleted.
+  - New activation error `trial_used` ("This domain has already run a free trial. Buy a license to use
+    LabelDesk on it."). Messages for removed licenses now suggest contacting MusicDesk.tech support.
 
 ### Changed
 - **Singles:** a single's track takes the release title, and follows it when the release is renamed.

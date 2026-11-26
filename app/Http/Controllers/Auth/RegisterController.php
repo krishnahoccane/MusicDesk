@@ -60,7 +60,8 @@ class RegisterController extends Controller
             'artist_name' => __('artist name'), 'label_name' => __('label name'),
         ]);
 
-        $this->registration->register([
+        try {
+            $this->registration->register([
             'type' => $data['type'],
             'name' => trim($data['name']),
             'email' => $data['email'],
@@ -69,7 +70,10 @@ class RegisterController extends Controller
             'label_name' => isset($data['label_name']) ? trim($data['label_name']) : null,
             'website' => $data['website'] ?? null,
             'country' => ($data['country'] ?? '') !== '' ? $data['country'] : null,
-        ], $request->ip());
+            ], $request->ip());
+        } catch (\App\Exceptions\TrialLimitException $e) {
+            return back()->withInput($request->except('password', 'password_confirmation'))->withErrors(['type' => $e->getMessage()]);
+        }
 
         return redirect()->route('login')->with('status', __('Thank you, :name. Your account has been created and is waiting for approval. You will get an email when you can sign in.', ['name' => trim($data['name'])]));
     }

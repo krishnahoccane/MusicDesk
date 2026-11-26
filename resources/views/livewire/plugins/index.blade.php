@@ -6,6 +6,9 @@
     </x-page-header>
 
     @if (session('success')) <x-alert variant="success" class="mb-3">{{ session('success') }}</x-alert> @endif
+    @unless (app(App\Services\License\TrialLimits::class)->addonsAllowed())
+        <x-alert variant="info" class="mb-3">{{ __('Add-ons are not included in the free trial. Buy a license to install and activate add-ons.') }}</x-alert>
+    @endunless
 
     <div class="row g-3">
         <div class="col-xl-8">
