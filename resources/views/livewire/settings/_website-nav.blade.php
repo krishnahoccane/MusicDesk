@@ -3,6 +3,9 @@
     <a href="{{ route('settings.website') }}" @class(['btn btn-sm', 'btn-primary' => request()->routeIs('settings.website'), 'btn-light' => ! request()->routeIs('settings.website')])>
         <x-icon name="sliders-horizontal" size="14" /> {{ __('Website and theme') }}
     </a>
+    <a href="{{ route('settings.website.home') }}" @class(['btn btn-sm', 'btn-primary' => request()->routeIs('settings.website.home'), 'btn-light' => ! request()->routeIs('settings.website.home')])>
+        <x-icon name="layout-template" size="14" /> {{ __('Home page') }}
+    </a>
     <a href="{{ route('settings.website.pages') }}" @class(['btn btn-sm', 'btn-primary' => request()->routeIs('settings.website.pages'), 'btn-light' => ! request()->routeIs('settings.website.pages')])>
         <x-icon name="files" size="14" /> {{ __('Pages and messages') }}
         @php($ldUnread = rescue(fn () => App\Models\SiteMessage::query()->whereNull('read_at')->count(), 0, false))

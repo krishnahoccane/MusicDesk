@@ -39,8 +39,12 @@ class SiteController extends Controller
 
         $settings = $this->site->settings();
 
+        $services = SitePage::query()->published()->where('type', 'services')->first();
+
         return view('site.home', [
             'settings' => $settings,
+            'home' => $this->site->home(),
+            'servicesPage' => $services,
             'featured' => $this->site->featured(),
             'latest' => $settings['show_releases'] ? $this->site->latest(8) : collect(),
             'upcoming' => $settings['show_releases'] ? $this->site->upcoming(4) : collect(),

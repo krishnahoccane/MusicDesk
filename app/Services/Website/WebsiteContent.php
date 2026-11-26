@@ -116,6 +116,28 @@ class WebsiteContent
         }
     }
 
+    /** Optional home page sections (Settings → Website → Home page); nothing is shown until filled in. */
+    public const HOME_DEFAULTS = [
+        'eyebrow' => '', 'cta1_label' => '', 'cta1_url' => '', 'cta2_label' => '', 'cta2_url' => '',
+        'stats' => [], 'stores_title' => '', 'stores' => '', 'show_services' => true, 'services_title' => '',
+        'steps_title' => '', 'steps' => [], 'testimonials_title' => '', 'testimonials' => [],
+        'faq_title' => '', 'faq' => [], 'cta_title' => '', 'cta_text' => '', 'cta_label' => '', 'cta_url' => '',
+    ];
+
+    /** @return array<string, mixed> */
+    public function home(): array
+    {
+        $saved = $this->settings->get('website.home', []);
+
+        return array_merge(self::HOME_DEFAULTS, array_intersect_key(is_array($saved) ? $saved : [], self::HOME_DEFAULTS));
+    }
+
+    /** Store names typed one per line or separated by commas. @return list<string> */
+    public static function storeNames(string $text): array
+    {
+        return array_values(array_unique(array_filter(array_map('trim', preg_split('/[\r\n,]+/', $text) ?: []))));
+    }
+
     public function heroTitle(): string
     {
         return (string) ($this->settings()['hero_title'] ?: config('app.name'));

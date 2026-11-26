@@ -1,0 +1,177 @@
+// ------------------------------------------------------------ home page sections (Settings → Website → Home page)
+
+.ld-site-service h3 { font-size: 1.15rem; font-weight: 700; margin: 0.75rem 0 0.5rem; color: var(--ld-heading); }
+
+// Stores: a moving strip of names (two copies for a seamless loop)
+.ld-site-stores {
+    padding: 1.75rem 0;
+    border-top: 1px solid var(--ld-border);
+    border-bottom: 1px solid var(--ld-border);
+    background: color-mix(in oklab, var(--ld-surface) 60%, transparent);
+    overflow: hidden;
+}
+.ld-site-stores__title {
+    text-align: center;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ld-text-muted);
+    margin-bottom: 1rem;
+}
+.ld-site-stores__track {
+    display: flex;
+    width: max-content;
+    animation: ld-site-marquee 40s linear infinite;
+    mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+    &:hover { animation-play-state: paused; }
+    ul { display: flex; gap: 2.75rem; list-style: none; margin: 0; padding: 0 1.375rem; }
+    li {
+        font-size: clamp(1.1rem, 1rem + 0.6vw, 1.45rem);
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        white-space: nowrap;
+        color: color-mix(in oklab, var(--ld-heading) 70%, transparent);
+    }
+}
+@keyframes ld-site-marquee { to { transform: translateX(-50%); } }
+
+// Numbers band
+.ld-site-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1.5rem;
+    margin: 0;
+    padding: clamp(24px, 4vw, 40px);
+    border-radius: calc(var(--ld-radius) * 1.6);
+    background: linear-gradient(120deg, color-mix(in oklab, var(--ld-accent) 14%, var(--ld-surface)), color-mix(in oklab, var(--ld-accent-2) 10%, var(--ld-surface)));
+    border: 1px solid var(--ld-border);
+    text-align: center;
+    dt {
+        font-size: clamp(2rem, 1.5rem + 2vw, 3.2rem);
+        font-weight: 800;
+        line-height: 1;
+        letter-spacing: -0.03em;
+        background: linear-gradient(100deg, var(--ld-heading), var(--ld-accent));
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+    }
+    dd { margin: 0.5rem 0 0; color: var(--ld-text-muted); }
+}
+
+// How it works
+.ld-site-steps {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(230px, 100%), 1fr));
+    gap: clamp(16px, 2.4vw, 28px);
+    counter-reset: none;
+    li {
+        position: relative;
+        padding: 1.5rem 1.25rem 1.25rem;
+        border-top: 3px solid var(--ld-accent);
+        background: var(--ld-surface);
+        border-radius: 0 0 var(--ld-radius) var(--ld-radius);
+        box-shadow: var(--ld-card-shadow);
+    }
+    h3 { font-size: 1.1rem; font-weight: 700; margin: 0.5rem 0 0.4rem; }
+}
+.ld-site-steps__no { font-family: var(--ld-font-mono); font-weight: 700; color: var(--ld-link); }
+
+// Testimonials
+.ld-site-quotes {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
+    gap: clamp(16px, 2.4vw, 28px);
+}
+.ld-site-quote {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 1.25rem;
+    padding: 1.75rem;
+    border-radius: calc(var(--ld-radius) * 1.3);
+    background: var(--ld-surface);
+    border: 1px solid var(--ld-border);
+    box-shadow: var(--ld-card-shadow);
+    blockquote { margin: 0; font-size: 1.05rem; line-height: 1.65; color: var(--ld-heading); }
+    figcaption { display: flex; align-items: center; gap: 0.75rem; }
+}
+.ld-site-quote__avatar {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    font-weight: 800;
+    font-size: 0.9rem;
+    color: #fff;
+    background: linear-gradient(135deg, var(--ld-accent), var(--ld-accent-2));
+}
+
+// FAQ
+.ld-site-faq {
+    display: grid;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    gap: clamp(24px, 5vw, 72px);
+    h2 { font-size: clamp(1.8rem, 1.4rem + 1.6vw, 2.6rem); font-weight: 800; }
+    @media (max-width: 767.98px) { grid-template-columns: 1fr; }
+}
+.ld-site-faq__item {
+    border-bottom: 1px solid var(--ld-border);
+    summary {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 1.1rem 0;
+        cursor: pointer;
+        list-style: none;
+        font-weight: 600;
+        color: var(--ld-heading);
+        &::-webkit-details-marker { display: none; }
+        svg { flex: none; transition: transform 0.2s ease; color: var(--ld-text-muted); }
+    }
+    &[open] summary svg { transform: rotate(180deg); }
+    .ld-site-prose { padding: 0 0 1.25rem; color: var(--ld-text-muted); }
+}
+
+// Closing call to action
+.ld-site-cta {
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    padding: clamp(28px, 5vw, 56px);
+    border-radius: calc(var(--ld-radius) * 1.8);
+    color: #fff;
+    background: linear-gradient(120deg, var(--ld-accent), var(--ld-accent-2));
+    box-shadow: 0 40px 80px -40px color-mix(in oklab, var(--ld-accent) 70%, #000);
+    h2 { color: #fff; font-size: clamp(1.7rem, 1.3rem + 1.6vw, 2.6rem); font-weight: 800; margin: 0 0 0.4rem; }
+    p { color: rgba(255, 255, 255, 0.85); max-width: 40em; }
+    .btn { border-radius: 999px; display: inline-flex; align-items: center; gap: 0.5rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ld-site-stores__track { animation: none; flex-wrap: wrap; width: auto; justify-content: center; mask-image: none; }
+    .ld-site-stores__track ul[aria-hidden] { display: none; }
+    .ld-site-stores__track ul { flex-wrap: wrap; justify-content: center; row-gap: 0.75rem; }
+}
+
+// Themes that square everything off keep that look here too
+[data-site-theme="bold"] .ld-site-stats, [data-site-theme="bold"] .ld-site-quote, [data-site-theme="bold"] .ld-site-cta,
+[data-site-theme="bold"] .ld-site-steps li { border-radius: 0; border: 3px solid var(--ld-heading); box-shadow: 8px 8px 0 var(--ld-heading); }
+[data-site-theme="noir"] .ld-site-stats, [data-site-theme="noir"] .ld-site-quote, [data-site-theme="noir"] .ld-site-cta { border-radius: 0; }
+[data-site-theme="minimal"] .ld-site-cta { background: #0a0a0a; box-shadow: none; }
+[data-site-theme="neon"] .ld-site-quote, [data-site-theme="neon"] .ld-site-steps li {
+    border-color: color-mix(in oklab, var(--ld-accent) 60%, transparent);
+    box-shadow: 0 0 24px -6px color-mix(in oklab, var(--ld-accent) 70%, transparent);
+}

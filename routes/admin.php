@@ -155,6 +155,7 @@ Route::middleware(['auth', 'auth.session', 'active', 'license'])->group(function
         Route::get('settings/catalog', CatalogSettings::class)->name('settings.catalog');
         Route::get('settings/website', \App\Livewire\Settings\Website::class)->name('settings.website');
         Route::get('settings/website/pages', \App\Livewire\Settings\WebsitePages::class)->name('settings.website.pages');
+        Route::get('settings/website/home', \App\Livewire\Settings\WebsiteHome::class)->name('settings.website.home');
         Route::get('settings/appearance/login-preview/{design}', LoginPreviewController::class)
             ->whereIn('design', array_keys(Appearance::LOGIN_LAYOUTS))->name('settings.appearance.login-preview');
         Route::get('system', SystemInfo::class)->name('system.index');

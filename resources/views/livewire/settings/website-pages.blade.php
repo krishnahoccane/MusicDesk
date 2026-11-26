@@ -210,9 +210,9 @@
             <li class="ld-list__item">
                 <span class="flex-grow-1">
                     <span class="fw-semibold" style="color: var(--ld-heading)">{{ __('Home') }}</span>
-                    <span class="d-block small text-muted">/ · {{ __('Edited under “Website and theme”.') }}</span>
+                    <span class="d-block small text-muted">/ · {{ __('Edited under “Website and theme” and “Home page”.') }}</span>
                 </span>
-                <a href="{{ route('settings.website') }}" class="btn btn-sm btn-light">{{ __('Edit') }}</a>
+                <a href="{{ route('settings.website.home') }}" class="btn btn-sm btn-light">{{ __('Edit') }}</a>
             </li>
             @foreach ($pages as $page)
                 <li class="ld-list__item flex-wrap" wire:key="page-{{ $page->id }}">
