@@ -34,6 +34,12 @@ class EnsureLicenseNotLocked
             return $next($request);
         }
 
+        // A MusicDesk support session may view and fix the licence on a locked site.
+        if ($request->hasSession() && is_array($request->session()->get('musicdesk_support'))
+            && $request->routeIs('license.*', 'system.*', 'settings.*', 'activity.*', 'logout', 'dashboard', 'preferences.*')) {
+            return $next($request);
+        }
+
         try {
             $snapshot = $this->license->snapshot();
         } catch (Throwable) {

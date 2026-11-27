@@ -27,6 +27,7 @@
 
         <div class="ld-main">
             @include('partials.license-ribbon', ['ribbonSnapshot' => $licenseSnapshot ?? null])
+            @include('partials.support-banner')
             @include('partials.topbar')
 
             <main id="main-content" class="ld-content" tabindex="-1">

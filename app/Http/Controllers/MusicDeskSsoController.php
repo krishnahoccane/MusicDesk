@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Exceptions\SupportSsoException;
 use App\Services\Activity\ActivityLogger;
+use App\Services\License\LicenseService;
 use App\Services\Security\SupportSsoService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -20,7 +21,7 @@ use Throwable;
  */
 class MusicDeskSsoController extends Controller
 {
-    public function __construct(protected SupportSsoService $sso, protected ActivityLogger $activity) {}
+    public function __construct(protected SupportSsoService $sso, protected ActivityLogger $activity, protected LicenseService $license) {}
 
     public function store(Request $request): RedirectResponse|Response
     {
@@ -66,8 +67,10 @@ class MusicDeskSsoController extends Controller
             $this->notify($admin->email, $admin->name, $by);
         }
 
-        // Never redirect to a URL from the request.
-        return redirect()->route('dashboard');
+        // Never redirect to a URL from the request. A site that is read-only or locked lands on the licence page.
+        $usable = rescue(fn () => $this->license->snapshot()->allowsWrites(), false, report: false);
+
+        return redirect()->route($usable ? 'dashboard' : 'license.show');
     }
 
     protected function notify(string $to, string $name, string $by): void
