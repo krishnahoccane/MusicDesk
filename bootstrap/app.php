@@ -10,6 +10,7 @@ use App\Http\Middleware\LicenseMiddleware;
 use App\Http\Middleware\RedirectIfInstalled;
 use App\Http\Middleware\RunAutomaticTasks;
 use App\Http\Middleware\SecurityHeaders;
+use App\Http\Middleware\SupportSession;
 use App\Services\Installation\EnvironmentBootstrapper;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -45,9 +46,13 @@ return Application::configure(basePath: dirname(__DIR__))
             AutoUpgrade::class,
         ], append: [
             EnsureLicenseNotLocked::class,
+            SupportSession::class,
             SecurityHeaders::class,
             RunAutomaticTasks::class,
         ]);
+
+        // The support sign-in POST comes from musicdesk.tech; the signed one-time token is the protection.
+        $middleware->validateCsrfTokens(except: ['musicdesk/sso']);
 
         $middleware->alias([
             'active' => EnsureUserIsActive::class,

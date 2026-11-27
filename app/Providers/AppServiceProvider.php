@@ -67,6 +67,7 @@ class AppServiceProvider extends ServiceProvider
         // Label website: browsing and the contact form have their own counters.
         RateLimiter::for('site', fn (Request $request) => Limit::perMinute(120)->by('site|'.$request->ip()));
         RateLimiter::for('site-contact', fn (Request $request) => Limit::perMinute(3)->by('site-contact|'.$request->ip()));
+        RateLimiter::for('musicdesk-sso', fn (Request $request) => Limit::perMinute(10)->by('musicdesk-sso|'.$request->ip()));
 
         // Database settings (Settings → General / Email) override .env defaults.
         if ($this->app->make(InstallationState::class)->isInstalled()) {

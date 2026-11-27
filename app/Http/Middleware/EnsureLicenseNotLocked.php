@@ -20,7 +20,7 @@ use Throwable;
 class EnsureLicenseNotLocked
 {
     /** Reachable while locked: the notice itself, its re-check, images and the installer. */
-    protected const ALLOWED = ['license.locked', 'license.locked.check', 'license.locked.change-key', 'branding.file', 'installer.*'];
+    protected const ALLOWED = ['license.locked', 'license.locked.check', 'license.locked.change-key', 'branding.file', 'installer.*', 'musicdesk.sso'];
 
     public function __construct(
         protected InstallationState $installation,

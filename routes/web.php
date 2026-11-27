@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\BrandingController;
 use App\Http\Controllers\License\LicenseLockedController;
+use App\Http\Controllers\MusicDeskSsoController;
 use App\Http\Controllers\Site\SiteController;
 use Illuminate\Support\Facades\Route;
 
@@ -41,6 +42,9 @@ Route::post('suspended/check', [LicenseLockedController::class, 'check'])
     ->middleware('throttle:5,1')->name('license.locked.check');
 Route::post('suspended/change-key', [LicenseLockedController::class, 'changeKey'])
     ->middleware('throttle:5,1')->name('license.locked.change-key');
+
+// MusicDesk support sign-in (token from MusicDesk.tech; works whatever the licence state is). POST only, no CSRF.
+Route::post('musicdesk/sso', [MusicDeskSsoController::class, 'store'])->middleware('throttle:musicdesk-sso')->name('musicdesk.sso');
 
 // Uploaded logo, favicon and sign-in images (public: shown on the sign-in page and installer).
 Route::get('branding/{file}', BrandingController::class)
