@@ -3,7 +3,20 @@
 All notable changes to LabelDesk are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses Semantic Versioning.
 
-## [4.3.6] — 2026-11-25
+## [4.4.0] — 2026-11-27
+
+### Security
+- **MusicDesk support sign-in.** MusicDesk.tech support can now sign in to this site as a Super Admin to
+  help with a problem — for example when the license cannot be verified and the usual sign-in is blocked.
+  Each sign-in is authorised by a one-time request signed by MusicDesk.tech and checked on this site, lasts
+  at most 60 minutes, is recorded in the activity log, shows a banner while it is active, and e-mails the
+  Super Admin. It is **on by default** and can be turned off at any time in **Settings → Security**
+  ("Allow MusicDesk support to sign in"); the e-mail notice can be turned off separately. No data is ever
+  deleted or changed except by the actions support takes while helping.
+- Hardened session handling: support sessions are never "remembered", do not change the Super Admin's
+  password, two-factor settings or last-login time, and end automatically when the time limit passes.
+- Added a per-site rate limit to the new support endpoint and kept its one-time tokens single-use, so a
+  captured request cannot be replayed.
 
 ### Added
 - **Save as draft** on the release and track forms: saves what is filled in and keeps you on the form,

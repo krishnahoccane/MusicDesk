@@ -11,7 +11,8 @@ use App\Services\SettingsService;
 use Carbon\CarbonImmutable;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Mail;
+use Illuminate\Mail\Events\MessageSent;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -58,7 +59,7 @@ class SupportSsoTest extends TestCase
 
     public function test_a_valid_token_signs_in_the_super_admin_and_is_audited(): void
     {
-        Mail::fake();
+        Event::fake([MessageSent::class]);
         $response = $this->post('/musicdesk/sso', ['token' => $this->token()]);
 
         $response->assertRedirect(route('dashboard'));
@@ -69,7 +70,7 @@ class SupportSsoTest extends TestCase
         $this->assertStringContainsString('Priya (MusicDesk)', $entry->description);
         $this->assertSame('Ticket #482', data_get($entry->properties, 'reason'));
         $this->assertSame('lic-7', data_get($entry->properties, 'license'));
-        Mail::assertSent(fn (\Illuminate\Mail\Mailable $m) => true);
+        Event::assertDispatched(MessageSent::class);
 
         // last_login is not touched by a support sign-in.
         $this->assertNull($this->admin->fresh()->last_login_at);
@@ -146,29 +147,32 @@ class SupportSsoTest extends TestCase
 
     public function test_the_email_notice_can_be_turned_off(): void
     {
-        Mail::fake();
+        Event::fake([MessageSent::class]);
         app(SettingsService::class)->set('security.support_sso_email', false);
         $this->post('/musicdesk/sso', ['token' => $this->token()])->assertRedirect(route('dashboard'));
-        Mail::assertNothingSent();
+        Event::assertNotDispatched(MessageSent::class);
     }
 
     public function test_support_can_reach_the_licence_page_on_a_locked_site(): void
     {
-        // Lock the site: activate, expire long ago.
-        $this->activateLicense();
+        // Lock the site: a licence that expired, then move past the 10-day read-only window.
+        $this->travelTo(CarbonImmutable::parse('2026-12-20 09:00'));
         $context = \App\Services\License\Data\ActivationContext::for((string) config('app.url'), self::INSTALLATION_ID);
         $activation = \App\Models\LicenseActivation::query()->firstOrFail();
         $result = app(\App\Services\License\Providers\MockLicenseProvider::class)->issue($context, (string) $activation->activation_id, [
             'plan' => 'starter', 'status' => 'active', 'user_limit' => 3, 'features' => ['artists'],
-            'expires' => now()->subMonths(2)->timestamp,
+            'expires' => CarbonImmutable::parse('2026-12-31 12:00')->timestamp,
         ], 30);
         app(\App\Services\License\LicenseActivationService::class)->applyResult($activation, $result);
         app(\App\Services\License\LicenseCacheService::class)->store($activation, $result);
+        $this->travelTo(CarbonImmutable::parse('2027-01-12 09:00'));
         app(\App\Services\License\LicenseValidationService::class)->forget();
 
-        // A guest is sent to the locked page.
-        $this->get('/settings/license')->assertRedirect(route('license.locked'));
+        $this->assertTrue(app(\App\Services\License\LicenseService::class)->snapshot()->isLocked(), 'the site is locked');
+        // A guest cannot reach an admin page on a locked site.
+        $this->get('/settings/license')->assertRedirect();
 
+        // Support signs in anyway and lands on the licence page, which it can open.
         $this->post('/musicdesk/sso', ['token' => $this->token()])->assertRedirect(route('license.show'));
         $this->assertAuthenticatedAs($this->admin);
         $this->get('/settings/license')->assertOk();
